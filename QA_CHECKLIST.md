@@ -1236,6 +1236,30 @@ adb shell run-as io.agents.pokeclaw strings /data/data/io.agents.pokeclaw/files/
 
 ---
 
+## FA. Fork Phase 2 — Arabic UI, Provider Settings, Chat Streaming/Markdown
+
+Fork-specific feature area (branch `phase-2-arabic-chat`). Run on the debug fork APK after clean install.
+
+| ID | Tag | Steps | Expected |
+|---|---|---|---|
+| FA1 | `[RELEASE-OK]` | Fresh install, launch chat. `adb logcat -s AppLocale ChatSessionController` | App UI is Arabic by default (toolbar `النماذج`, composer, model cards); layout RTL; log shows locale `ar`. |
+| FA2 | `[RELEASE-OK]` | Settings → language switch to English → force-stop → relaunch. | UI switches to English and persists across restart (`pokeclaw_locale` prefs). Switch back to Arabic and repeat. |
+| FA3 | `[RELEASE-OK]` | Screenshot chat + Models screen with Arabic active. | Arabic renders in Noto Naskh Arabic (bundled font), legible, no tofu; `docs/licenses/NotoNaskhArabic-OFL.txt` present in repo. |
+| FA4 | `[LOGCAT-DEBUG] [LLM-CLOUD]` | Models screen → DeepSeek tab visible with Chat/Reasoner cards; Base URL field prefilled `https://api.deepseek.com/v1`. Enter a valid key, tap Test. | Logcat `CloudConnectionTester: test: provider=DEEPSEEK ... ok`; status shows localized `✓ Connection successful`. |
+| FA5 | `[LOGCAT-DEBUG]` | Enter an invalid key (`sk-bad000000000000`) on any provider, tap Test. | Status shows the 401 unauthorized string; logcat `CloudConnectionTester ... failed` with the key masked (never `sk-…` in full). |
+| FA6 | `[LOGCAT-DEBUG]` | OpenAI tab, Base URL → `https://api.openai.com/v9`, valid key, Test. | Status shows model-not-found/404-class localized string; no crash. |
+| FA7 | `[RELEASE-OK]` | Set custom Base URL + valid key on a provider → Save & Activate → force-stop → relaunch → Models. | Per-provider Base URL persisted (`KEY_LLM_BASE_URL_<PROVIDER>`); active cloud model shows the custom endpoint; chat works through it. |
+| FA8 | `[LLM-CLOUD]` | Cloud chat: send `اكتب مقدمة قصيرة عن الرياض`. | Assistant bubble grows token-by-token (120ms-throttled partial updates), then footer shows model name + timestamp; reply is Arabic. |
+| FA9 | `[LLM-CLOUD]` | Send a prompt that yields Markdown (bold/code/bullets). | Bubble renders bold/italic/monospace/lists, no raw `**` or fenced ``` visible; link tap opens browser via LinkAnnotation. |
+| FA10 | `[LLM-CLOUD] [LOGCAT-DEBUG]` | Point Base URL at an unreachable host (e.g. blackhole TLD), send a chat. | Localized SYSTEM bubble `خطأ: …` / `Error: …` appears, no fake assistant `Error:` message, typing placeholder removed; `ChatSessionController: Chat error` logged. |
+| FA11 | `[DEBUG-ONLY]` | Configure an API key + Telegram token, then `adb shell run-as io.agents.pokeclaw cat shared_prefs/pokeclaw_secure.xml`. | Secret values are ciphertext; MMKV files contain no plaintext secret copies after migration; logcat `SecureStore initialized encrypted=true`. |
+| FA12 | `[RELEASE-OK]` | With ConfigServer enabled, GET the config endpoint from a LAN client. | Secret values returned masked (`***`), names preserved. |
+| FA13 | `[LLM-CLOUD]` | Send Gulf-dialect message (`وشك كيف حالك؟`). | Reply is written Arabic (MSA) per LanguagePolicy; policy composed before user global prompt so global prompt still overrides. |
+
+Execution status: **NOT YET EXECUTED** — no Android device/emulator was connected via adb on this Windows machine at phase close (adb path exists but no device). JVM unit tests all pass (`.\gradlew.bat testDebugUnitTest`, 17 classes / 61 tests). Execute FA1–FA13 when a device is available and record results in the QA Debug Changelog below.
+
+---
+
 ## QA Debug Changelog
 
 Format: `[date] [status] [test-id] description`

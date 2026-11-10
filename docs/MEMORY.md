@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-10 (Phase 1 close-out)
+Last updated: 2026-11-10 (Phase 2 code-complete; device QA pending)
 
 ## Project Identity
 
@@ -14,10 +14,10 @@ Last updated: 2026-11-10 (Phase 1 close-out)
 
 | Phase | Status |
 |---|---|
-| P1 Setup/audit | **DONE 2026-11-10** (branch `phase-1-setup`) |
-| P2 Arabic + chat + provider settings | Not started |
+| P1 Setup/audit | **DONE 2026-11-10** (branch `phase-1-setup`, merged into local `main` @ `187a065`) |
+| P2 Arabic + chat + provider settings | **CODE COMPLETE 2026-11-10** on branch `phase-2-arabic-chat` (7 commits, build+unit tests green). On-device E2E QA pending — no adb device connected yet. |
 | P3 Voice input | Not started |
-| P4 Agent safety/security/stability | Not started |
+| P4 Agent safety/security/stability | Not started (note: secrets-encryption item already delivered early in P2) |
 | P5 Final build/tests/release docs | Not started |
 
 ## What's Done (Phase 1)
@@ -27,6 +27,19 @@ Last updated: 2026-11-10 (Phase 1 close-out)
 - `.gitignore` hardened: added `*.keystore`, `*.p12`, `*.pem`, `keys/`, `secrets/`, `signing/`, `keystores/`, `.env.local`, `.env.*.local`, `**/build/`, `**/.gradle/`, `app/release/`, `*.apk`, `*.aab`; explicit `!.env.enc` exception for upstream's SOPS file. Existing rules (`.env`, `local.properties`, `*.jks`) kept.
 - Fixed Gradle wrapper: upstream pointed at `mirrors.cloud.tencent.com` (10s timeout outside China) → switched to official `https://services.gradle.org/distributions/gradle-9.3.1-all.zip`, networkTimeout 120000.
 - Build verified: `.\gradlew.bat assembleDebug` → **BUILD SUCCESSFUL in 2m42s** (2026-11-10), APK `app\build\outputs\apk\debug\PokeClaw_v0.7.1_20261110_134716.apk`. Only warnings (deprecations, native lib strip notes).
+
+## What's Done (Phase 2) — branch `phase-2-arabic-chat`
+
+Commits: `8cc0123` feat(arabic) · `cdd57cb` feat(prompt) · `75c6310` feat(security) · `811de4e` fix(arabic-typography) · `a0952ae` fix(security-types) · `8a68f16` feat(provider-settings) · `49ca390` feat(chat).
+
+- **Arabic default**: `utils/AppLocale.kt` (plain SharedPreferences `pokeclaw_locale`, key `KEY_APP_LANGUAGE`, default Arabic unless user picked English); `attachBaseContext` overrides in `BaseActivity`/`ComposeChatActivity`/`ClawApplication`. Full `values-ar/strings.xml`; new keys added to both locales. Noto Naskh Arabic variable TTF bundled (OFL at `docs/licenses/NotoNaskhArabic-OFL.txt`), applied via `themes.xml` fontFamily (Views) + `PokeclawTypography` (Compose; material3 1.3 removed `Typography(defaultFontFamily=…)` → font applied via `copy()` on all text styles). Localized literals in ChatScreen/ChatSessionController/LlmConfigActivity. RTL works via existing `supportsRtl`; some upstream icons still need AutoMirrored swap (flagged).
+- **Gulf language policy**: `agent/LanguagePolicy.kt` — Khaleeji/Gulf-dialect comprehension + Modern-Standard-Arabic written replies; composed by `PromptUtils.applyGlobalPrompt` as base → policy → user global instructions (user prompt last so it can override). Wired into both cloud `SystemMessage` sites in ChatSessionController and the local `ConversationConfig` path.
+- **Encrypted secrets** (P4 item delivered early): `utils/SecureStore.kt` = EncryptedSharedPreferences (AES256-GCM keys+values, SIV key names, Android Keystore master key) with private-mode fallback + one-time migration of plaintext MMKV secrets (removed from MMKV after copy). `utils/SecretsMasker.kt` masks ConfigServer GET secret values; masked values detected so POST never overwrites real keys. No secret values ever logged. `security-crypto:1.1.0` added.
+- **Provider settings**: DEEPSEEK added to `agent/CloudProvider.kt` (`deepseek-chat` recommended, `deepseek-reasoner`; OpenAI-compatible). Base URL now editable for **every** provider (incl. Claude/OpenAI proxies), persisted per provider via `KVUtils KEY_LLM_BASE_URL_<PROVIDER>` resolved in `ModelConfigRepository.buildCloudConfig`. Real test-connection: `agent/llm/CloudConnectionTester.kt` sends one minimal chat request (langchain4j OpenAI/Anthropic client behind `OkHttpClientBuilderAdapter`, 25s timeout) and classifies OK / UNAUTHORIZED(401) / MODEL_NOT_FOUND(404) / TIMEOUT / NETWORK / GENERIC into localized strings; API key never in results/logs.
+- **Chat upgrade**: cloud replies stream token-by-token into the assistant bubble via `chatStreaming` (120ms-throttled partial updates, placeholder finalized in place); Markdown rendering in `AssistantBubble` through new pure-JVM `ui/chat/MarkdownRender.kt` (`markdownToSegments`/`parseInlineMarkdown`: bold/italic/bold-italic/inline code/fenced blocks/links/headings→bold/blockquotes/bullets/HR; links clickable via Compose `LinkAnnotation` + `BasicText`); errors now localized SYSTEM bubbles (`chat_error_prefix`) instead of fake assistant "Error:" messages.
+- **Unit tests**: 4 new classes — `LanguagePolicyTest`, `SecretsMaskerTest`, `CloudConnectionTesterTest`, `MarkdownRenderTest`. Full suite green: 17 classes / 61 tests, 0 failures (`.\gradlew.bat testDebugUnitTest`).
+- **Build verified**: `assembleDebug` → BUILD SUCCESSFUL (~11–19s incremental) → `PokeClaw_v0.7.1_20261110_154327.apk`. Only pre-existing deprecation warnings.
+- **QA cases added** (not yet executed — no device): QA_CHECKLIST.md section **FA** (FA1–FA13).
 
 ## Build Environment (Windows machine — how it was made to work)
 
@@ -40,20 +53,23 @@ Last updated: 2026-11-10 (Phase 1 close-out)
 
 - Single module `:app`; agent loop = `DefaultAgentService.runAgentLoop` (while iterations < maxIterations, StuckDetector + TaskBudget/TokenMonitor + guards), tools via `ToolRegistry` (35 tools), skills as markdown (`docs/skill-spec.md`).
 - Local LLM: LiteRT-LM 0.10.0, Gemma 4 E2B/E4B `.litertlm` from HuggingFace `litert-community`; GPU→CPU fallback tracked by `LocalBackendHealth`.
-- Cloud: LangChain4j OpenAI + Anthropic + custom OpenAI-compatible base URLs; catalog/pricing in `agent/CloudProvider.kt`.
-- State/settings: MMKV via `KVUtils` (API keys plaintext — P4 target). UI: Compose chat (`ChatScreen.kt`) + Views settings. Channels: Telegram/Discord/WeChat. External automation intent API (user-toggle, default off).
+- Cloud: LangChain4j OpenAI + Anthropic + custom OpenAI-compatible base URLs; catalog/pricing in `agent/CloudProvider.kt` (now incl. DeepSeek). Per-provider editable Base URL (`KEY_LLM_BASE_URL_<PROVIDER>`); real probe via `agent/llm/CloudConnectionTester`. Chat streams cloud replies token-by-token (`ChatSessionController.sendChat` → `chatStreaming`); Markdown via `ui/chat/MarkdownRender.kt`.
+- State/settings: MMKV via `KVUtils` for non-secret settings; secrets (API keys, bot tokens) in `utils/SecureStore` EncryptedSharedPreferences since phase 2 (migrated from plaintext MMKV). UI: Compose chat (`ChatScreen.kt`) + Views settings. Channels: Telegram/Discord/WeChat. External automation intent API (user-toggle, default off).
 
 ## Known Issues / Risks (carried into later phases)
 
-1. Push target unresolved: `origin` = upstream `agents-io/PokeClaw`; push of `phase-1-setup` returned `remote: Permission to agents-io/PokeClaw.git denied to Altamimi79.` (403). GitHub account has no fork yet. When the fork exists (create at https://github.com/agents-io/PokeClaw → Fork), run:
-   `git remote rename origin upstream` then `git remote add origin https://github.com/Altamimi79/<fork-name>.git` then `git push -u origin phase-1-setup` and open PR `phase-1-setup → main`.
+1. Push target unresolved: `origin` = upstream `agents-io/PokeClaw`; push attempts return `remote: Permission to agents-io/PokeClaw.git denied to Altamimi79.` (403). GitHub account has no fork yet. When the fork exists (create at https://github.com/agents-io/PokeClaw → Fork), run:
+   `git remote rename origin upstream` then `git remote add origin https://github.com/Altamimi79/<fork-name>.git` then `git push -u origin phase-1-setup` and `git push -u origin phase-2-arabic-chat`, and open PRs into `main`.
 2. Upstream signing key lost historically → upgrade gap requires one-time uninstall/reinstall (BACKLOG P1). Affects P5 release story.
 3. Security debt for P4: plaintext API keys in MMKV, unauthenticated loopback ConfigServer HTTP, cleartext permitted globally, exported RUN_TASK components without sender verification, prompt-injection surface from screen/notification content (guards exist: DirectDeviceDataGuard etc.).
 4. God classes: `ChatScreen.kt` 2385L, `AutoReplyManager.java` 1060L, `DefaultAgentService.kt` 778L, `SettingsActivity` 773L.
 5. Local model RAM floor (E2B/E4B heavy for low-RAM devices); MediaTek/Samsung engine failures open upstream (BACKLOG P1).
 6. `.env.enc` age-encrypted to upstream recipient — fork cannot rotate those secrets; P4 needs a fork-local secret story if cloud features are used in CI.
 7. JITPack dependency (EasyFloat) + Chinese-mirror history = supply-chain watch item.
+8. Phase 2 E2E QA (QA_CHECKLIST §FA) not executed: no Android device/emulator connected via adb on this Windows machine at phase close (`adb` at `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`). JVM unit tests cover the pure logic.
+9. `androidx.security-crypto` EncryptedSharedPreferences is deprecated upstream (last release 1.1.0): functional today with private-mode fallback; revisit storage approach in P4.
 
-## Next Up (Phase 2 preview)
+## Next Up
 
-Arabic support groundwork: RTL (`supportsRtl` already true), strings.xml localization (currently mostly English + scattered Chinese comments), Arabic-aware UI matching utils (`UiActionMatchUtils`, `ContactListUiUtils` — structure-first per BACKLOG P1), chat UX polish, provider settings improvements in `LlmConfigActivity`/`CloudProvider.kt`. Plan details: docs/PLAN.md.
+- **Phase 2 close-out**: connect a device/emulator, execute QA_CHECKLIST §FA (FA1–FA13), record results; push `phase-1-setup` + `phase-2-arabic-chat` once the GitHub fork exists (commands in Known Issue 1).
+- **Phase 3 preview**: voice input — mic button in chat composer, STT path with configured key, RECORD_AUDIO permission flow (not yet in manifest), optional on-device STT spike. Plan details: docs/PLAN.md.

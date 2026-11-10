@@ -12,14 +12,17 @@ Rules per phase: branch `phase-N-…`, QA-first (AGENTS.md), update `docs/MEMORY
 - [x] Verify build: `gradlew.bat assembleDebug` → BUILD SUCCESSFUL (v0.7.1 debug APK)
 - [x] Branch `phase-1-setup`, commit, push/PR toward `main` (see CHANGELOG for remote status)
 
-## P2 — Arabic + Chat + Provider Settings
+## P2 — Arabic + Chat + Provider Settings — CODE COMPLETE 2026-11-10 (device QA pending)
 
-- [ ] Inventory all user-facing strings; move hardcoded strings to `strings.xml`; add `values-ar` with full Arabic translations
-- [ ] RTL verification pass on chat/settings/guide screens (Compose + Views), mirror icons where needed (AutoMirrored)
-- [ ] Arabic-aware text matching: audit `UiActionMatchUtils.java`, `ContactListUiUtils.java`, `UiTextMatchUtils` for Arabic diacritics/normalization (structure-first per BACKLOG "Structure-first UI matching")
-- [ ] Chat improvements: session sidebar polish, keyboard dismissal (BACKLOG P2), long model-name layout fix (BACKLOG P2)
-- [ ] Provider settings: improve `LlmConfigActivity` (provider tabs, custom base URL flow, test-connection UX), extend `CloudProvider.kt` catalog as needed for Arabic-region-friendly providers
-- [ ] QA: add E2E cases to QA_CHECKLIST.md (Arabic locale switch, RTL chat, provider save/test)
+- [x] Inventory user-facing strings; hardcoded literals moved/localized; `values-ar` full Arabic translations added
+- [~] RTL verification: works via existing `supportsRtl` + Arabic locale switching; remaining AutoMirrored icon swaps tracked as a flag in docs/MEMORY.md (upstream deprecation warnings visible in build)
+- [ ] Arabic-aware text matching audit (`UiActionMatchUtils`, `ContactListUiUtils`, `UiTextMatchUtils`) — deferred (structure-first matching backlog; `UiTextMatchUtilsTest` exists)
+- [~] Chat improvements: streaming replies, Markdown bubbles, localized error SYSTEM bubbles, loading states done; session sidebar polish / keyboard dismissal / long model-name layout fixes still open (BACKLOG P2)
+- [x] Provider settings: DeepSeek added; per-provider editable Base URL; real test-connection (`CloudConnectionTester`); Claude/OpenAI/DeepSeek key+model+URL config
+- [x] QA: E2E cases FA1–FA13 added to QA_CHECKLIST.md — **execution blocked** until an Android device/emulator is connected via adb
+- [x] Gulf dialect language policy (`LanguagePolicy` wired into all system prompts)
+- [x] Encrypted API-key/token storage (`SecureStore`, early P4 item) + ConfigServer secret masking
+- [x] Unit tests green (61 tests); `assembleDebug` green
 
 ## P3 — Voice Input
 
