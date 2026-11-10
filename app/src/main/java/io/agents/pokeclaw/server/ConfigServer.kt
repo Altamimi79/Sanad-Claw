@@ -80,8 +80,8 @@ class ConfigServer(
 
     private fun handleGetChannels(): Response {
         val data = JsonObject().apply {
-            addProperty("discordBotToken", KVUtils.getDiscordBotToken())
-            addProperty("telegramBotToken", KVUtils.getTelegramBotToken())
+            addProperty("discordBotToken", maskSecret(KVUtils.getDiscordBotToken()))
+            addProperty("telegramBotToken", maskSecret(KVUtils.getTelegramBotToken()))
         }
         val result = JsonObject().apply {
             addProperty("code", 0)
@@ -150,9 +150,8 @@ class ConfigServer(
     }
 
     private fun handleGetLlm(): Response {
-        val apiKey = KVUtils.getLlmApiKey()
         val data = JsonObject().apply {
-            addProperty("llmApiKey", apiKey)
+            addProperty("llmApiKey", maskSecret(KVUtils.getLlmApiKey()))
             addProperty("llmBaseUrl", KVUtils.getLlmBaseUrl())
             addProperty("llmModelName", KVUtils.getLlmModelName())
         }
@@ -348,18 +347,12 @@ class ConfigServer(
     /**
      * Mask: show only last 4 characters, replace the rest with *
      */
-    private fun maskSecret(secret: String): String {
-        if (secret.isEmpty()) return ""
-        if (secret.length <= 4) return secret
-        return "*".repeat(secret.length - 4) + secret.takeLast(4)
-    }
+    private fun maskSecret(secret: String): String = io.agents.pokeclaw.utils.SecretsMasker.mask(secret)
 
     /**
      * Check whether a value has been masked (contains *)
      */
-    private fun isMaskedValue(value: String): Boolean {
-        return value.contains("*")
-    }
+    private fun isMaskedValue(value: String): Boolean = io.agents.pokeclaw.utils.SecretsMasker.isMasked(value)
 
     private fun corsResponse(response: Response): Response {
         response.addHeader("Access-Control-Allow-Origin", "*")
