@@ -376,6 +376,12 @@ object KVUtils {
     fun hasLlmConfig(): Boolean =
         getLlmApiKey().isNotEmpty() || getLlmBaseUrl().isNotEmpty() || getLocalModelPath().isNotEmpty()
 
+    // ==================== Voice Input (Phase 3) ====================
+    private const val KEY_VOICE_AUTO_SEND = "KEY_VOICE_AUTO_SEND"
+    /** When true, a finished dictation is sent immediately; default false = user edits first. */
+    fun isVoiceAutoSendEnabled(): Boolean = getBoolean(KEY_VOICE_AUTO_SEND, false)
+    fun setVoiceAutoSendEnabled(enabled: Boolean) = putBoolean(KEY_VOICE_AUTO_SEND, enabled)
+
     // ==================== Global Prompt (#45) ====================
     // User-defined persistent instructions prepended to every system prompt.
     // Empty string = disabled. No separate enable toggle by design (less to misconfigure).

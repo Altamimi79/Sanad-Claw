@@ -3,10 +3,9 @@
 
 package io.agents.pokeclaw.ui.chat
 
-import android.app.Activity
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.speech.RecognizerIntent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.SystemClock
 import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,7 +47,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import io.agents.pokeclaw.utils.KVUtils
 import io.agents.pokeclaw.utils.XLog
+import io.agents.pokeclaw.ui.voice.VoiceRecordingBar
+import io.agents.pokeclaw.voice.SpeechRecognizerController
+import io.agents.pokeclaw.voice.VoiceDictationPolicy
+import io.agents.pokeclaw.voice.VoiceError
+import io.agents.pokeclaw.voice.VoiceTextNormalizer
+import io.agents.pokeclaw.voice.VoiceTimerFormat
+import androidx.core.content.ContextCompat
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -61,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -861,33 +871,159 @@ private fun ChatInputBar(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
+    val textFieldFocus = remember { FocusRequester() }
 
-    // Voice input — Android system RecognizerIntent, no RECORD_AUDIO needed (system dialog
-    // handles its own permission). Appends transcript to current text instead of replacing,
-    // so users can prefix with typed context.
-    val voiceLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        XLog.d("VoiceInput", "voiceLauncher result: resultCode=${result.resultCode}")
-        if (result.resultCode == Activity.RESULT_OK) {
-            val spokenText = result.data
-                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                ?.firstOrNull()
-                ?.takeIf { it.isNotBlank() }
-            if (spokenText != null) {
-                XLog.i("VoiceInput", "transcript received: ${spokenText.length} chars, currentText.len=${text.length}")
-                val prefix = when {
-                    text.isBlank() -> ""
-                    text.endsWith(" ") -> text
-                    else -> "$text "
-                }
-                text = prefix + spokenText
-            } else {
-                XLog.w("VoiceInput", "transcript empty or missing from result data")
-                Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
-            }
+    // ---- Voice input (phase 3): in-app Arabic dictation via SpeechRecognizer (ar-SA) ----
+    var voiceActive by remember { mutableStateOf(false) }
+    var voiceProcessing by remember { mutableStateOf(false) }
+    var voiceElapsed by remember { mutableIntStateOf(0) }
+    var voiceRms by remember { mutableFloatStateOf(0f) }
+    var voicePartial by remember { mutableStateOf("") }
+    var voiceStartedAt by remember { mutableLongStateOf(0L) }
+
+    fun resetVoiceUi() {
+        voiceStartedAt = 0L
+        voiceActive = false
+        voiceProcessing = false
+        voiceElapsed = 0
+        voiceRms = 0f
+        voicePartial = ""
+    }
+
+    fun sendCurrentMessage() {
+        if (!inputEnabled || isAwaitingReply || isTaskRunning || text.isBlank()) return
+        val message = text.trim()
+        if (isLocalModel && !isTaskMode) onSendChat(message) else onSendTask(message)
+        text = ""
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
+
+    fun appendTranscript(transcript: String) {
+        val prefix = when {
+            text.isBlank() -> ""
+            text.endsWith(" ") -> text
+            else -> "$text "
+        }
+        text = prefix + transcript
+    }
+
+    fun handleVoiceFinal(rawTranscript: String) {
+        val transcript = VoiceTextNormalizer.normalize(rawTranscript)
+        XLog.i("VoiceInput", "final transcript received: ${transcript.length} chars")
+        resetVoiceUi()
+        if (transcript.isEmpty()) {
+            Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
+            return
+        }
+        appendTranscript(transcript)
+        val autoSend = KVUtils.isVoiceAutoSendEnabled()
+        if (VoiceDictationPolicy.shouldAutoSend(
+                autoSendEnabled = autoSend,
+                transcript = text,
+                inputEnabled = inputEnabled,
+                isAwaitingReply = isAwaitingReply,
+                isTaskRunning = isTaskRunning,
+            )
+        ) {
+            XLog.i("VoiceInput", "auto-send enabled — sending transcript")
+            sendCurrentMessage()
         } else {
-            XLog.d("VoiceInput", "voice input cancelled by user (resultCode != OK)")
+            textFieldFocus.requestFocus()
+        }
+    }
+
+    fun handleVoiceError(error: VoiceError) {
+        XLog.w("VoiceInput", "recognition error: $error")
+        resetVoiceUi()
+        Toast.makeText(context, voiceErrorRes(error), Toast.LENGTH_LONG).show()
+    }
+
+    val speechController = remember {
+        SpeechRecognizerController(
+            context = context,
+            listener = object : SpeechRecognizerController.Listener {
+                override fun onListening() {
+                    voiceActive = true
+                    voiceProcessing = false
+                }
+
+                override fun onProcessing() {
+                    voiceProcessing = true
+                }
+
+                override fun onPartialText(text: String) {
+                    voicePartial = text
+                }
+
+                override fun onFinalText(text: String) {
+                    handleVoiceFinal(text)
+                }
+
+                override fun onError(error: VoiceError) {
+                    handleVoiceError(error)
+                }
+
+                override fun onRmsChanged(rmsDb: Float) {
+                    voiceRms = rmsDb
+                }
+            },
+        )
+    }
+
+    fun startVoiceInput() {
+        if (!speechController.isAvailable()) {
+            XLog.w("VoiceInput", "recognition service unavailable")
+            Toast.makeText(context, R.string.voice_input_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+        voicePartial = ""
+        voiceElapsed = 0
+        if (!speechController.start()) {
+            XLog.w("VoiceInput", "controller.start() returned false")
+            resetVoiceUi()
+            Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        XLog.i("VoiceInput", "RECORD_AUDIO granted=$granted")
+        if (granted) startVoiceInput()
+        else Toast.makeText(context, R.string.voice_permission_denied, Toast.LENGTH_LONG).show()
+    }
+
+    fun onMicClick() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        when {
+            voiceActive -> {
+                XLog.i("VoiceInput", "mic tapped while recording — stopping gracefully")
+                speechController.stop()
+            }
+            hasPermission -> startVoiceInput()
+            else -> micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            XLog.d("VoiceInput", "disposing recognizer")
+            speechController.destroy()
+        }
+    }
+
+    LaunchedEffect(voiceActive, voiceProcessing) {
+        if (voiceActive && !voiceProcessing) {
+            voiceStartedAt = SystemClock.elapsedRealtime()
+            while (true) {
+                delay(250)
+                voiceElapsed = VoiceTimerFormat.elapsedSeconds(
+                    voiceStartedAt, SystemClock.elapsedRealtime()
+                )
+            }
         }
     }
 
@@ -958,6 +1094,27 @@ private fun ChatInputBar(
             }
         }
 
+        // Voice dictation state strip (phase 3)
+        if (voiceActive || voiceProcessing) {
+            VoiceRecordingBar(
+                processing = voiceProcessing,
+                elapsedSeconds = voiceElapsed,
+                rmsLevel = voiceRms,
+                statusListening = stringResource(R.string.voice_recording_status),
+                statusProcessing = stringResource(R.string.voice_processing_status),
+                cancelLabel = stringResource(R.string.voice_cancel),
+                partialText = voicePartial,
+                accent = colors.accent,
+                textColor = colors.textPrimary,
+                mutedColor = colors.textTertiary,
+                onCancel = {
+                    XLog.i("VoiceInput", "cancel tapped")
+                    speechController.cancel()
+                    resetVoiceUi()
+                },
+            )
+        }
+
         // Input bar — always visible, style changes in Task mode
         Row(
             modifier = Modifier
@@ -981,7 +1138,8 @@ private fun ChatInputBar(
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 40.dp, max = 100.dp),
+                    .heightIn(min = 40.dp, max = 100.dp)
+                    .focusRequester(textFieldFocus),
                 shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = if (isTaskMode && isLocalModel) colors.accent else colors.accent.copy(alpha = 0.4f),
@@ -998,53 +1156,26 @@ private fun ChatInputBar(
 
             Spacer(Modifier.width(6.dp))
 
-            // Voice input mic button (Issue #44) — launches Android system speech dialog.
-            // Available whenever input is enabled (including while a task runs, so user
-            // can queue next prompt with voice without waiting).
+            // Voice input mic button (phase 3) — in-app Arabic dictation (ar-SA).
+            // Tap while recording to stop gracefully; transcript lands in the box
+            // (and auto-sends only if the user enabled that setting).
             val micEnabled = inputEnabled
             FloatingActionButton(
                 onClick = {
-                    XLog.i("VoiceInput", "mic tapped: text.len=${text.length}, isTaskMode=$isTaskMode, isLocalModel=$isLocalModel")
-                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(
-                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                        )
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-                        putExtra(
-                            RecognizerIntent.EXTRA_PROMPT,
-                            context.getString(R.string.voice_input_prompt)
-                        )
-                    }
-                    try {
-                        voiceLauncher.launch(intent)
-                    } catch (e: ActivityNotFoundException) {
-                        XLog.e("VoiceInput", "no speech recognition service installed", e)
-                        Toast.makeText(
-                            context,
-                            R.string.voice_input_unavailable,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } catch (e: Exception) {
-                        XLog.e("VoiceInput", "voice launch failed unexpectedly", e)
-                        Toast.makeText(
-                            context,
-                            R.string.voice_input_error,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                    XLog.i("VoiceInput", "mic tapped: text.len=${text.length}, active=$voiceActive, processing=$voiceProcessing")
+                    onMicClick()
                 },
                 modifier = Modifier
                     .size(34.dp)
                     .alpha(if (micEnabled) 1f else 0.35f),
-                containerColor = colors.background,
+                containerColor = if (voiceActive || voiceProcessing) colors.accent.copy(alpha = 0.18f) else colors.background,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
             ) {
                 Icon(
                     Icons.Default.Mic,
                     contentDescription = stringResource(R.string.voice_input_button_cd),
-                    tint = colors.textTertiary,
+                    tint = if (voiceActive || voiceProcessing) colors.accent else colors.textTertiary,
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -1099,6 +1230,19 @@ private fun ChatInputBar(
             }
         }
     }
+}
+
+private fun voiceErrorRes(error: VoiceError): Int = when (error) {
+    VoiceError.NO_MATCH -> R.string.voice_error_no_match
+    VoiceError.TIMEOUT -> R.string.voice_error_timeout
+    VoiceError.NETWORK -> R.string.voice_error_network
+    VoiceError.PERMISSION -> R.string.voice_error_permission
+    VoiceError.BUSY -> R.string.voice_error_busy
+    VoiceError.AUDIO -> R.string.voice_error_audio
+    VoiceError.SERVER -> R.string.voice_error_server
+    VoiceError.CLIENT -> R.string.voice_error_client
+    VoiceError.LANGUAGE -> R.string.voice_error_language
+    VoiceError.UNKNOWN -> R.string.voice_error_unknown
 }
 
 // ======================== SKILL SHORTCUT BAR ========================

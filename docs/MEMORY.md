@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-10 (Phase 2 code-complete; device QA pending)
+Last updated: 2026-11-10 (Phase 3 code-complete; device QA pending)
 
 ## Project Identity
 
@@ -16,7 +16,7 @@ Last updated: 2026-11-10 (Phase 2 code-complete; device QA pending)
 |---|---|
 | P1 Setup/audit | **DONE 2026-11-10** (branch `phase-1-setup`, merged into local `main` @ `187a065`) |
 | P2 Arabic + chat + provider settings | **CODE COMPLETE 2026-11-10** on branch `phase-2-arabic-chat` (7 commits, build+unit tests green). On-device E2E QA pending — no adb device connected yet. |
-| P3 Voice input | Not started |
+| P3 Voice input | **CODE COMPLETE 2026-11-10** on branch `phase-3-voice` (3 commits, build + 101 unit tests green). Device QA pending. |
 | P4 Agent safety/security/stability | Not started (note: secrets-encryption item already delivered early in P2) |
 | P5 Final build/tests/release docs | Not started |
 
@@ -41,6 +41,22 @@ Commits: `8cc0123` feat(arabic) · `cdd57cb` feat(prompt) · `75c6310` feat(secu
 - **Build verified**: `assembleDebug` → BUILD SUCCESSFUL (~11–19s incremental) → `PokeClaw_v0.7.1_20261110_154327.apk`. Only pre-existing deprecation warnings.
 - **QA cases added** (not yet executed — no device): QA_CHECKLIST.md section **FA** (FA1–FA13).
 
+## What's Done (Phase 3: Arabic voice input) — branch `phase-3-voice` (from `main` after P2 merge)
+
+Commits: `4018013` feat(voice core) · `e46c2fa` feat(voice controller) · `ad184e1` feat(voice-ui + auto-send setting + manifest).
+
+- **In-app Arabic dictation** replaces the old system `RecognizerIntent` dialog: `voice/SpeechRecognizerController` wraps Android `SpeechRecognizer` with **ar-SA**, partial results, tuned silence (complete 1.5s / possibly 0.9s / minimum 0.8s), 60s hard cap, graceful stop, cancel, and a timeout fallback that keeps the last partial transcript.
+- **Pure logic (unit-tested)**: `VoiceTextNormalizer` (trim, strip bidi/zero-width, collapse whitespace, cap), `VoiceTranscriptAssembler` (partials replace, finals win, multiple finals joined), `VoiceDictationPolicy` (auto-send gate), `VoiceTimerFormat` (mm:ss), `VoiceError` (10 error kinds with string-resource names).
+- **Recording UI**: `ui/voice/VoiceRecordingBar` — pulsing mic ring driven by RMS, mm:ss timer, live partial transcript, Cancel; shown above the composer while listening/processing. Mic tint turns accent during capture; tapping mic again stops gracefully.
+- **Transcript flow**: final text is normalized and appended to whatever the user already typed; it stays editable. Auto-send is a new setting `KVUtils.KEY_VOICE_AUTO_SEND` (default **off**) exposed at Settings → Tools → “Auto-send voice input”, and only fires when the composer is free (`VoiceDictationPolicy.shouldAutoSend`).
+- **Permissions**: `RECORD_AUDIO` added to the manifest plus `<queries>` for `android.speech.RecognitionService` (Android 11+ visibility). Runtime request on first mic tap; denial and unavailability show localized Arabic messages.
+- **Errors**: no-match, timeout, network, permission, busy, audio, server, client, language, unknown → `voice_error_*` strings in en + ar; mapped by `voiceErrorRes()` in ChatScreen.
+- **Replies stay written Arabic only**: no TextToSpeech anywhere (verified by grep). Voice only produces text.
+- **Offline Whisper intentionally skipped** (documented in `docs/skills/voice-input.md` §Offline Whisper): LiteRT-LM has no audio encoder; a usable Arabic Whisper model is 0.5–1.5 GB and unverified on-device; Android's own recognizer already runs offline when the ar-SA pack is installed.
+- **Tests**: 5 new classes (`VoiceTextNormalizerTest`, `VoiceTranscriptAssemblerTest`, `VoiceDictationPolicyTest`, `VoiceTimerFormatTest`, `VoiceErrorTest`). Full suite: **101 tests / 0 failures** (`.\gradlew.bat testDebugUnitTest`).
+- **Build**: `assembleDebug` green → `PokeClaw_v0.7.1_20261110_162107.apk`.
+- **QA**: QA_CHECKLIST §VA1–VA10 added (device execution pending).
+
 ## Build Environment (Windows machine — how it was made to work)
 
 - `local.properties` (gitignored): `sdk.dir=C:\Users\Altamimi\AppData\Local\Android\Sdk`.
@@ -54,7 +70,7 @@ Commits: `8cc0123` feat(arabic) · `cdd57cb` feat(prompt) · `75c6310` feat(secu
 - Single module `:app`; agent loop = `DefaultAgentService.runAgentLoop` (while iterations < maxIterations, StuckDetector + TaskBudget/TokenMonitor + guards), tools via `ToolRegistry` (35 tools), skills as markdown (`docs/skill-spec.md`).
 - Local LLM: LiteRT-LM 0.10.0, Gemma 4 E2B/E4B `.litertlm` from HuggingFace `litert-community`; GPU→CPU fallback tracked by `LocalBackendHealth`.
 - Cloud: LangChain4j OpenAI + Anthropic + custom OpenAI-compatible base URLs; catalog/pricing in `agent/CloudProvider.kt` (now incl. DeepSeek). Per-provider editable Base URL (`KEY_LLM_BASE_URL_<PROVIDER>`); real probe via `agent/llm/CloudConnectionTester`. Chat streams cloud replies token-by-token (`ChatSessionController.sendChat` → `chatStreaming`); Markdown via `ui/chat/MarkdownRender.kt`.
-- State/settings: MMKV via `KVUtils` for non-secret settings; secrets (API keys, bot tokens) in `utils/SecureStore` EncryptedSharedPreferences since phase 2 (migrated from plaintext MMKV). UI: Compose chat (`ChatScreen.kt`) + Views settings. Channels: Telegram/Discord/WeChat. External automation intent API (user-toggle, default off).
+- State/settings: MMKV via `KVUtils` for non-secret settings; secrets (API keys, bot tokens) in `utils/SecureStore` EncryptedSharedPreferences since phase 2 (migrated from plaintext MMKV). Voice: `voice/SpeechRecognizerController` (Android SpeechRecognizer, ar-SA) + pure helpers in `voice/`; auto-send flag `KEY_VOICE_AUTO_SEND` (default off). UI: Compose chat (`ChatScreen.kt`) + Views settings. Channels: Telegram/Discord/WeChat. External automation intent API (user-toggle, default off).
 
 ## Known Issues / Risks (carried into later phases)
 
@@ -68,8 +84,10 @@ Commits: `8cc0123` feat(arabic) · `cdd57cb` feat(prompt) · `75c6310` feat(secu
 7. JITPack dependency (EasyFloat) + Chinese-mirror history = supply-chain watch item.
 8. Phase 2 E2E QA (QA_CHECKLIST §FA) not executed: no Android device/emulator connected via adb on this Windows machine at phase close (`adb` at `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`). JVM unit tests cover the pure logic.
 9. `androidx.security-crypto` EncryptedSharedPreferences is deprecated upstream (last release 1.1.0): functional today with private-mode fallback; revisit storage approach in P4.
+10. Phase 3 voice QA (QA_CHECKLIST §VA) not executed: no adb device. Additionally, real recognition depends on the device speech service having the **Arabic (ar-SA)** language pack; some OEMs are online-only. Could not verify latency, accuracy, permission dialog, 60s cap, or error toasts on hardware.
+11. Offline Whisper not implemented (deliberate; rationale in `docs/skills/voice-input.md`). Revisit only with a device farm + a measured Arabic WER/latency budget.
 
 ## Next Up
 
-- **Phase 2 close-out**: connect a device/emulator, execute QA_CHECKLIST §FA (FA1–FA13), record results; push `phase-1-setup` + `phase-2-arabic-chat` once the GitHub fork exists (commands in Known Issue 1).
-- **Phase 3 preview**: voice input — mic button in chat composer, STT path with configured key, RECORD_AUDIO permission flow (not yet in manifest), optional on-device STT spike. Plan details: docs/PLAN.md.
+- **Phase 2/3 close-out**: connect a device/emulator, execute QA_CHECKLIST §FA (FA1–FA13) and §VA (VA1–VA10), record results; push `phase-1-setup`, `phase-2-arabic-chat`, `phase-3-voice` once the GitHub fork exists (commands in Known Issue 1).
+- **Phase 4 preview**: ConfigServer auth/restrict-to-debug, external-automation sender verification + rate limiting, prompt-injection hardening, stability fixes (GPU fallback logging, download resume, accessibility rebind), optional ChatScreen de-godding; revisit SecureStore deprecation and Whisper decision. Plan details: docs/PLAN.md.

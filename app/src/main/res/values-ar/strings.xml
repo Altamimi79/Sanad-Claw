@@ -214,6 +214,27 @@
     <string name="voice_input_unavailable">التعرف على الكلام غير متوفر على هذا الجهاز</string>
     <string name="voice_input_error">فشل الإدخال الصوتي. حاول مجددًا.</string>
 
+    <!-- Voice Input (Phase 3: in-app Arabic dictation) -->
+    <string name="voice_recording_status">أستمع…</string>
+    <string name="voice_processing_status">أعالج الكلام…</string>
+    <string name="voice_cancel">إلغاء</string>
+    <string name="voice_permission_denied">إذن الميكروفون مطلوب للإدخال الصوتي</string>
+    <string name="voice_auto_send_title">إرسال الإدخال الصوتي تلقائيًا</string>
+    <string name="voice_auto_send_enabled_toast">سيتم إرسال الإدخال الصوتي تلقائيًا</string>
+    <string name="voice_auto_send_disabled_toast">سيبقى الإدخال الصوتي في المربع لتعديله</string>
+    <string name="voice_error_no_match">لم أسمع كلامًا واضحًا. جرّب التحدث مرة أخرى بالقرب من الميكروفون.</string>
+    <string name="voice_error_timeout">لم يتم التقاط أي كلام. تحقق من الميكروفون وحاول مجددًا.</string>
+    <string name="voice_error_network">تعذر الوصول إلى خدمة التعرف على الكلام. تحقق من اتصالك أو حاول لاحقًا.</string>
+    <string name="voice_error_permission">تم رفض إذن الميكروفون. اسمح به من إعدادات النظام.</string>
+    <string name="voice_error_busy">خدمة التعرف على الكلام مشغولة. حاول بعد لحظات.</string>
+    <string name="voice_error_audio">مشكلة في إدخال الصوت. تحقق من أن الميكروفون غير مستخدم.</string>
+    <string name="voice_error_server">أعاد خادم التعرف خطأ. حاول مجددًا.</string>
+    <string name="voice_error_client">توقف الإدخال الصوتي. حاول مجددًا.</string>
+    <string name="voice_error_language">التعرف على الكلام العربي غير مثبت لهذه الخدمة.</string>
+    <string name="voice_error_unknown">فشل الإدخال الصوتي. حاول مجددًا.</string>
+    <string name="settings_enabled">ممكّن</string>
+    <string name="settings_disabled">معطّل</string>
+
     <!-- Global Prompt (#45) -->
     <string name="global_prompt_title">التعليمات العامة</string>
     <string name="global_prompt_dialog_title">تعديل التعليمات العامة</string>
