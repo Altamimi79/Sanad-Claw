@@ -45,7 +45,8 @@ Last updated: 2026-11-10 (Phase 1 close-out)
 
 ## Known Issues / Risks (carried into later phases)
 
-1. No GitHub fork exists yet for this repo (public account `Altamimi79` had zero repos at phase start; push target TBD — see git notes in docs/CHANGELOG.md / final summary).
+1. Push target unresolved: `origin` = upstream `agents-io/PokeClaw`; push of `phase-1-setup` returned `remote: Permission to agents-io/PokeClaw.git denied to Altamimi79.` (403). GitHub account has no fork yet. When the fork exists (create at https://github.com/agents-io/PokeClaw → Fork), run:
+   `git remote rename origin upstream` then `git remote add origin https://github.com/Altamimi79/<fork-name>.git` then `git push -u origin phase-1-setup` and open PR `phase-1-setup → main`.
 2. Upstream signing key lost historically → upgrade gap requires one-time uninstall/reinstall (BACKLOG P1). Affects P5 release story.
 3. Security debt for P4: plaintext API keys in MMKV, unauthenticated loopback ConfigServer HTTP, cleartext permitted globally, exported RUN_TASK components without sender verification, prompt-injection surface from screen/notification content (guards exist: DirectDeviceDataGuard etc.).
 4. God classes: `ChatScreen.kt` 2385L, `AutoReplyManager.java` 1060L, `DefaultAgentService.kt` 778L, `SettingsActivity` 773L.

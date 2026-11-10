@@ -22,3 +22,4 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 
 ### Notes
 - Local (uncommitted, machine-only) setup: `local.properties` sdk.dir; user-level `~\.gradle\gradle.properties` JDK 21 toolchain path; SDK licenses accepted; cmdline-tools installed into the SDK.
+- Git: branch `phase-1-setup` created with commits `af376f0` (chore/setup) + `f3a9b50` (docs/phase-1). Push to origin failed — `Permission to agents-io/PokeClaw.git denied to Altamimi79.` (403; no fork of upstream exists under the account yet). See docs/MEMORY.md Known Issues for the exact commands to rerun once the fork exists.
