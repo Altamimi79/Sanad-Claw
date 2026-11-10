@@ -1281,6 +1281,30 @@ Execution status: **NOT YET EXECUTED** — no Android device/emulator connected 
 
 ---
 
+## SA. Fork Phase 4 — Safety, Security & Stability
+
+Fork-specific. Debug APK, Arabic UI, Accessibility enabled. `[LLM-CLOUD]` or `[LLM-LOCAL]` as noted.
+
+| ID | Tag | Steps | Expected |
+|---|---|---|---|
+| SA1 | `[LLM-CLOUD] [HUMAN]` | Task `Send hi to <contact> on WhatsApp` with confirmations ON. | In-app Arabic dialog names the risk (إرسال رسالة); Allow → message sent; dialog never blocks the main thread ANR-style. |
+| SA2 | `[LLM-CLOUD]` | Same task, tap Deny. | Nothing is sent; task stops with `تم رفض الإجراء. أُوقفت المهمة.`; logcat `SafetyGate: user denied`. |
+| SA3 | `[LLM-CLOUD]` | Force a payment-ish step (e.g. ask to type “transfer 100” in a notes app). | `input_text` triggers payment confirmation before typing. |
+| SA4 | `[LLM-CLOUD]` | Ask the agent to delete a note/photo. | Delete confirmation appears before the delete tap. |
+| SA5 | `[LLM-CLOUD]` | Ask to install an app from a store. | Install confirmation appears. |
+| SA6 | `[LLM-CLOUD]` | Open a banking or password-manager app, then ask the agent anything. | Task stops with `safety_blocked_app` Arabic message; no tool runs inside that app; logcat `blocked tool=... in blocked app`. |
+| SA7 | `[RELEASE-OK]` | Settings → Tools → Blocked apps → add `com.example.chat`, save; open that app and run a task. | Custom list replaces defaults; the task is blocked; trailing text shows the pattern count. |
+| SA8 | `[LLM-CLOUD]` | Settings → Tools → Task timeout → set 120 s; start a long task. | Task aborts at ~120 s with `safety_task_timeout`; logcat `Safety task timeout`. |
+| SA9 | `[LLM-CLOUD]` | Run a task; tap the red banner “إيقاف طارئ”; repeat from the notification action. | Task/monitoring/service stop immediately; notification disappears; no further tool calls. |
+| SA10 | `[DEBUG-ONLY]` | Run several tasks, then Settings → Tools → Action log. | Entries show time/tool/risk/outcome; API keys, tokens, passwords and card-like numbers appear as `***`; Clear empties it. |
+| SA11 | `[LOGCAT-DEBUG]` | Induce a transient `tap` failure (e.g. flaky screen). | At most one retry logged (`Retrying tool=... attempt=2`), then normal failure; risky tools are never retried. |
+| SA12 | `[DEBUG-ONLY]` | With ConfigServer enabled: `curl http://127.0.0.1:9527/api/channels` without a token, then with the token from the served page. | 401 `unauthorized` without token; masked JSON with token. |
+| SA13 | `[LLM-CLOUD]` | Start a task that reaches a risky step, then background the app (recents/home) and return after ~10 s. | Confirmation is denied while no UI is attached (fail-safe); task stops with the denial message. |
+
+Execution status: **NOT YET EXECUTED** — no Android device/emulator connected via adb. Unit tests cover all pure safety logic (127 tests green).
+
+---
+
 ## QA Debug Changelog
 
 Format: `[date] [status] [test-id] description`
