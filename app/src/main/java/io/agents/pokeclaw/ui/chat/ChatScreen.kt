@@ -53,6 +53,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -742,11 +743,10 @@ private fun AssistantBubble(text: String, timestamp: Long, colors: PokeclawColor
                     shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp),
                     border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.aiBubbleBorder),
                 ) {
-                    Text(
-                        text = text,
+                    MarkdownText(
+                        markdown = text,
                         color = colors.aiText,
-                        fontSize = 15.sp,
-                        lineHeight = 21.sp,
+                        style = TextStyle(fontSize = 15.sp, lineHeight = 21.sp),
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     )
                 }

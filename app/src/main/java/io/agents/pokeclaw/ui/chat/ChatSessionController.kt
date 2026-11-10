@@ -17,6 +17,7 @@ import io.agents.pokeclaw.agent.llm.LlmSessionManager
 import io.agents.pokeclaw.agent.llm.LocalModelManager
 import io.agents.pokeclaw.agent.llm.LocalModelRuntime
 import io.agents.pokeclaw.agent.llm.ModelConfigRepository
+import io.agents.pokeclaw.agent.llm.StreamingListener
 import io.agents.pokeclaw.utils.XLog
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Conversation
@@ -25,6 +26,7 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.SamplerConfig
 import java.io.File
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 
 data class ChatSessionUiState(
     val messages: SnapshotStateList<ChatMessage>,
@@ -312,25 +314,73 @@ class ChatSessionController(
         uiState.messages.add(ChatMessage(ChatMessage.Role.ASSISTANT, "..."))
 
         executor.submit {
+            val placeholderIdx = uiState.messages.lastIndex
             try {
                 if (cloudClient != null) {
                     ensureCloudHistoryInitialized()
                     cloudHistory.add(UserMessage.from(text))
-                    val llmResponse = cloudClient!!.chat(cloudHistory, emptyList())
-                    val responseText = llmResponse.text ?: "(no response)"
-                    cloudHistory.add(AiMessage.from(responseText))
-                    val usage = llmResponse.tokenUsage
-                    val inputTokens = usage?.inputTokenCount() ?: (text.length / 4 + 1)
-                    val outputTokens = usage?.outputTokenCount() ?: (responseText.length / 4 + 1)
-                    val fallbackModelName = cloudModelName ?: ModelConfigRepository.snapshot().activeCloud.modelName
-                    val modelTag = llmResponse.modelName ?: fallbackModelName
-                    XLog.d(TAG, "sendChat: cloud response modelName='${llmResponse.modelName}', fallback='$fallbackModelName'")
-                    postToMain {
-                        replaceTypingIndicator(responseText, modelTag)
-                        uiState.isAwaitingReply.value = false
-                        uiState.sessionTokens.value += inputTokens + outputTokens
-                        uiState.sessionCost.value += ModelPricing.estimateCost(modelTag, inputTokens, outputTokens)
-                        onPersistConversation()
+                    if (ModelConfigRepository.isLocalActive()) {
+                        // Defensive: chat UI is on a cloud model but the repo flipped to local.
+                        val llmResponse = cloudClient!!.chat(cloudHistory, emptyList())
+                        val responseText = llmResponse.text ?: "(no response)"
+                        cloudHistory.add(AiMessage.from(responseText))
+                        val usage = llmResponse.tokenUsage
+                        val inputTokens = usage?.inputTokenCount() ?: (text.length / 4 + 1)
+                        val outputTokens = usage?.outputTokenCount() ?: (responseText.length / 4 + 1)
+                        val fallbackModelName = cloudModelName ?: ModelConfigRepository.snapshot().activeCloud.modelName
+                        val modelTag = llmResponse.modelName ?: fallbackModelName
+                        XLog.d(TAG, "sendChat: cloud response modelName='${llmResponse.modelName}', fallback='$fallbackModelName'")
+                        postToMain {
+                            finalizeStreamingAssistant(placeholderIdx, responseText, modelTag)
+                            uiState.isAwaitingReply.value = false
+                            uiState.sessionTokens.value += inputTokens + outputTokens
+                            uiState.sessionCost.value += ModelPricing.estimateCost(modelTag, inputTokens, outputTokens)
+                            onPersistConversation()
+                        }
+                    } else {
+                        // Cloud chat streams token-by-token into the assistant bubble.
+                        val partial = StringBuilder()
+                        var lastUiUpdateMs = 0L
+                        // chatStreaming blocks until the stream completes; onComplete applies the final text.
+                        cloudClient!!.chatStreaming(
+                            cloudHistory,
+                            emptyList(),
+                            object : StreamingListener {
+                                override fun onPartialText(token: String) {
+                                    synchronized(partial) { partial.append(token) }
+                                    val now = System.currentTimeMillis()
+                                    if (now - lastUiUpdateMs >= 120L) {
+                                        lastUiUpdateMs = now
+                                        val snapshot = synchronized(partial) { partial.toString() }
+                                        postToMain { updateStreamingAssistant(placeholderIdx, snapshot) }
+                                    }
+                                }
+
+                                override fun onComplete(response: io.agents.pokeclaw.agent.llm.LlmResponse) {
+                                    cloudHistory.add(AiMessage.from(response.text ?: ""))
+                                    val usage = response.tokenUsage
+                                    val inputTokens = usage?.inputTokenCount() ?: (text.length / 4 + 1)
+                                    val outputTokens = usage?.outputTokenCount() ?: ((response.text?.length ?: 0) / 4 + 1)
+                                    val fallbackModelName = cloudModelName ?: ModelConfigRepository.snapshot().activeCloud.modelName
+                                    val modelTag = response.modelName ?: fallbackModelName
+                                    XLog.d(TAG, "sendChat: cloud stream complete modelName='${response.modelName}', fallback='$fallbackModelName'")
+                                    postToMain {
+                                        finalizeStreamingAssistant(placeholderIdx, response.text ?: "(no response)", modelTag)
+                                        uiState.isAwaitingReply.value = false
+                                        uiState.sessionTokens.value += inputTokens + outputTokens
+                                        uiState.sessionCost.value += ModelPricing.estimateCost(modelTag, inputTokens, outputTokens)
+                                        onPersistConversation()
+                                    }
+                                }
+
+                                override fun onError(error: Throwable) {
+                                    throw RuntimeException(error)
+                                }
+                            },
+                        )
+                        // chatStreaming blocks until the stream completes and returns the
+                        // final response; onComplete already applied it to the UI.
+                        XLog.d(TAG, "sendChat: cloud stream finished for model=$cloudModelName")
                     }
                 } else {
                     val currentConversation = conversation
@@ -372,8 +422,10 @@ class ChatSessionController(
                     }
                 }
                 XLog.e(TAG, "Chat error", e)
+                val messageText = e.message ?: e.javaClass.simpleName
                 postToMain {
-                    replaceTypingIndicator("Error: ${e.message}")
+                    removeStreamingPlaceholder(placeholderIdx)
+                    addSystem(activity.getString(R.string.chat_error_prefix, messageText))
                     uiState.isAwaitingReply.value = false
                 }
             }
@@ -611,6 +663,27 @@ class ChatSessionController(
             uiState.messages[idx] = ChatMessage(ChatMessage.Role.ASSISTANT, text, modelName = modelTag)
         } else {
             uiState.messages.add(ChatMessage(ChatMessage.Role.ASSISTANT, text, modelName = modelTag))
+        }
+    }
+
+    private fun updateStreamingAssistant(index: Int, partialText: String) {
+        if (index !in uiState.messages.indices) return
+        val msg = uiState.messages[index]
+        if (msg.role != ChatMessage.Role.ASSISTANT) return
+        uiState.messages[index] = msg.copy(content = if (partialText.isEmpty()) "..." else partialText)
+    }
+
+    private fun finalizeStreamingAssistant(index: Int, text: String, actualModelName: String?) {
+        if (index in uiState.messages.indices && uiState.messages[index].role == ChatMessage.Role.ASSISTANT) {
+            uiState.messages[index] = ChatMessage(ChatMessage.Role.ASSISTANT, text, modelName = actualModelName)
+        } else {
+            replaceTypingIndicator(text, actualModelName)
+        }
+    }
+
+    private fun removeStreamingPlaceholder(index: Int) {
+        if (index in uiState.messages.indices && uiState.messages[index].role == ChatMessage.Role.ASSISTANT) {
+            uiState.messages.removeAt(index)
         }
     }
 
