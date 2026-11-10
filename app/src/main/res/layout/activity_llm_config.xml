@@ -371,13 +371,12 @@
 
                     </LinearLayout>
 
-                    <!-- Base URL (Custom only) -->
+                    <!-- Base URL (editable for every provider) -->
                     <LinearLayout
                         android:id="@+id/layoutBaseUrl"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone">
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -393,12 +392,22 @@
                             android:layout_width="match_parent"
                             android:layout_height="44dp"
                             android:background="@drawable/bg_edit_text"
-                            android:hint="https://api.openrouter.ai/v1"
+                            android:hint="@string/provider_base_url_hint"
                             android:inputType="textUri"
                             android:paddingHorizontal="12dp"
                             android:textColor="@color/colorTextPrimary"
                             android:textColorHint="@color/colorTextTertiary"
                             android:textSize="13dp" />
+
+                    </LinearLayout>
+
+                    <!-- Model Name (Custom only) -->
+                    <LinearLayout
+                        android:id="@+id/layoutModelName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
                         <TextView
                             android:layout_width="wrap_content"

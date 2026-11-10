@@ -269,6 +269,9 @@
     <string name="provider_connection_timeout">Connection timed out — check the Base URL and your network</string>
     <string name="provider_connection_network_error">Network error: %s</string>
     <string name="provider_connection_generic">Connection failed: %s</string>
+    <string name="provider_base_url_hint">Keep the default or set a proxy / OpenAI-compatible endpoint</string>
+    <string name="provider_missing_base_url">Enter a Base URL first</string>
+    <string name="provider_missing_model_id">Enter a model name first</string>
 
     <!-- Models screen labels (phase 2) -->
     <string name="llm_active_model">Active Model</string>

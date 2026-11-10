@@ -270,6 +270,9 @@
     <string name="provider_connection_timeout">انتهت مهلة الاتصال — تحقق من Base URL وشبكتك</string>
     <string name="provider_connection_network_error">خطأ شبكة: %s</string>
     <string name="provider_connection_generic">فشل الاتصال: %s</string>
+    <string name="provider_base_url_hint">اتركه كما هو أو ضع عنوان وكيل/مزود متوافق مع OpenAI</string>
+    <string name="provider_missing_base_url">أدخل Base URL أولًا</string>
+    <string name="provider_missing_model_id">أدخل اسم النموذج أولًا</string>
 
     <!-- Models screen labels (phase 2) -->
     <string name="llm_active_model">النموذج الحالي</string>

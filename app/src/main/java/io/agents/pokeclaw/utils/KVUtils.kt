@@ -294,6 +294,12 @@ object KVUtils {
         SecureStore.getString("KEY_LLM_API_KEY_${provider.uppercase()}", "")
     fun setApiKeyForProvider(provider: String, key: String) =
         SecureStore.putString("KEY_LLM_API_KEY_${provider.uppercase()}", key)
+
+    /** Per-provider base URL storage — lets each provider keep its own endpoint (proxy/custom). */
+    fun getBaseUrlForProvider(provider: String): String =
+        getString("KEY_LLM_BASE_URL_${provider.uppercase()}", "")
+    fun setBaseUrlForProvider(provider: String, value: String) =
+        putString("KEY_LLM_BASE_URL_${provider.uppercase()}", value)
     fun getLlmBaseUrl(): String = getString(KEY_LLM_BASE_URL, "")
     fun setLlmBaseUrl(value: String) = putString(KEY_LLM_BASE_URL, value)
     fun getLlmModelName(): String = getString(KEY_LLM_MODEL_NAME, "")

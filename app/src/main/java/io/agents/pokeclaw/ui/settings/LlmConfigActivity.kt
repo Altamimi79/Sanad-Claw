@@ -27,6 +27,7 @@ import io.agents.pokeclaw.agent.CloudModel
 import io.agents.pokeclaw.agent.CloudProvider
 import io.agents.pokeclaw.agent.ModelPricing
 import io.agents.pokeclaw.agent.llm.ActiveModelMode
+import io.agents.pokeclaw.agent.llm.CloudConnectionTester
 import io.agents.pokeclaw.agent.llm.LocalModelManager
 import io.agents.pokeclaw.agent.llm.ModelConfigRepository
 import io.agents.pokeclaw.base.BaseActivity
@@ -371,6 +372,7 @@ class LlmConfigActivity : BaseActivity() {
         val tabLayout = findViewById<LinearLayout>(R.id.layoutProviderTabs)
         val modelListLayout = findViewById<LinearLayout>(R.id.layoutCloudModels)
         val layoutBaseUrl = findViewById<View>(R.id.layoutBaseUrl)
+        val layoutModelName = findViewById<View>(R.id.layoutModelName)
         val tvCustomHint = findViewById<TextView>(R.id.tvCustomHint)
         val etApiKey = findViewById<EditText>(R.id.etApiKey)
         val etBaseUrl = findViewById<EditText>(R.id.etBaseUrl)
@@ -435,14 +437,21 @@ class LlmConfigActivity : BaseActivity() {
         updateTabStyles()
 
         // Render model cards for current provider
+        fun savedBaseUrlFor(provider: CloudProvider): String {
+            val perProvider = KVUtils.getBaseUrlForProvider(provider.name)
+            val seed = if (provider == cloudSeed.provider) cloudSeed.baseUrl else ""
+            return perProvider.ifBlank { seed.ifBlank { provider.defaultBaseUrl } }
+        }
+
         fun renderModels() {
             modelListLayout.removeAllViews()
             val isCustom = selectedProvider == CloudProvider.CUSTOM
-            layoutBaseUrl.visibility = if (isCustom) View.VISIBLE else View.GONE
+            layoutBaseUrl.visibility = View.VISIBLE
+            layoutModelName.visibility = if (isCustom) View.VISIBLE else View.GONE
             tvCustomHint?.visibility = if (isCustom) View.VISIBLE else View.GONE
+            etBaseUrl.setText(savedBaseUrlFor(selectedProvider))
 
             if (isCustom) {
-                etBaseUrl.setText(cloudSeed.baseUrl)
                 etModelName.setText(selectedModelId)
                 return
             }
@@ -539,34 +548,63 @@ class LlmConfigActivity : BaseActivity() {
             tab.setOnClickListener { switchProvider(provider, tc) }
         }
 
-        // Test Connection
+        // Test Connection — real probe against the configured endpoint/model
         btnTest.setOnClickListener {
             val apiKey = etApiKey.text.toString().trim()
             if (apiKey.isEmpty()) {
                 Toast.makeText(this, getString(R.string.provider_enter_api_key_first), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            val baseUrl = etBaseUrl.text.toString().trim()
+            if (baseUrl.isEmpty()) {
+                Toast.makeText(this, getString(R.string.provider_missing_base_url), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val modelId = if (selectedProvider == CloudProvider.CUSTOM) etModelName.text.toString().trim()
+                else selectedModelId
+            if (modelId.isEmpty()) {
+                Toast.makeText(this, getString(R.string.provider_missing_model_id), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             tvStatus.visibility = View.VISIBLE
             tvStatus.text = getString(R.string.provider_testing)
             tvStatus.setTextColor(Color.parseColor("#8b949e"))
+            btnTest.isEnabled = false
 
             executor.submit {
-                try {
-                    val baseUrl = if (selectedProvider == CloudProvider.CUSTOM) etBaseUrl.text.toString().trim()
-                        else selectedProvider.defaultBaseUrl
-                    val modelId = if (selectedProvider == CloudProvider.CUSTOM) etModelName.text.toString().trim()
-                        else selectedModelId
-                    // Quick test: just validate the key format
-                    if (apiKey.length < 10) throw RuntimeException("API key too short")
-                    if (modelId.isEmpty()) throw RuntimeException("No model selected")
-                    runOnUiThread {
-                        tvStatus.text = getString(R.string.llm_ready_to_save)
-                        tvStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        tvStatus.text = "✗ ${e.message}"
-                        tvStatus.setTextColor(getColor(R.color.colorErrorPrimary))
+                val result = CloudConnectionTester.test(
+                    providerName = selectedProvider.name,
+                    baseUrl = baseUrl,
+                    apiKey = apiKey,
+                    modelId = modelId,
+                )
+                runOnUiThread {
+                    btnTest.isEnabled = true
+                    when (result.status) {
+                        CloudConnectionTester.Status.OK -> {
+                            tvStatus.text = getString(R.string.provider_connection_ok)
+                            tvStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
+                        }
+                        CloudConnectionTester.Status.UNAUTHORIZED -> {
+                            tvStatus.text = getString(R.string.provider_connection_unauthorized)
+                            tvStatus.setTextColor(getColor(R.color.colorErrorPrimary))
+                        }
+                        CloudConnectionTester.Status.MODEL_NOT_FOUND -> {
+                            tvStatus.text = getString(R.string.provider_connection_model_not_found, modelId)
+                            tvStatus.setTextColor(getColor(R.color.colorErrorPrimary))
+                        }
+                        CloudConnectionTester.Status.TIMEOUT -> {
+                            tvStatus.text = getString(R.string.provider_connection_timeout)
+                            tvStatus.setTextColor(getColor(R.color.colorErrorPrimary))
+                        }
+                        CloudConnectionTester.Status.NETWORK -> {
+                            tvStatus.text = getString(R.string.provider_connection_network_error, result.detail)
+                            tvStatus.setTextColor(getColor(R.color.colorErrorPrimary))
+                        }
+                        CloudConnectionTester.Status.GENERIC -> {
+                            tvStatus.text = getString(R.string.provider_connection_generic, result.detail)
+                            tvStatus.setTextColor(getColor(R.color.colorErrorPrimary))
+                        }
                     }
                 }
             }
@@ -581,7 +619,11 @@ class LlmConfigActivity : BaseActivity() {
             }
 
             val isCustom = selectedProvider == CloudProvider.CUSTOM
-            val baseUrl = if (isCustom) etBaseUrl.text.toString().trim() else selectedProvider.defaultBaseUrl
+            val baseUrl = etBaseUrl.text.toString().trim()
+            if (baseUrl.isEmpty()) {
+                Toast.makeText(this, getString(R.string.provider_missing_base_url), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             val modelId = if (isCustom) etModelName.text.toString().trim() else selectedModelId
 
             if (modelId.isEmpty()) {

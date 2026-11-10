@@ -182,6 +182,7 @@ object ModelConfigRepository {
         KVUtils.setDefaultCloudModel(modelId)
         KVUtils.setDefaultCloudProvider(normalizedProvider)
         KVUtils.setDefaultCloudBaseUrl(resolvedBaseUrl)
+        if (resolvedBaseUrl.isNotBlank()) KVUtils.setBaseUrlForProvider(normalizedProvider, resolvedBaseUrl)
         KVUtils.setLlmApiKey(apiKey)
         KVUtils.setApiKeyForProvider(normalizedProvider, apiKey)
         if (activateNow) {
@@ -226,10 +227,11 @@ object ModelConfigRepository {
         val normalizedProvider = normalizeCloudProvider(providerName)
         val apiKey = KVUtils.getApiKeyForProvider(normalizedProvider)
             .ifEmpty { KVUtils.getLlmApiKey() }
+        val effectiveBaseUrl = baseUrl.ifBlank { KVUtils.getBaseUrlForProvider(normalizedProvider) }
         return CloudModelConfig(
             providerName = normalizedProvider,
             modelName = modelName,
-            baseUrl = resolveCloudBaseUrl(normalizedProvider, baseUrl),
+            baseUrl = resolveCloudBaseUrl(normalizedProvider, effectiveBaseUrl),
             apiKey = apiKey
         )
     }
