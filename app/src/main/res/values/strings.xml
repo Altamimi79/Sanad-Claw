@@ -213,6 +213,27 @@
     <string name="voice_input_unavailable">Speech recognition not available on this device</string>
     <string name="voice_input_error">Voice input failed. Try again.</string>
 
+    <!-- Voice Input (Phase 3: in-app Arabic dictation) -->
+    <string name="voice_recording_status">Listening…</string>
+    <string name="voice_processing_status">Processing speech…</string>
+    <string name="voice_cancel">Cancel</string>
+    <string name="voice_permission_denied">Microphone permission is required for voice input</string>
+    <string name="voice_auto_send_title">Auto-send voice input</string>
+    <string name="voice_auto_send_enabled_toast">Voice input will send automatically</string>
+    <string name="voice_auto_send_disabled_toast">Voice input will stay in the box for editing</string>
+    <string name="voice_error_no_match">I didn\'t catch that. Try speaking again a bit closer to the mic.</string>
+    <string name="voice_error_timeout">No speech detected. Check the microphone and try again.</string>
+    <string name="voice_error_network">Speech recognition service unreachable. Check your connection or try again later.</string>
+    <string name="voice_error_permission">Microphone permission denied. Allow it in system settings.</string>
+    <string name="voice_error_busy">Speech recognition is busy. Try again in a moment.</string>
+    <string name="voice_error_audio">Audio input problem. Check that the microphone is not in use.</string>
+    <string name="voice_error_server">The recognition server returned an error. Try again.</string>
+    <string name="voice_error_client">Voice input was interrupted. Try again.</string>
+    <string name="voice_error_language">Arabic speech recognition is not installed for this service.</string>
+    <string name="voice_error_unknown">Voice input failed. Try again.</string>
+    <string name="settings_enabled">Enabled</string>
+    <string name="settings_disabled">Disabled</string>
+
     <!-- Global Prompt (#45) -->
     <string name="global_prompt_title">Global instructions</string>
     <string name="global_prompt_dialog_title">Edit global instructions</string>

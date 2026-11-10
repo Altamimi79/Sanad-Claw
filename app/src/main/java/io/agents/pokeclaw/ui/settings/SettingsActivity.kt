@@ -451,9 +451,39 @@ class SettingsActivity : BaseActivity() {
             onClick = {
                 Toast.makeText(this, "12 tools enabled. Tool management coming soon.", Toast.LENGTH_SHORT).show()
             },
-            showDivider = false
+            showDivider = true
         ).apply {
             setTrailingText("12 enabled")
+        }
+
+        // Voice input auto-send (phase 3) — off by default so dictation stays editable.
+        var voiceAutoSendItem: MenuItem? = null
+        voiceAutoSendItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_btn_speak_now,
+            title = getString(R.string.voice_auto_send_title),
+            onClick = {
+                val next = !KVUtils.isVoiceAutoSendEnabled()
+                KVUtils.setVoiceAutoSendEnabled(next)
+                voiceAutoSendItem?.setTrailingText(
+                    getString(if (next) R.string.settings_enabled else R.string.settings_disabled)
+                )
+                Toast.makeText(
+                    this,
+                    getString(
+                        if (next) R.string.voice_auto_send_enabled_toast
+                        else R.string.voice_auto_send_disabled_toast
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            showDivider = false
+        ).apply {
+            setTrailingText(
+                getString(
+                    if (KVUtils.isVoiceAutoSendEnabled()) R.string.settings_enabled
+                    else R.string.settings_disabled
+                )
+            )
         }
 
         // Remote Control
