@@ -414,7 +414,7 @@ class ChatSessionController(
     fun startNewConversationRuntime() {
         if (cloudClient != null) {
             cloudHistory.clear()
-            cloudHistory.add(SystemMessage.from(BASE_SYSTEM_PROMPT))
+            cloudHistory.add(SystemMessage.from(io.agents.pokeclaw.agent.PromptUtils.applyGlobalPrompt(BASE_SYSTEM_PROMPT)))
             postToMain {
                 addSystem(activity.getString(R.string.chat_new_conversation_started))
                 onRefreshSidebarHistory()
@@ -460,7 +460,7 @@ class ChatSessionController(
                         context = activity,
                         modelPath = modelPath,
                         conversationConfig = ConversationConfig(
-                            systemInstruction = Contents.of(systemPrompt),
+                            systemInstruction = Contents.of(io.agents.pokeclaw.agent.PromptUtils.applyGlobalPrompt(systemPrompt)),
                             samplerConfig = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.7)
                         )
                     )
@@ -586,7 +586,7 @@ class ChatSessionController(
 
     private fun rebuildCloudHistoryFromVisibleMessages() {
         cloudHistory.clear()
-        cloudHistory.add(SystemMessage.from(BASE_SYSTEM_PROMPT))
+        cloudHistory.add(SystemMessage.from(io.agents.pokeclaw.agent.PromptUtils.applyGlobalPrompt(BASE_SYSTEM_PROMPT)))
         uiState.messages.forEach { msg ->
             when (msg.role) {
                 ChatMessage.Role.USER -> cloudHistory.add(UserMessage.from(msg.content))
