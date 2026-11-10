@@ -24,13 +24,17 @@ Rules per phase: branch `phase-N-…`, QA-first (AGENTS.md), update `docs/MEMORY
 - [x] Encrypted API-key/token storage (`SecureStore`, early P4 item) + ConfigServer secret masking
 - [x] Unit tests green (61 tests); `assembleDebug` green
 
-## P3 — Voice Input
+## P3 — Voice Input — CODE COMPLETE 2026-11-10 (device QA pending)
 
-- [ ] Mic button in chat composer (push-to-talk first; no wake-word per upstream guidance)
-- [ ] Cloud STT path when API key configured (pick provider consistent with LangChain4j stack); record transcript → chat input
-- [ ] Permission flow: RECORD_AUDIO request + error UX (note: RECORD_AUDIO not yet in manifest — add deliberately)
-- [ ] Optional local STT spike (on-device Whisper/LiteRT option) — evaluate, gate on device RAM
-- [ ] QA: voice input E2E section in QA_CHECKLIST.md
+- [x] Mic button in chat composer (tap-to-start, tap-to-stop; no wake-word)
+- [x] On-device Arabic STT via Android `SpeechRecognizer` with **ar-SA**, partial results, silence tuning, 60s cap + partial-transcript fallback
+- [x] Permission flow: `RECORD_AUDIO` in manifest + `<queries>` for RecognitionService; runtime request with Arabic denial/unavailable messages
+- [x] Transcript → composer (editable, appended); auto-send setting (default off) at Settings → Tools
+- [x] Recording UI: pulsing animation (RMS-driven), mm:ss timer, live partials, cancel
+- [x] Error taxonomy (no-match/timeout/network/permission/busy/audio/server/client/language/unknown) with Arabic messages
+- [~] Optional on-device Whisper: **skipped deliberately** (LiteRT-LM has no audio encoder; model size/RAM + unverifiable on device) — rationale in `docs/skills/voice-input.md`
+- [x] Unit tests for all non-UI logic (5 classes, 30 tests)
+- [x] QA: E2E section VA1–VA10 added — execution blocked (no device)
 
 ## P4 — Agent Safety / Security / Stability
 

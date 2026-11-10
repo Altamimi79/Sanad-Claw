@@ -1260,6 +1260,27 @@ Execution status: **NOT YET EXECUTED** — no Android device/emulator was connec
 
 ---
 
+## VA. Fork Phase 3 — Arabic Voice Input
+
+Fork-specific. Debug APK, Arabic UI, requires a device whose speech service supports Arabic (Google app / OEM speech service with ar-SA pack). `[HUMAN]` = needs real speech.
+
+| ID | Tag | Steps | Expected |
+|---|---|---|---|
+| VA1 | `[RELEASE-OK] [HUMAN]` | Fresh install → chat → tap mic. | Android runtime dialog asks for Microphone. Deny → Arabic toast `إذن الميكروفون مطلوب…`, no crash, mic usable again after granting. |
+| VA2 | `[RELEASE-OK] [HUMAN]` | Grant permission, tap mic, speak `كم الساعة`. | Recording bar appears with pulsing mic, timer counts from 00:00, live partial transcript line updates. |
+| VA3 | `[RELEASE-OK] [HUMAN]` | With auto-send OFF (default), finish speaking. | Final Arabic text is inserted into the input box (editable, not sent); tapping send sends it as a normal message. |
+| VA4 | `[RELEASE-OK] [HUMAN]` | Enable Settings → Tools → Auto-send voice input; dictate a short message. | Message sends automatically after the final result; no TTS/audio playback of the reply (written only). |
+| VA5 | `[RELEASE-OK] [HUMAN]` | Start recording, tap mic again or tap Cancel. | Mic tap stops gracefully and delivers the final transcript; Cancel hides the bar and inserts nothing. |
+| VA6 | `[RELEASE-OK]` | Tap mic and stay silent through the silence window. | Engine finalizes; if nothing was heard an Arabic `لم أسمع كلامًا واضحًا…` / timeout message appears. |
+| VA7 | `[RELEASE-OK] [LOGCAT-DEBUG]` | Speak in a noisy place / mumble. | Either a usable transcript or Arabic no-match error; logcat `VoiceInput` shows `onError code=… mapped=NO_MATCH`. |
+| VA8 | `[RELEASE-OK] [LOGCAT-DEBUG]` | Keep the mic open for >60s. | Controller stops at the cap; if any partial existed it is returned as the transcript (`timeout but partial transcript available` in logcat), otherwise an Arabic timeout message. |
+| VA9 | `[RELEASE-OK]` | Airplane mode with a cloud-only recognizer, tap mic. | Arabic network error message (no crash). On devices with offline Arabic pack, recognition still works. |
+| VA10 | `[RELEASE-OK] [LOGCAT-DEBUG]` | Check logcat during VA2–VA3. | Lines tagged `VoiceInput`: mic tapped, start listening language=ar-SA, partial/final lengths, no full transcript is required in logs. |
+
+Execution status: **NOT YET EXECUTED** — no Android device/emulator connected via adb on this Windows machine at phase close. JVM unit tests cover all pure logic (101 tests total green).
+
+---
+
 ## QA Debug Changelog
 
 Format: `[date] [status] [test-id] description`

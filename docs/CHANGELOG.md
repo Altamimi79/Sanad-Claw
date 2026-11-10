@@ -46,3 +46,28 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 ### Notes
 - On-device E2E QA (FA1–FA13) not executed at phase close: no Android device/emulator connected via adb on this machine.
 - Push to GitHub still blocked (no fork under `Altamimi79`); branches exist locally. See docs/MEMORY.md Known Issue 1.
+
+## [Unreleased] — 2026-11-10 (Phase 3: Arabic voice input) — branch `phase-3-voice`
+
+### Added
+- In-app Arabic dictation: `voice/SpeechRecognizerController` wraps Android `SpeechRecognizer` with **ar-SA**, partial hypotheses, tuned silence windows (1.5s complete / 0.9s possibly-complete / 0.8s minimum), 60s hard cap, graceful stop (`stopListening`), cancel, and a timeout fallback that returns the last partial transcript instead of discarding speech.
+- Pure, unit-tested dictation core: `VoiceTextNormalizer` (trim, strip bidi/zero-width marks, collapse whitespace, cap), `VoiceTranscriptAssembler` (partials replace, finals win, multi-final join), `VoiceDictationPolicy` (auto-send gate), `VoiceTimerFormat` (mm:ss/elapsed), `VoiceError` (10 kinds mapped to localized messages).
+- Recording UI: `ui/voice/VoiceRecordingBar` with RMS-driven pulsing mic, mm:ss timer, live partial transcript and Cancel, shown above the composer; mic tap while recording stops gracefully.
+- Transcript insertion: final text is appended to whatever the user typed and stays editable. New setting **Settings → Tools → Auto-send voice input** (`KEY_VOICE_AUTO_SEND`, default off); when enabled the message sends immediately once the composer is free.
+- Permissions: `RECORD_AUDIO` manifest permission + `<queries>` for `android.speech.RecognitionService`; runtime request on first mic tap with Arabic denial/unavailable messages.
+- Error UX: no-match, timeout, network, permission, busy, audio, server, client, language, unknown → `voice_error_*` strings in `values/` and `values-ar/`.
+- QA: fork section **VA1–VA10** in `QA_CHECKLIST.md`; skill `docs/skills/voice-input.md`.
+- Unit tests: `VoiceTextNormalizerTest`, `VoiceTranscriptAssemblerTest`, `VoiceDictationPolicyTest`, `VoiceTimerFormatTest`, `VoiceErrorTest`.
+
+### Changed
+- The mic button no longer launches the system `RecognizerIntent` dialog; recognition happens in-app so the recording animation/timer/cancel and Arabic error handling are under our control. Replies remain written text only (no TTS exists in the app).
+
+### Skipped (documented)
+- Offline Whisper: LiteRT-LM has no audio encoder path, a usable Arabic model is 0.5–1.5 GB (RAM risk on target devices), and no device was available to validate accuracy/latency. Rationale + revisit plan in `docs/skills/voice-input.md`.
+
+### Verified
+- `assembleDebug` → BUILD SUCCESSFUL → `PokeClaw_v0.7.1_20261110_162107.apk`.
+- `testDebugUnitTest` → 101 tests / 0 failures.
+
+### Notes
+- Device E2E (VA1–VA10) not executed: no adb device. ar-SA recognition needs a device speech service with the Arabic language pack; some OEMs are online-only.
