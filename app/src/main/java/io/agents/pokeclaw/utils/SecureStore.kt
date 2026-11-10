@@ -78,11 +78,11 @@ object SecureStore {
     }
 
     private fun migrateLegacySecretsFromMmkv(context: Context) {
-        val legacyKeys = try {
-            KVUtils.getAllKeys().filter { isSecretKey(it) }
+        val legacyKeys: List<String> = try {
+            KVUtils.getAllKeys().filter { key -> isSecretKey(key) }
         } catch (e: Exception) {
             XLog.w(TAG, "Could not enumerate MMKV keys for secret migration: ${e.message}")
-            emptyArray()
+            listOf<String>()
         }
         if (legacyKeys.isEmpty()) return
         var migrated = 0
