@@ -76,7 +76,7 @@ Commits: `(core)` feat(safety-core) · `(agent)` feat(safety-agent) · `(ui)` fe
 
 ## What's Done (Phase 5: final release) — branch `phase-5-release`
 
-- **Verification**: `.\gradlew.bat testDebugUnitTest` (forced re-run) → **127 tests / 28 classes / 0 failures**; `assembleDebug` green → `app/build/outputs/apk/debug/PokeClaw_v1.0.0_20261110_163948.apk` (~149 MB).
+- **Verification**: `.\gradlew.bat testDebugUnitTest` (forced re-run) → **127 tests / 28 classes / 0 failures**; `assembleDebug` green → `app/build/outputs/apk/debug/PokeClaw_v1.0.0_20261110_164051.apk` (~149 MB).
 - **Version bump**: `versionName 1.0.0`, `versionCode 100` (fork release line; up from upstream 0.7.1/29). Overridable via `POKECLAW_VERSION_NAME` / `POKECLAW_VERSION_CODE`.
 - **Project review fixes**:
   - Removed the “Manage Tools — coming soon” stub: Settings → Tools now lists the actually registered tools (count + dialog) from `ToolRegistry.getAllTools()`.

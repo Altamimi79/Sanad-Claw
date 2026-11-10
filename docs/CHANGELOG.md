@@ -111,7 +111,7 @@ First fork release (code-complete; device QA not executed).
 
 ### Verified
 - `testDebugUnitTest` → 127 tests / 28 classes / 0 failures (forced re-run).
-- `assembleDebug` → `PokeClaw_v1.0.0_20261110_163948.apk`.
+- `assembleDebug` → `PokeClaw_v1.0.0_20261110_164051.apk (SHA-256 16077DB4541D7B860258CB5A3A18110B5F2B86E872E14EFA770FBC259E48B899)`.
 
 ### Not verified
 - Any on-device flow (no adb device): permissions, accessibility tasks, voice, safety dialogs, emergency stop, notification action.
