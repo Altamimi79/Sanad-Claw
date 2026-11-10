@@ -33,6 +33,19 @@ class ConfigServer(
 
     private val gson = Gson()
 
+    /**
+     * Phase 4 hardening: per-process random token. The HTML page served by this
+     * server embeds it, and every /api endpoint requires it. Any other app on
+     * the device hitting loopback without the token gets 401.
+     */
+    private val apiToken: String = java.util.UUID.randomUUID().toString().replace("-", "")
+
+    private fun isAuthorized(session: IHTTPSession): Boolean {
+        val header = session.headers["x-pokeclaw-token"]
+        val query = session.parms["token"]
+        return apiToken.isNotEmpty() && (header == apiToken || query == apiToken)
+    }
+
     override fun serve(session: IHTTPSession): Response {
         // CORS preflight request
         if (session.method == Method.OPTIONS) {
@@ -41,6 +54,16 @@ class ConfigServer(
 
         val uri = session.uri
         val method = session.method
+
+        if (uri.startsWith("/api/") && !isAuthorized(session)) {
+            XLog.w(TAG, "Rejected unauthenticated ${method.name} $uri")
+            return corsResponse(
+                newFixedLengthResponse(
+                    Response.Status.UNAUTHORIZED, MIME_JSON,
+                    """{"code":-1,"message":"unauthorized"}"""
+                )
+            )
+        }
 
         return try {
             when {
@@ -75,7 +98,9 @@ class ConfigServer(
     private fun serveHtml(): Response {
         val inputStream = context.assets.open("web/index.html")
         val html = inputStream.bufferedReader().use { it.readText() }
-        return corsResponse(newFixedLengthResponse(Response.Status.OK, MIME_HTML, html))
+        val tokenScript = "<script>window.__POKECLAW_TOKEN='$apiToken';</script>"
+        val patched = if (html.contains("</head>")) html.replaceFirst("</head>", "$tokenScript</head>") else tokenScript + html
+        return corsResponse(newFixedLengthResponse(Response.Status.OK, MIME_HTML, patched))
     }
 
     private fun handleGetChannels(): Response {

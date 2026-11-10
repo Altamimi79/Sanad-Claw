@@ -36,15 +36,19 @@ Rules per phase: branch `phase-N-…`, QA-first (AGENTS.md), update `docs/MEMORY
 - [x] Unit tests for all non-UI logic (5 classes, 30 tests)
 - [x] QA: E2E section VA1–VA10 added — execution blocked (no device)
 
-## P4 — Agent Safety / Security / Stability
+## P4 — Agent Safety / Security / Stability — CODE COMPLETE 2026-11-10 (device QA pending)
 
-- [ ] API keys → EncryptedSharedPreferences or MMKV encryption layer; stop serving raw keys via ConfigServer GET (mask everywhere)
-- [ ] ConfigServer: add local auth token or restrict to debug builds; revisit `cleartextTrafficPermitted=true`
-- [ ] External automation: sender verification (signature/permission or explicit pairing), rate limiting, task review UX before execution
-- [ ] Prompt-injection hardening: strengthen guard set for screen/notification/web content (extend DirectDeviceDataGuard pattern)
-- [ ] Stability: address top BACKLOG P1 items reachable without upstream device farm (GPU fallback logging truth, download resume/corruption checks, accessibility rebind grace)
-- [ ] De-god `ChatScreen.kt` / extract ChatViewModel (BACKLOG P3) if time allows
-- [ ] QA: full checklist pass
+- [x] API keys → SecureStore (done in P2); ConfigServer GET masks secrets (P2); ConfigServer now requires a per-process token on every `/api/*` request
+- [~] ConfigServer: loopback-only binding verified + token auth added; `cleartextTrafficPermitted=true` still global (needed for LAN/local LLM) — documented in SECURITY.md S3
+- [~] External automation: user toggle + targeted broadcast + base64 contract; sender verification/rate limiting deferred to P5 (SECURITY.md S4)
+- [x] Risky-action confirmation gate (send/file/call/payment/delete/install/publish) with fail-safe background denial
+- [x] Banking/password app blocklist (defaults + configurable CSV), enforced before every tool
+- [x] Action log screen (local, redacted, clearable) + visible emergency stop (banner/notification/floating pill) + configurable task timeout
+- [x] Bounded retry for transient failures; Arabic error messages for timeout/denial/blocked app
+- [x] Battery-conscious foreground polling (adaptive 5/15/30 s)
+- [x] Security review documented in `docs/SECURITY.md` (S1–S12, fixes + residuals)
+- [x] Unit tests for safety logic (6 new classes; 127 total green)
+- [ ] Full on-device QA pass (blocked: no device)
 
 ## P5 — Final Build / Tests / Release Docs
 

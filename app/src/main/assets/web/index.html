@@ -389,9 +389,11 @@ function togglePassword(inputId, btn) {
 const fields = ['dingtalkAppKey', 'dingtalkAppSecret', 'feishuAppId', 'feishuAppSecret', 'qqAppId', 'qqAppSecret', 'discordBotToken', 'telegramBotToken'];
 const llmFields = ['llmApiKey', 'llmBaseUrl', 'llmModelName'];
 
+const apiHeaders = (extra) => Object.assign({}, extra || {}, (window.__POKECLAW_TOKEN ? { 'X-PokeClaw-Token': window.__POKECLAW_TOKEN } : {}));
+
 async function load() {
   try {
-    const [chanRes, llmRes] = await Promise.all([fetch('/api/channels'), fetch('/api/llm')]);
+    const [chanRes, llmRes] = await Promise.all([fetch('/api/channels', { headers: apiHeaders() }), fetch('/api/llm', { headers: apiHeaders() })]);
     const chanJson = await chanRes.json();
     const llmJson = await llmRes.json();
     if (chanJson.code === 0 && chanJson.data) {
@@ -429,8 +431,8 @@ async function save() {
       if (el) llmBody[f] = el.value.trim();
     });
     const [chanRes, llmRes] = await Promise.all([
-      fetch('/api/channels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(chanBody) }),
-      fetch('/api/llm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(llmBody) })
+      fetch('/api/channels', { method: 'POST', headers: apiHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(chanBody) }),
+      fetch('/api/llm', { method: 'POST', headers: apiHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(llmBody) })
     ]);
     const chanJson = await chanRes.json();
     const llmJson = await llmRes.json();

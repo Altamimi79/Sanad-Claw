@@ -71,3 +71,26 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 
 ### Notes
 - Device E2E (VA1–VA10) not executed: no adb device. ar-SA recognition needs a device speech service with the Arabic language pack; some OEMs are online-only.
+
+## [Unreleased] — 2026-11-10 (Phase 4: safety, security, stability) — branch `phase-4-safety`
+
+### Added
+- Pre-execution safety gate in the agent loop (`safety/SafetyGate`): every tool call is checked against the app blocklist and risk classifier before execution; blocked/denied actions stop the task with a localized message.
+- Risky-action confirmations: sending messages/files, calls, payments/transfers, deletes, app installs and publishing require explicit in-app approval (`SafetyCoordinator` + Compose dialog). No UI attached ⇒ denied (fail-safe), never auto-approved.
+- Configurable app blocklist (`AppBlocklist`): conservative banking/wallet/password-manager defaults (Arabic + English patterns) plus a user CSV in Settings → Tools → Blocked apps. All tools are refused inside blocked apps (also protects clipboard reads).
+- Configurable task timeout (`TaskTimeoutPolicy`, default 180 s; presets 120/180/300/600) enforced at loop start and before each tool.
+- Emergency stop: red chat banner while a task runs, foreground-notification action (`EmergencyStopReceiver`, not exported) and the existing floating pill; stops task, monitoring and service.
+- Local-only action log (`ActionLog`) with redaction (`ActionLogFormatter`: API keys, tokens/passwords, bearer tokens, card-like numbers → `***`, 200-entry cap) and a viewer screen (`ActionLogActivity`) with clear.
+- Bounded retry for transient failures (`RetryPolicy`): max 2 attempts, safe read/navigation tools only, risky tools never retried.
+- Battery-conscious foreground service polling (5 s monitoring / 15 s task / 30 s idle instead of a fixed 5 s loop).
+- ConfigServer hardening: per-process API token required on every `/api/*` request (401 otherwise), token embedded only in the served HTML; H5 page updated to send it.
+- Unit tests: `RiskClassifierTest`, `AppBlocklistTest`, `TaskTimeoutPolicyTest`, `RetryPolicyTest`, `ActionLogFormatterTest`, `SafetyCoordinatorTest`.
+- `docs/SECURITY.md` (full review, findings S1–S12 with status), `docs/skills/safety-guardrails.md`, QA section SA1–SA13.
+
+### Verified
+- `assembleDebug` → BUILD SUCCESSFUL → `PokeClaw_v0.7.1_20261110_163624.apk`.
+- `testDebugUnitTest` → 127 tests / 0 failures.
+
+### Notes
+- Device E2E (SA1–SA13) not executed: no adb device.
+- Residual security items tracked in docs/SECURITY.md (cleartext policy, external-automation sender verification, AppLogStore content redaction, security-crypto deprecation).

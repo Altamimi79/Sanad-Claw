@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-10 (Phase 3 code-complete; device QA pending)
+Last updated: 2026-11-10 (Phase 4 code-complete; device QA pending)
 
 ## Project Identity
 
@@ -17,7 +17,7 @@ Last updated: 2026-11-10 (Phase 3 code-complete; device QA pending)
 | P1 Setup/audit | **DONE 2026-11-10** (branch `phase-1-setup`, merged into local `main` @ `187a065`) |
 | P2 Arabic + chat + provider settings | **CODE COMPLETE 2026-11-10** on branch `phase-2-arabic-chat` (7 commits, build+unit tests green). On-device E2E QA pending — no adb device connected yet. |
 | P3 Voice input | **CODE COMPLETE 2026-11-10** on branch `phase-3-voice` (3 commits, build + 101 unit tests green). Device QA pending. |
-| P4 Agent safety/security/stability | Not started (note: secrets-encryption item already delivered early in P2) |
+| P4 Agent safety/security/stability | **CODE COMPLETE 2026-11-10** on branch phase-4-safety (build + 127 unit tests green). Device QA pending. |
 | P5 Final build/tests/release docs | Not started |
 
 ## What's Done (Phase 1)
@@ -57,6 +57,23 @@ Commits: `4018013` feat(voice core) · `e46c2fa` feat(voice controller) · `ad18
 - **Build**: `assembleDebug` green → `PokeClaw_v0.7.1_20261110_162107.apk`.
 - **QA**: QA_CHECKLIST §VA1–VA10 added (device execution pending).
 
+## What's Done (Phase 4: safety, security, stability) — branch `phase-4-safety`
+
+Commits: `(core)` feat(safety-core) · `(agent)` feat(safety-agent) · `(ui)` feat(safety-ui) · `(security)` fix(config-server-auth) · docs.
+
+- **Safety gate** (`safety/SafetyGate`) runs before every tool call in `DefaultAgentService.runAgentLoop`: app blocklist + risk classification + confirmation. Deny/block stops the task with a localized message; the model cannot route around it.
+- **Confirmations** (`SafetyCoordinator` + `SafetyConfirmationHost` in ChatScreen): send message/file, call, payment/transfer, delete, install, publish. Blocks the worker thread on a latch (45s), UI approves/denies; **no UI ⇒ denied** (`ComposeChatActivity.onPause` clears availability). Fail-safe, never auto-approve.
+- **Blocklist** (`AppBlocklist`): defaults cover banking/wallets/password managers/authenticators in Arabic + English; user CSV via Settings → Tools → Blocked apps; package/app-label match, password-screen fallback. Blocks all tools while such an app is foreground (incl. clipboard).
+- **Timeout** (`TaskTimeoutPolicy`): default 180s, presets 120/180/300/600 cycled in Settings; checked each loop iteration.
+- **Emergency stop**: red chat banner, notification action (`EmergencyStopReceiver`, exported=false → `EmergencyStop.trigger`), floating pill. Stops task + monitoring + service and logs the event.
+- **Action log** (`ActionLog`): local MMKV ring buffer (200), redacted details (`ActionLogFormatter` masks sk-…, token/password/secret=, bearer, card-like digits), viewer `ActionLogActivity` in Settings → Tools with Clear. No network.
+- **Retry** (`RetryPolicy`): ≤2 attempts, safe read/navigation tools only, transient markers only; risky tools never retried.
+- **Battery**: ForegroundService adaptive health polling 5s (monitor) / 15s (task) / 30s (idle) instead of fixed 5s.
+- **ConfigServer hardening**: loopback-only (verified) + per-process token required on every `/api/*` (401 otherwise); token injected only into the served HTML; H5 updated.
+- **Docs**: `docs/SECURITY.md` (findings S1–S12 with status + residuals), `docs/skills/safety-guardrails.md`, QA §SA1–SA13.
+- **Tests**: 6 new classes — RiskClassifier, AppBlocklist, TaskTimeoutPolicy, RetryPolicy, ActionLogFormatter, SafetyCoordinator. Full suite **127 tests / 0 failures**.
+- **Build**: `assembleDebug` green → `PokeClaw_v0.7.1_20261110_163624.apk`.
+
 ## Build Environment (Windows machine — how it was made to work)
 
 - `local.properties` (gitignored): `sdk.dir=C:\Users\Altamimi\AppData\Local\Android\Sdk`.
@@ -86,8 +103,10 @@ Commits: `4018013` feat(voice core) · `e46c2fa` feat(voice controller) · `ad18
 9. `androidx.security-crypto` EncryptedSharedPreferences is deprecated upstream (last release 1.1.0): functional today with private-mode fallback; revisit storage approach in P4.
 10. Phase 3 voice QA (QA_CHECKLIST §VA) not executed: no adb device. Additionally, real recognition depends on the device speech service having the **Arabic (ar-SA)** language pack; some OEMs are online-only. Could not verify latency, accuracy, permission dialog, 60s cap, or error toasts on hardware.
 11. Offline Whisper not implemented (deliberate; rationale in `docs/skills/voice-input.md`). Revisit only with a device farm + a measured Arabic WER/latency budget.
+12. Phase 4 device QA (QA_CHECKLIST §SA) not executed: no adb device. Confirmation dialogs, blocklist enforcement, emergency stop, timeout, notification action and the ConfigServer token were not exercised on hardware.
+13. Residual security risks tracked in `docs/SECURITY.md`: global cleartext (S3), external-automation sender verification/rate limiting (S4), AppLogStore content redaction (S7), security-crypto deprecation (S1 residual).
 
 ## Next Up
 
-- **Phase 2/3 close-out**: connect a device/emulator, execute QA_CHECKLIST §FA (FA1–FA13) and §VA (VA1–VA10), record results; push `phase-1-setup`, `phase-2-arabic-chat`, `phase-3-voice` once the GitHub fork exists (commands in Known Issue 1).
-- **Phase 4 preview**: ConfigServer auth/restrict-to-debug, external-automation sender verification + rate limiting, prompt-injection hardening, stability fixes (GPU fallback logging, download resume, accessibility rebind), optional ChatScreen de-godding; revisit SecureStore deprecation and Whisper decision. Plan details: docs/PLAN.md.
+- **Phase 2/3/4 close-out**: connect a device/emulator, execute QA_CHECKLIST §FA, §VA, §SA; push `phase-1-setup`, `phase-2-arabic-chat`, `phase-3-voice`, `phase-4-safety` once the GitHub fork exists (commands in Known Issue 1).
+- **Phase 5 preview**: green signed `assembleRelease` with a documented fork keystore story, release docs/versioning, final audit delta, residual security fixes (S3/S4/S7), and a full QA pass. Plan details: docs/PLAN.md.

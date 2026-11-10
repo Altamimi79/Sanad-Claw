@@ -184,7 +184,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Debug: trigger tasks via ADB broadcast -->
+        <!-- Debug: send task intent via ADB (debug builds only) -->
         <receiver
             android:name=".debug.TaskTriggerReceiver"
             android:exported="true">
@@ -192,6 +192,20 @@
                 <action android:name="io.agents.pokeclaw.TASK" />
             </intent-filter>
         </receiver>
+
+        <!-- Phase 4: emergency stop from the foreground notification. Not exported. -->
+        <receiver
+            android:name=".safety.EmergencyStopReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="io.agents.pokeclaw.EMERGENCY_STOP" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Phase 4: local-only action log viewer -->
+        <activity
+            android:name=".ui.settings.ActionLogActivity"
+            android:exported="false" />
 
     </application>
 

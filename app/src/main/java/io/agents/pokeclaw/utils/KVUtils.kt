@@ -376,6 +376,24 @@ object KVUtils {
     fun hasLlmConfig(): Boolean =
         getLlmApiKey().isNotEmpty() || getLlmBaseUrl().isNotEmpty() || getLocalModelPath().isNotEmpty()
 
+    // ==================== Safety (Phase 4) ====================
+    private const val KEY_SAFETY_CONFIRM_RISKY = "KEY_SAFETY_CONFIRM_RISKY"
+    private const val KEY_SAFETY_TASK_TIMEOUT_SEC = "KEY_SAFETY_TASK_TIMEOUT_SEC"
+    private const val KEY_SAFETY_BLOCKLIST = "KEY_SAFETY_BLOCKLIST"
+    private const val KEY_SAFETY_ACTION_LOG = "KEY_SAFETY_ACTION_LOG_ENABLED"
+
+    fun isSafetyConfirmRiskyEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_RISKY, true)
+    fun setSafetyConfirmRiskyEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_RISKY, enabled)
+
+    fun getSafetyTaskTimeoutSec(): Int = getInt(KEY_SAFETY_TASK_TIMEOUT_SEC, 180)
+    fun setSafetyTaskTimeoutSec(seconds: Int) = putInt(KEY_SAFETY_TASK_TIMEOUT_SEC, seconds)
+
+    fun getSafetyBlocklistRaw(): String = getString(KEY_SAFETY_BLOCKLIST, "")
+    fun setSafetyBlocklistRaw(value: String) = putString(KEY_SAFETY_BLOCKLIST, value)
+
+    fun isSafetyActionLogEnabled(): Boolean = getBoolean(KEY_SAFETY_ACTION_LOG, true)
+    fun setSafetyActionLogEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_ACTION_LOG, enabled)
+
     // ==================== Voice Input (Phase 3) ====================
     private const val KEY_VOICE_AUTO_SEND = "KEY_VOICE_AUTO_SEND"
     /** When true, a finished dictation is sent immediately; default false = user edits first. */
