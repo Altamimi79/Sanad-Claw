@@ -94,3 +94,28 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 ### Notes
 - Device E2E (SA1–SA13) not executed: no adb device.
 - Residual security items tracked in docs/SECURITY.md (cleartext policy, external-automation sender verification, AppLogStore content redaction, security-crypto deprecation).
+
+## [1.0.0] — 2026-11-10 (fork release)
+
+First fork release (code-complete; device QA not executed).
+
+### Added
+- Arabic-first experience: default Arabic UI, RTL, Noto Naskh Arabic font, full `values-ar` strings.
+- Gulf-dialect language policy (understands Khaleeji, replies in written Arabic).
+- Chat upgrades: token streaming, Markdown bubbles (bold/italic/code/links/lists), localized error bubbles.
+- Provider settings: OpenAI, Anthropic, Google, DeepSeek + custom OpenAI-compatible Base URL; per-provider editable endpoint; real connection test; encrypted secrets.
+- Arabic voice dictation (SpeechRecognizer, ar-SA) with recording bar, timer, cancel, auto-send setting, Arabic error messages.
+- Safety: risky-action confirmations, banking/password app blocklist, local redacted action log, emergency stop (banner/notification/floating pill), task timeout, bounded retry.
+- Security: EncryptedSharedPreferences secret storage, ConfigServer token auth + masked GET, `docs/SECURITY.md`.
+- Docs: Arabic `README.md` and `docs/USER_GUIDE.md`, `docs/RELEASING.md`, `docs/skills/*`.
+
+### Verified
+- `testDebugUnitTest` → 127 tests / 28 classes / 0 failures (forced re-run).
+- `assembleDebug` → `PokeClaw_v1.0.0_20261110_163948.apk`.
+
+### Not verified
+- Any on-device flow (no adb device): permissions, accessibility tasks, voice, safety dialogs, emergency stop, notification action.
+- GitHub push/release (no fork under the account; `gh` not installed).
+
+### Known limitations
+- Image attachments unsupported; offline Whisper not bundled; local models need sufficient RAM; external automation off by default; global cleartext traffic remains for custom local endpoints.

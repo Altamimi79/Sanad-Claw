@@ -445,16 +445,23 @@ class SettingsActivity : BaseActivity() {
         val toolsGroup = findViewById<MenuGroup>(R.id.toolsGroup)
         toolsGroup.setTitle("Tools")
 
+        val registeredTools = io.agents.pokeclaw.tool.ToolRegistry.getInstance().getAllTools()
         toolsGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_manage,
-            title = "Manage Tools",
+            title = "Available tools",
             onClick = {
-                Toast.makeText(this, "12 tools enabled. Tool management coming soon.", Toast.LENGTH_SHORT).show()
+                val names = registeredTools
+                    .map { it.getDisplayName() }
+                    .sorted()
+                    .joinToString("\n")
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("${getString(R.string.tools_dialog_title)} (${registeredTools.size})")
+                    .setMessage(names)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
             },
-            showDivider = true
-        ).apply {
-            setTrailingText("12 enabled")
-        }
+            trailingText = registeredTools.size.toString(),
+        )
 
         // Voice input auto-send (phase 3) — off by default so dictation stays editable.
         var voiceAutoSendItem: MenuItem? = null

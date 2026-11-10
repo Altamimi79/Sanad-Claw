@@ -4,6 +4,7 @@
 package io.agents.pokeclaw.ui.chat
 
 import io.agents.pokeclaw.AppCapabilityCoordinator
+import io.agents.pokeclaw.R
 import io.agents.pokeclaw.ServiceBindingState
 import android.content.Intent
 import android.os.Bundle
@@ -171,7 +172,7 @@ class ComposeChatActivity : ComponentActivity() {
                 onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
                 onOpenModels = { startActivity(Intent(this, LlmConfigActivity::class.java)) },
                 onFixPermissions = { startActivity(Intent(this, SettingsActivity::class.java)) },
-                onAttach = { Toast.makeText(this, "Image upload coming soon", Toast.LENGTH_SHORT).show() },
+                onAttach = { Toast.makeText(this, R.string.attach_not_supported, Toast.LENGTH_SHORT).show() },
                 conversations = _conversations.toList(),
                 onSelectConversation = { loadConversation(it) },
                 onDeleteConversation = { conv ->
