@@ -231,6 +231,8 @@
     <string name="voice_error_client">Voice input was interrupted. Try again.</string>
     <string name="voice_error_language">Arabic speech recognition is not installed for this service.</string>
     <string name="voice_error_unknown">Voice input failed. Try again.</string>
+    <string name="tools_dialog_title">Available tools</string>
+    <string name="attach_not_supported">Image attachments are not supported yet</string>
     <string name="settings_enabled">Enabled</string>
     <string name="settings_disabled">Disabled</string>
 

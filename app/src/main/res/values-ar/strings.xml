@@ -232,6 +232,8 @@
     <string name="voice_error_client">توقف الإدخال الصوتي. حاول مجددًا.</string>
     <string name="voice_error_language">التعرف على الكلام العربي غير مثبت لهذه الخدمة.</string>
     <string name="voice_error_unknown">فشل الإدخال الصوتي. حاول مجددًا.</string>
+    <string name="tools_dialog_title">الأدوات المتاحة</string>
+    <string name="attach_not_supported">إرفاق الصور غير مدعوم بعد</string>
     <string name="settings_enabled">ممكّن</string>
     <string name="settings_disabled">معطّل</string>
 
