@@ -196,6 +196,17 @@ class ForegroundService : Service() {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
 
+            // Phase 4: emergency stop right from the notification shade.
+            val stopIntent = Intent(context, io.agents.pokeclaw.safety.EmergencyStopReceiver::class.java).apply {
+                action = io.agents.pokeclaw.safety.EmergencyStopReceiver.ACTION
+            }
+            val stopPendingIntent = PendingIntent.getBroadcast(
+                context,
+                42,
+                stopIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(text)
@@ -204,6 +215,7 @@ class ForegroundService : Service() {
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(false)
+                .addAction(0, context.getString(R.string.safety_emergency_stop), stopPendingIntent)
                 .build()
         }
     }
@@ -215,7 +227,14 @@ class ForegroundService : Service() {
             if (_mode == ForegroundMode.MONITOR) {
                 ForegroundService.syncToBackgroundState(applicationContext)
             }
-            healthHandler.postDelayed(this, MONITOR_HEALTH_POLL_MS)
+            // Battery-conscious adaptive polling: monitor needs fast health checks,
+            // an active task only needs light supervision, idle backs off further.
+            val interval = when (_mode) {
+                ForegroundMode.MONITOR -> MONITOR_HEALTH_POLL_MS
+                ForegroundMode.TASK -> 15_000L
+                ForegroundMode.IDLE -> 30_000L
+            }
+            healthHandler.postDelayed(this, interval)
         }
     }
 

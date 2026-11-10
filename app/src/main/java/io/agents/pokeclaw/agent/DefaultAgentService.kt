@@ -542,10 +542,29 @@ class DefaultAgentService : AgentService {
         val taskBudget = TaskBudget.fromSettings()
         var softLimitWarned = false
         var consecutiveNoToolCalls = 0
+        val taskStartedAtMs = System.currentTimeMillis()
+        val safetyTimeoutMs = io.agents.pokeclaw.safety.TaskTimeoutPolicy.timeoutMs(
+            io.agents.pokeclaw.safety.SafetySettings.taskTimeoutSeconds()
+        )
 
         while (iterations < maxIterations && !cancelled.get()) {
             iterations++
             callback.onLoopStart(iterations)
+
+            if (io.agents.pokeclaw.safety.TaskTimeoutPolicy.isTimedOut(
+                    taskStartedAtMs, System.currentTimeMillis(), safetyTimeoutMs
+                )
+            ) {
+                val msg = ClawApplication.instance.getString(
+                    R.string.safety_task_timeout, (safetyTimeoutMs / 1000).toInt()
+                )
+                XLog.w(TAG, "Safety task timeout reached (${safetyTimeoutMs}ms) — stopping")
+                io.agents.pokeclaw.safety.ActionLog.record(
+                    userPrompt, "task", "none", "timeout", msg
+                )
+                callback.onError(iterations, RuntimeException(msg), totalTokens)
+                return
+            }
 
             // Compress history messages before sending to save tokens
             compressHistoryForSend(messages)
@@ -716,11 +735,52 @@ class DefaultAgentService : AgentService {
                     continue
                 }
 
+                // Phase 4 safety gate: blocklist + risky-action confirmation (fails safe
+                // when no UI is attached — risky actions are denied, never auto-approved).
+                val safetyDecision = io.agents.pokeclaw.safety.SafetyGate.evaluate(toolName, params, userPrompt)
+                if (!safetyDecision.allow) {
+                    val denied = ToolResult.error(safetyDecision.message ?: "")
+                    callback.onToolCall(iterations, toolName, displayName, toolArgs)
+                    callback.onToolResult(iterations, toolName, displayName, toolArgs, denied)
+                    io.agents.pokeclaw.safety.SafetyGate.recordAction(
+                        userPrompt, toolName, safetyDecision.assessment.label, "blocked", safetyDecision.message
+                    )
+                    messages.add(ToolExecutionResultMessage.from(toolRequest, GSON.toJson(denied)))
+                    callback.onError(
+                        iterations,
+                        RuntimeException(safetyDecision.message ?: ""),
+                        totalTokens
+                    )
+                    return
+                }
+
                 callback.onToolCall(iterations, toolName, displayName, toolArgs)
                 directDeviceDataGuard.recordToolAttempt(toolName)
                 emailComposeGuard.recordToolAttempt(toolName)
 
-                val result = ToolRegistry.getInstance().executeTool(toolName, params)
+                var attempt = 1
+                var result = ToolRegistry.getInstance().executeTool(toolName, params)
+                while (!result.isSuccess && io.agents.pokeclaw.safety.RetryPolicy.shouldRetry(
+                        attempt, toolName, result.error
+                    )
+                ) {
+                    XLog.w(TAG, "Retrying tool=$toolName attempt=${attempt + 1} after transient error: ${result.error}")
+                    try {
+                        Thread.sleep(io.agents.pokeclaw.safety.RetryPolicy.backoffMs(attempt))
+                    } catch (e: InterruptedException) {
+                        Thread.currentThread().interrupt()
+                        break
+                    }
+                    attempt++
+                    result = ToolRegistry.getInstance().executeTool(toolName, params)
+                }
+                io.agents.pokeclaw.safety.ActionLog.record(
+                    userPrompt,
+                    toolName,
+                    safetyDecision.assessment.label,
+                    if (result.isSuccess) "ok" else "error",
+                    result.error ?: result.data
+                )
                 val paramsString = if (params.isEmpty()) "" else params.toString()
                 callback.onToolResult(iterations, toolName, displayName, paramsString, result)
                 if (result.isSuccess) {
