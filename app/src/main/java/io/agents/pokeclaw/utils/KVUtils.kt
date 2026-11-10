@@ -43,6 +43,7 @@ object KVUtils {
     fun init(context: Context) {
         MMKV.initialize(context)
         mmkv = MMKV.defaultMMKV()
+        SecureStore.init(context)
     }
 
     // ==================== String ====================
@@ -144,17 +145,17 @@ object KVUtils {
 
     fun setGuideShown(shown: Boolean) = putBoolean(KEY_GUIDE_SHOWN, shown)
 
-    // ==================== Discord Bot Config ====================
-    fun getDiscordBotToken(): String = getString(KEY_DISCORD_BOT_TOKEN, "")
-    fun setDiscordBotToken(value: String) = putString(KEY_DISCORD_BOT_TOKEN, value)
+    // ==================== Discord Bot Config (secret — SecureStore) ====================
+    fun getDiscordBotToken(): String = SecureStore.getString(KEY_DISCORD_BOT_TOKEN, "")
+    fun setDiscordBotToken(value: String) = SecureStore.putString(KEY_DISCORD_BOT_TOKEN, value)
 
-    // ==================== Telegram Bot Config ====================
-    fun getTelegramBotToken(): String = getString(KEY_TELEGRAM_BOT_TOKEN, "")
-    fun setTelegramBotToken(value: String) = putString(KEY_TELEGRAM_BOT_TOKEN, value)
+    // ==================== Telegram Bot Config (secret — SecureStore) ====================
+    fun getTelegramBotToken(): String = SecureStore.getString(KEY_TELEGRAM_BOT_TOKEN, "")
+    fun setTelegramBotToken(value: String) = SecureStore.putString(KEY_TELEGRAM_BOT_TOKEN, value)
 
-    // ==================== WeChat iLink Bot Config ====================
-    fun getWechatBotToken(): String = getString(KEY_WECHAT_BOT_TOKEN, "")
-    fun setWechatBotToken(value: String) = putString(KEY_WECHAT_BOT_TOKEN, value)
+    // ==================== WeChat iLink Bot Config (token secret — SecureStore) ====================
+    fun getWechatBotToken(): String = SecureStore.getString(KEY_WECHAT_BOT_TOKEN, "")
+    fun setWechatBotToken(value: String) = SecureStore.putString(KEY_WECHAT_BOT_TOKEN, value)
     fun getWechatApiBaseUrl(): String = getString(KEY_WECHAT_API_BASE_URL, "")
     fun setWechatApiBaseUrl(value: String) = putString(KEY_WECHAT_API_BASE_URL, value)
     fun getWechatUpdatesCursor(): String = getString(KEY_WECHAT_UPDATES_CURSOR, "")
@@ -285,14 +286,20 @@ object KVUtils {
     private const val KEY_PENDING_LOCAL_GPU_INIT_AT = "KEY_PENDING_LOCAL_GPU_INIT_AT"
     private const val KEY_PENDING_LOCAL_GPU_INIT_PID = "KEY_PENDING_LOCAL_GPU_INIT_PID"
 
-    fun getLlmApiKey(): String = getString(KEY_LLM_API_KEY, "")
-    fun setLlmApiKey(value: String) = putString(KEY_LLM_API_KEY, value)
+    fun getLlmApiKey(): String = SecureStore.getString(KEY_LLM_API_KEY, "")
+    fun setLlmApiKey(value: String) = SecureStore.putString(KEY_LLM_API_KEY, value)
 
     /** Per-provider API key storage — allows users to save keys for multiple providers simultaneously. */
     fun getApiKeyForProvider(provider: String): String =
-        getString("KEY_LLM_API_KEY_${provider.uppercase()}", "")
+        SecureStore.getString("KEY_LLM_API_KEY_${provider.uppercase()}", "")
     fun setApiKeyForProvider(provider: String, key: String) =
-        putString("KEY_LLM_API_KEY_${provider.uppercase()}", key)
+        SecureStore.putString("KEY_LLM_API_KEY_${provider.uppercase()}", key)
+
+    /** Per-provider base URL storage — lets each provider keep its own endpoint (proxy/custom). */
+    fun getBaseUrlForProvider(provider: String): String =
+        getString("KEY_LLM_BASE_URL_${provider.uppercase()}", "")
+    fun setBaseUrlForProvider(provider: String, value: String) =
+        putString("KEY_LLM_BASE_URL_${provider.uppercase()}", value)
     fun getLlmBaseUrl(): String = getString(KEY_LLM_BASE_URL, "")
     fun setLlmBaseUrl(value: String) = putString(KEY_LLM_BASE_URL, value)
     fun getLlmModelName(): String = getString(KEY_LLM_MODEL_NAME, "")

@@ -227,4 +227,80 @@
     <string name="custom_local_model_url_not_set">Not set</string>
     <string name="custom_local_model_url_set">Custom URL set</string>
     <string name="custom_local_model_url_invalid">URL must start with http:// or https://</string>
+
+    <!-- Chat UI (phase 2) -->
+    <string name="chat_tab_chat">Chat</string>
+    <string name="chat_tab_task">Task</string>
+    <string name="chat_placeholder_chat">Chat with local AI…</string>
+    <string name="chat_placeholder_task">Describe a phone task…</string>
+    <string name="chat_placeholder_cloud">Chat or give a task…</string>
+    <string name="chat_no_model_selected">No model selected</string>
+    <string name="chat_loading">Loading…</string>
+    <string name="chat_error_prefix">Error: %s</string>
+    <string name="chat_new_conversation_started">New conversation started.</string>
+    <string name="chat_switched_to_local">Switched to local model</string>
+    <string name="chat_switched_to_model">Switched to %s</string>
+    <string name="chat_downloading_title">Downloading your AI brain</string>
+    <string name="chat_downloading_sub">This only happens once</string>
+    <string name="chat_permissions_needed">Permissions needed. Tap to fix.</string>
+    <string name="chat_skills_label">Skills</string>
+    <string name="chat_configure_api_key">Configure API key…</string>
+    <string name="chat_no_api_key_configured">No API key configured</string>
+    <string name="chat_download_models">Download models…</string>
+    <string name="chat_no_local_model_downloaded">No local model downloaded</string>
+
+    <!-- Provider settings (phase 2) -->
+    <string name="models_title">Models</string>
+    <string name="provider_test_connection">Test Connection</string>
+    <string name="provider_testing">Testing…</string>
+    <string name="provider_save_activate">Save &amp; Activate</string>
+    <string name="provider_enter_api_key_first">Enter API Key first</string>
+    <string name="provider_enter_api_key">Please enter API Key</string>
+    <string name="provider_select_model">Select a model</string>
+    <string name="provider_api_key_cleared">API key cleared</string>
+    <string name="provider_saved_default">Saved cloud default: %s</string>
+    <string name="provider_connection_ok">✓ Connection successful</string>
+    <string name="provider_connection_failed">✗ %s</string>
+    <string name="provider_base_url_label">Base URL</string>
+    <string name="provider_api_key_label">API Key</string>
+    <string name="provider_model_name_label">Model Name</string>
+    <string name="provider_connection_unauthorized">Invalid or unauthorized API key (401)</string>
+    <string name="provider_connection_model_not_found">Model not found at this provider (404): %s</string>
+    <string name="provider_connection_timeout">Connection timed out — check the Base URL and your network</string>
+    <string name="provider_connection_network_error">Network error: %s</string>
+    <string name="provider_connection_generic">Connection failed: %s</string>
+    <string name="provider_base_url_hint">Keep the default or set a proxy / OpenAI-compatible endpoint</string>
+    <string name="provider_missing_base_url">Enter a Base URL first</string>
+    <string name="provider_missing_model_id">Enter a model name first</string>
+
+    <!-- Models screen labels (phase 2) -->
+    <string name="llm_active_model">Active Model</string>
+    <string name="llm_available_models">Available Models</string>
+    <string name="llm_default_models">Default Models</string>
+    <string name="llm_default_local_model">Default local model</string>
+    <string name="llm_default_cloud_model">Default cloud model</string>
+    <string name="llm_choose_local_model">Choose a local model below</string>
+    <string name="llm_configure_cloud_below">Configure a cloud model below</string>
+    <string name="llm_cloud_llm">Cloud LLM</string>
+    <string name="llm_tap_download_model">Tap to download a model</string>
+    <string name="llm_clear">Clear</string>
+    <string name="llm_test">Test</string>
+    <string name="llm_compatible_hint">Compatible with: OpenRouter, Groq, Together AI, Ollama, any OpenAI-compatible endpoint</string>
+    <string name="status_not_configured">● Not configured</string>
+    <string name="status_ready">● Ready</string>
+    <string name="llm_use">Use</string>
+    <string name="llm_download">↓ Download</string>
+    <string name="llm_downloading">Downloading…</string>
+    <string name="llm_already_downloading">Already downloading</string>
+    <string name="llm_model_file_not_found">Model file not found</string>
+    <string name="llm_set_default_local">Set default local: %s</string>
+    <string name="llm_deleted">Deleted %s</string>
+    <string name="llm_active_badge">✓ Active</string>
+    <string name="llm_active_warning_badge">⚠ Active</string>
+    <string name="llm_default_badge">✓ Default</string>
+    <string name="llm_needs_ram">Needs %dGB+</string>
+    <string name="llm_ready_to_save">✓ Ready to save</string>
+    <string name="llm_status_connected">● Connected</string>
+    <string name="llm_no_default_cloud_model">No default cloud model</string>
+    <string name="llm_downloaded_done">Downloaded!</string>
 </resources>

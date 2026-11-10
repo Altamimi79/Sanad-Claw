@@ -108,6 +108,11 @@ class ComposeChatActivity : ComponentActivity() {
 
     // Permission polling
     private val permHandler = Handler(Looper.getMainLooper())
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(io.agents.pokeclaw.utils.AppLocale.wrap(newBase, newBase))
+    }
+
     private val permPoller = object : Runnable {
         override fun run() {
             _needsPermission.value =
@@ -143,6 +148,7 @@ class ComposeChatActivity : ComponentActivity() {
         setContent {
             val activeTasks by activeTaskShellController.activeTasks.collectAsState()
 
+            androidx.compose.material3.MaterialTheme(typography = PokeclawTypography) {
             ChatScreen(
                 messages = _messages.toList(),
                 modelStatus = _modelStatus.value,
@@ -199,6 +205,7 @@ class ComposeChatActivity : ComponentActivity() {
                 onModelSwitch = { modelId, displayName -> switchModel(modelId, displayName) },
                 colors = composeColors,
             )
+            }
         }
 
         refreshSidebarHistory()

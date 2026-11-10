@@ -29,6 +29,8 @@ enum class CloudProvider(
     val displayName: String,
     val defaultBaseUrl: String,
     val models: List<CloudModel>,
+    // Base URL is editable for every provider; this flag marks providers that also
+    // need the free-text model-name field because they have no preset model cards.
     val showBaseUrl: Boolean = false
 ) {
     OPENAI(
@@ -49,6 +51,15 @@ enum class CloudProvider(
             CloudModel("claude-sonnet-4-6", "Claude Sonnet 4.6", 3.00, 15.00, ModelTier.PRO, 200_000),
             CloudModel("claude-haiku-4-5", "Claude Haiku 4.5", 0.80, 4.00, ModelTier.FAST, 200_000, recommended = true),
         )
+    ),
+    DEEPSEEK(
+        displayName = "DeepSeek",
+        defaultBaseUrl = "https://api.deepseek.com/v1",
+        models = listOf(
+            CloudModel("deepseek-chat", "DeepSeek Chat", 0.27, 1.10, ModelTier.FAST, 163_840, recommended = true),
+            CloudModel("deepseek-reasoner", "DeepSeek Reasoner", 0.80, 2.40, ModelTier.SMART, 163_840),
+        ),
+        showBaseUrl = true
     ),
     GOOGLE(
         displayName = "Google",

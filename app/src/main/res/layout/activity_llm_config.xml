@@ -34,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="4dp"
                 android:paddingBottom="8dp"
-                android:text="Active Model"
+                android:text="@string/llm_active_model"
                 android:textColor="@color/colorTextSecondary"
                 android:textSize="13dp"
                 android:textStyle="bold" />
@@ -72,7 +72,7 @@
                             android:id="@+id/tvActiveModelName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="No model"
+                            android:text="@string/chat_no_model_selected"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="15dp"
                             android:textStyle="bold" />
@@ -82,7 +82,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Tap to download a model"
+                            android:text="@string/llm_tap_download_model"
                             android:textColor="@color/colorTextTertiary"
                             android:textSize="12dp" />
 
@@ -91,7 +91,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="● Not configured"
+                            android:text="@string/status_not_configured"
                             android:textColor="@color/colorSuccessPrimary"
                             android:textSize="12dp" />
                     </LinearLayout>
@@ -104,7 +104,7 @@
                 android:layout_marginTop="20dp"
                 android:paddingHorizontal="4dp"
                 android:paddingBottom="8dp"
-                android:text="Default Models"
+                android:text="@string/llm_default_models"
                 android:textColor="@color/colorTextSecondary"
                 android:textSize="13dp"
                 android:textStyle="bold" />
@@ -145,7 +145,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Default local model"
+                                android:text="@string/llm_default_local_model"
                                 android:textColor="@color/colorTextTertiary"
                                 android:textSize="12dp" />
 
@@ -154,7 +154,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Not set"
+                                android:text="@string/global_prompt_not_set"
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="14dp"
                                 android:textStyle="bold" />
@@ -164,7 +164,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Choose a local model below"
+                                android:text="@string/llm_choose_local_model"
                                 android:textColor="@color/colorTextTertiary"
                                 android:textSize="12dp" />
 
@@ -173,7 +173,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="● Not configured"
+                                android:text="@string/status_not_configured"
                                 android:textColor="@color/colorTextTertiary"
                                 android:textSize="12dp" />
                         </LinearLayout>
@@ -208,7 +208,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Default cloud model"
+                                android:text="@string/llm_default_cloud_model"
                                 android:textColor="@color/colorTextTertiary"
                                 android:textSize="12dp" />
 
@@ -217,7 +217,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Not set"
+                                android:text="@string/global_prompt_not_set"
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="14dp"
                                 android:textStyle="bold" />
@@ -227,7 +227,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Configure a cloud model below"
+                                android:text="@string/llm_configure_cloud_below"
                                 android:textColor="@color/colorTextTertiary"
                                 android:textSize="12dp" />
 
@@ -236,7 +236,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="● Not configured"
+                                android:text="@string/status_not_configured"
                                 android:textColor="@color/colorTextTertiary"
                                 android:textSize="12dp" />
                         </LinearLayout>
@@ -251,7 +251,7 @@
                 android:layout_marginTop="20dp"
                 android:paddingHorizontal="4dp"
                 android:paddingBottom="8dp"
-                android:text="Available Models"
+                android:text="@string/llm_available_models"
                 android:textColor="@color/colorTextSecondary"
                 android:textSize="13dp"
                 android:textStyle="bold" />
@@ -287,7 +287,7 @@
                 android:layout_marginTop="20dp"
                 android:paddingHorizontal="4dp"
                 android:paddingBottom="8dp"
-                android:text="Cloud LLM"
+                android:text="@string/llm_cloud_llm"
                 android:textColor="@color/colorTextSecondary"
                 android:textSize="13dp"
                 android:textStyle="bold" />
@@ -334,7 +334,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="API Key"
+                        android:text="@string/provider_api_key_label"
                         android:textColor="@color/colorTextSecondary"
                         android:textSize="12dp"
                         android:layout_marginTop="12dp"
@@ -365,24 +365,23 @@
                             android:layout_height="44dp"
                             android:gravity="center"
                             android:paddingHorizontal="10dp"
-                            android:text="Clear"
+                            android:text="@string/llm_clear"
                             android:textColor="@color/colorErrorPrimary"
                             android:textSize="12dp" />
 
                     </LinearLayout>
 
-                    <!-- Base URL (Custom only) -->
+                    <!-- Base URL (editable for every provider) -->
                     <LinearLayout
                         android:id="@+id/layoutBaseUrl"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone">
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Base URL"
+                            android:text="@string/provider_base_url_label"
                             android:textColor="@color/colorTextSecondary"
                             android:textSize="12dp"
                             android:layout_marginTop="10dp"
@@ -393,17 +392,27 @@
                             android:layout_width="match_parent"
                             android:layout_height="44dp"
                             android:background="@drawable/bg_edit_text"
-                            android:hint="https://api.openrouter.ai/v1"
+                            android:hint="@string/provider_base_url_hint"
                             android:inputType="textUri"
                             android:paddingHorizontal="12dp"
                             android:textColor="@color/colorTextPrimary"
                             android:textColorHint="@color/colorTextTertiary"
                             android:textSize="13dp" />
 
+                    </LinearLayout>
+
+                    <!-- Model Name (Custom only) -->
+                    <LinearLayout
+                        android:id="@+id/layoutModelName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Model Name"
+                            android:text="@string/provider_model_name_label"
                             android:textColor="@color/colorTextSecondary"
                             android:textSize="12dp"
                             android:layout_marginTop="10dp"
@@ -447,7 +456,7 @@
                             android:layout_marginEnd="6dp"
                             android:background="@drawable/bg_edit_text"
                             android:gravity="center"
-                            android:text="Test"
+                            android:text="@string/llm_test"
                             android:textColor="@color/colorBrandPrimary"
                             android:textSize="13dp" />
 
@@ -456,7 +465,7 @@
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="2"
-                            android:text="Save &amp; Activate" />
+                            android:text="@string/provider_save_activate" />
 
                     </LinearLayout>
 
@@ -466,7 +475,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Compatible with: OpenRouter, Groq, Together AI, Ollama, any OpenAI-compatible endpoint"
+                        android:text="@string/llm_compatible_hint"
                         android:textColor="@color/colorTextTertiary"
                         android:textSize="10dp"
                         android:visibility="gone" />
@@ -477,3 +486,4 @@
         </LinearLayout>
     </ScrollView>
 </LinearLayout>
+

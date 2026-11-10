@@ -12,8 +12,8 @@ Verified against code at phase 1 (v0.7.1). Two layers exist: the **runtime clien
 ## 2. Catalog / pricing / settings
 
 5. Add the provider to `agent/CloudProvider.kt` enum with its model list (`CloudModel(id, label, input$/M, output$/M, ModelTier, contextWindow, recommended)`); update `fromName()` mapping.
-6. Keys are stored per provider automatically via `KVUtils.getApiKeyForProvider/setApiKeyForProvider` (`KEY_LLM_API_KEY_<NAME>`) — no new storage code needed.
-7. Settings UI: `ui/settings/LlmConfigActivity.kt` builds provider tabs from the `CloudProvider` enum (tabViews map, ~line 403) — a new enum entry appears; verify tab styling + model list rendering + Test Connection path.
+6. Keys are stored per provider automatically via `KVUtils.getApiKeyForProvider/setApiKeyForProvider` (`KEY_LLM_API_KEY_<NAME>`, backed by `SecureStore` encrypted prefs since phase 2). Base URLs persist per provider via `KVUtils.getBaseUrlForProvider/setBaseUrlForProvider` (`KEY_LLM_BASE_URL_<NAME>`), resolved in `ModelConfigRepository.buildCloudConfig`.
+7. Settings UI: `ui/settings/LlmConfigActivity.kt` builds provider tabs from the `CloudProvider` enum (tabViews map) — a new enum entry appears; Base URL field is shown for every provider, free-text model name only for `CUSTOM`. Test Connection runs `agent/llm/CloudConnectionTester.test(...)` (see skill `test-cloud-connection.md`).
 8. Debug/QA hook: `debug/DebugTaskReceiver.kt` `config:` broadcast accepts `--es provider "<NAME>"` for headless setup (debug builds only).
 
 ## 3. QA (mandatory per CLAUDE.md)

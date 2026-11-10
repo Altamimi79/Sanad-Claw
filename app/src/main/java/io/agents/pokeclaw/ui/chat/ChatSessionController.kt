@@ -10,12 +10,14 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.UserMessage
+import io.agents.pokeclaw.R
 import io.agents.pokeclaw.agent.ModelPricing
 import io.agents.pokeclaw.agent.llm.LlmClient
 import io.agents.pokeclaw.agent.llm.LlmSessionManager
 import io.agents.pokeclaw.agent.llm.LocalModelManager
 import io.agents.pokeclaw.agent.llm.LocalModelRuntime
 import io.agents.pokeclaw.agent.llm.ModelConfigRepository
+import io.agents.pokeclaw.agent.llm.StreamingListener
 import io.agents.pokeclaw.utils.XLog
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Conversation
@@ -24,6 +26,7 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.SamplerConfig
 import java.io.File
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 
 data class ChatSessionUiState(
     val messages: SnapshotStateList<ChatMessage>,
@@ -76,7 +79,7 @@ class ChatSessionController(
                 val previousModel = cloudModelName
                 cloudClient = LlmSessionManager.createCloudClient(temperature = 0.7)
                 if (cloudClient == null) {
-                    uiState.modelStatus.value = "No model selected"
+                    uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                     isModelReady = false
                     setButtonsEnabled(false)
                     return
@@ -101,7 +104,7 @@ class ChatSessionController(
                 setButtonsEnabled(true)
                 XLog.i(TAG, "Cloud chat ready: ${cloudConfig.modelName} via ${cloudConfig.resolvedBaseUrl}")
             } else {
-                uiState.modelStatus.value = "No model selected"
+                uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                 isModelReady = false
                 setButtonsEnabled(false)
             }
@@ -187,7 +190,7 @@ class ChatSessionController(
         }
 
         val restoredSystemPrompt = buildRestoredSystemPrompt(conversationId, visibleMessages)
-        uiState.modelStatus.value = "Loading..."
+        uiState.modelStatus.value = activity.getString(R.string.chat_loading)
         setButtonsEnabled(false)
         val generation = ++localUiGeneration
         executor.submit { loadModel(modelPath, generation, restoredSystemPrompt) }
@@ -311,25 +314,73 @@ class ChatSessionController(
         uiState.messages.add(ChatMessage(ChatMessage.Role.ASSISTANT, "..."))
 
         executor.submit {
+            val placeholderIdx = uiState.messages.lastIndex
             try {
                 if (cloudClient != null) {
                     ensureCloudHistoryInitialized()
                     cloudHistory.add(UserMessage.from(text))
-                    val llmResponse = cloudClient!!.chat(cloudHistory, emptyList())
-                    val responseText = llmResponse.text ?: "(no response)"
-                    cloudHistory.add(AiMessage.from(responseText))
-                    val usage = llmResponse.tokenUsage
-                    val inputTokens = usage?.inputTokenCount() ?: (text.length / 4 + 1)
-                    val outputTokens = usage?.outputTokenCount() ?: (responseText.length / 4 + 1)
-                    val fallbackModelName = cloudModelName ?: ModelConfigRepository.snapshot().activeCloud.modelName
-                    val modelTag = llmResponse.modelName ?: fallbackModelName
-                    XLog.d(TAG, "sendChat: cloud response modelName='${llmResponse.modelName}', fallback='$fallbackModelName'")
-                    postToMain {
-                        replaceTypingIndicator(responseText, modelTag)
-                        uiState.isAwaitingReply.value = false
-                        uiState.sessionTokens.value += inputTokens + outputTokens
-                        uiState.sessionCost.value += ModelPricing.estimateCost(modelTag, inputTokens, outputTokens)
-                        onPersistConversation()
+                    if (ModelConfigRepository.isLocalActive()) {
+                        // Defensive: chat UI is on a cloud model but the repo flipped to local.
+                        val llmResponse = cloudClient!!.chat(cloudHistory, emptyList())
+                        val responseText = llmResponse.text ?: "(no response)"
+                        cloudHistory.add(AiMessage.from(responseText))
+                        val usage = llmResponse.tokenUsage
+                        val inputTokens = usage?.inputTokenCount() ?: (text.length / 4 + 1)
+                        val outputTokens = usage?.outputTokenCount() ?: (responseText.length / 4 + 1)
+                        val fallbackModelName = cloudModelName ?: ModelConfigRepository.snapshot().activeCloud.modelName
+                        val modelTag = llmResponse.modelName ?: fallbackModelName
+                        XLog.d(TAG, "sendChat: cloud response modelName='${llmResponse.modelName}', fallback='$fallbackModelName'")
+                        postToMain {
+                            finalizeStreamingAssistant(placeholderIdx, responseText, modelTag)
+                            uiState.isAwaitingReply.value = false
+                            uiState.sessionTokens.value += inputTokens + outputTokens
+                            uiState.sessionCost.value += ModelPricing.estimateCost(modelTag, inputTokens, outputTokens)
+                            onPersistConversation()
+                        }
+                    } else {
+                        // Cloud chat streams token-by-token into the assistant bubble.
+                        val partial = StringBuilder()
+                        var lastUiUpdateMs = 0L
+                        // chatStreaming blocks until the stream completes; onComplete applies the final text.
+                        cloudClient!!.chatStreaming(
+                            cloudHistory,
+                            emptyList(),
+                            object : StreamingListener {
+                                override fun onPartialText(token: String) {
+                                    synchronized(partial) { partial.append(token) }
+                                    val now = System.currentTimeMillis()
+                                    if (now - lastUiUpdateMs >= 120L) {
+                                        lastUiUpdateMs = now
+                                        val snapshot = synchronized(partial) { partial.toString() }
+                                        postToMain { updateStreamingAssistant(placeholderIdx, snapshot) }
+                                    }
+                                }
+
+                                override fun onComplete(response: io.agents.pokeclaw.agent.llm.LlmResponse) {
+                                    cloudHistory.add(AiMessage.from(response.text ?: ""))
+                                    val usage = response.tokenUsage
+                                    val inputTokens = usage?.inputTokenCount() ?: (text.length / 4 + 1)
+                                    val outputTokens = usage?.outputTokenCount() ?: ((response.text?.length ?: 0) / 4 + 1)
+                                    val fallbackModelName = cloudModelName ?: ModelConfigRepository.snapshot().activeCloud.modelName
+                                    val modelTag = response.modelName ?: fallbackModelName
+                                    XLog.d(TAG, "sendChat: cloud stream complete modelName='${response.modelName}', fallback='$fallbackModelName'")
+                                    postToMain {
+                                        finalizeStreamingAssistant(placeholderIdx, response.text ?: "(no response)", modelTag)
+                                        uiState.isAwaitingReply.value = false
+                                        uiState.sessionTokens.value += inputTokens + outputTokens
+                                        uiState.sessionCost.value += ModelPricing.estimateCost(modelTag, inputTokens, outputTokens)
+                                        onPersistConversation()
+                                    }
+                                }
+
+                                override fun onError(error: Throwable) {
+                                    throw RuntimeException(error)
+                                }
+                            },
+                        )
+                        // chatStreaming blocks until the stream completes and returns the
+                        // final response; onComplete already applied it to the UI.
+                        XLog.d(TAG, "sendChat: cloud stream finished for model=$cloudModelName")
                     }
                 } else {
                     val currentConversation = conversation
@@ -371,8 +422,10 @@ class ChatSessionController(
                     }
                 }
                 XLog.e(TAG, "Chat error", e)
+                val messageText = e.message ?: e.javaClass.simpleName
                 postToMain {
-                    replaceTypingIndicator("Error: ${e.message}")
+                    removeStreamingPlaceholder(placeholderIdx)
+                    addSystem(activity.getString(R.string.chat_error_prefix, messageText))
                     uiState.isAwaitingReply.value = false
                 }
             }
@@ -381,7 +434,7 @@ class ChatSessionController(
 
     fun switchModel(modelId: String, displayName: String) {
         if (modelId == "NONE") {
-            uiState.modelStatus.value = "No model selected"
+            uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
             isModelReady = false
             setButtonsEnabled(false)
             XLog.i(TAG, "switchModel: NONE — no model configured for current tab")
@@ -390,7 +443,7 @@ class ChatSessionController(
         if (modelId == "LOCAL") {
             val localConfig = ModelConfigRepository.snapshot().local
             if (!localConfig.isConfigured) {
-                uiState.modelStatus.value = "No model selected"
+                uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                 isModelReady = false
                 setButtonsEnabled(false)
                 XLog.i(TAG, "switchModel: LOCAL requested but no local default configured")
@@ -398,14 +451,14 @@ class ChatSessionController(
             }
             ModelConfigRepository.activateLocal(localConfig.modelPath, localConfig.modelId)
             uiState.modelStatus.value = "● ${localConfig.displayName} · On-device"
-            addSystem("Switched to local model")
+            addSystem(activity.getString(R.string.chat_switched_to_local))
             loadModelIfReady()
         } else {
             localUiGeneration++
             ModelConfigRepository.activateCloudSelection(modelId)
             suppressNextCloudSwitchMessage = true
             loadModelIfReady()
-            addSystem("Switched to $displayName")
+            addSystem(activity.getString(R.string.chat_switched_to_model, displayName))
         }
         XLog.i(TAG, "Model switched to: $modelId ($displayName)")
     }
@@ -413,9 +466,9 @@ class ChatSessionController(
     fun startNewConversationRuntime() {
         if (cloudClient != null) {
             cloudHistory.clear()
-            cloudHistory.add(SystemMessage.from(BASE_SYSTEM_PROMPT))
+            cloudHistory.add(SystemMessage.from(io.agents.pokeclaw.agent.PromptUtils.applyGlobalPrompt(BASE_SYSTEM_PROMPT)))
             postToMain {
-                addSystem("New conversation started.")
+                addSystem(activity.getString(R.string.chat_new_conversation_started))
                 onRefreshSidebarHistory()
             }
             return
@@ -434,7 +487,7 @@ class ChatSessionController(
                 isModelReady = true
             }
             postToMain {
-                addSystem("New conversation started.")
+                addSystem(activity.getString(R.string.chat_new_conversation_started))
                 onRefreshSidebarHistory()
             }
         }
@@ -459,7 +512,7 @@ class ChatSessionController(
                         context = activity,
                         modelPath = modelPath,
                         conversationConfig = ConversationConfig(
-                            systemInstruction = Contents.of(systemPrompt),
+                            systemInstruction = Contents.of(io.agents.pokeclaw.agent.PromptUtils.applyGlobalPrompt(systemPrompt)),
                             samplerConfig = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.7)
                         )
                     )
@@ -585,7 +638,7 @@ class ChatSessionController(
 
     private fun rebuildCloudHistoryFromVisibleMessages() {
         cloudHistory.clear()
-        cloudHistory.add(SystemMessage.from(BASE_SYSTEM_PROMPT))
+        cloudHistory.add(SystemMessage.from(io.agents.pokeclaw.agent.PromptUtils.applyGlobalPrompt(BASE_SYSTEM_PROMPT)))
         uiState.messages.forEach { msg ->
             when (msg.role) {
                 ChatMessage.Role.USER -> cloudHistory.add(UserMessage.from(msg.content))
@@ -613,6 +666,27 @@ class ChatSessionController(
         }
     }
 
+    private fun updateStreamingAssistant(index: Int, partialText: String) {
+        if (index !in uiState.messages.indices) return
+        val msg = uiState.messages[index]
+        if (msg.role != ChatMessage.Role.ASSISTANT) return
+        uiState.messages[index] = msg.copy(content = if (partialText.isEmpty()) "..." else partialText)
+    }
+
+    private fun finalizeStreamingAssistant(index: Int, text: String, actualModelName: String?) {
+        if (index in uiState.messages.indices && uiState.messages[index].role == ChatMessage.Role.ASSISTANT) {
+            uiState.messages[index] = ChatMessage(ChatMessage.Role.ASSISTANT, text, modelName = actualModelName)
+        } else {
+            replaceTypingIndicator(text, actualModelName)
+        }
+    }
+
+    private fun removeStreamingPlaceholder(index: Int) {
+        if (index in uiState.messages.indices && uiState.messages[index].role == ChatMessage.Role.ASSISTANT) {
+            uiState.messages.removeAt(index)
+        }
+    }
+
     private fun addUser(text: String) {
         uiState.messages.add(ChatMessage(ChatMessage.Role.USER, text))
     }
@@ -627,7 +701,7 @@ class ChatSessionController(
 
     private fun updateLocalModelStatus(modelPath: String?) {
         if (modelPath.isNullOrEmpty()) {
-            uiState.modelStatus.value = "No model selected"
+            uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
             return
         }
         val modelInfo = LocalModelManager.AVAILABLE_MODELS.find { modelPath.endsWith(it.fileName) }
@@ -641,7 +715,7 @@ class ChatSessionController(
         if (config.isLocalActive()) {
             val modelPath = config.local.modelPath
             if (modelPath.isNullOrBlank()) {
-                uiState.modelStatus.value = "No model selected"
+                uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                 setButtonsEnabled(false)
                 return
             }
@@ -656,7 +730,7 @@ class ChatSessionController(
 
         val cloud = config.activeCloud
         if (!cloud.isConfigured) {
-            uiState.modelStatus.value = "No model selected"
+            uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
             setButtonsEnabled(false)
             return
         }
@@ -702,3 +776,4 @@ class ChatSessionController(
         activity.runOnUiThread(action)
     }
 }
+

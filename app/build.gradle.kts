@@ -163,6 +163,9 @@ dependencies {
     // NanoHTTPD 嵌入式 HTTP 服务器（局域网配置服务）
     implementation(libs.nanohttpd)
 
+    // EncryptedSharedPreferences for API keys / bot tokens (Android Keystore backed)
+    implementation(libs.security.crypto)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

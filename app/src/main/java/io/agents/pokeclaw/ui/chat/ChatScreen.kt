@@ -53,6 +53,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -550,13 +551,13 @@ private fun ChatTopBar(
                     } else {
                         // No API key configured
                         DropdownMenuItem(
-                            text = { Text("No API key configured", fontSize = 13.sp, color = colors.textTertiary) },
+                            text = { Text(stringResource(R.string.chat_no_api_key_configured), fontSize = 13.sp, color = colors.textTertiary) },
                             onClick = { showModelMenu = false; onSettings() },
                         )
                     }
                     HorizontalDivider()
                     DropdownMenuItem(
-                        text = { Text("Configure API key...", fontSize = 13.sp, color = colors.accent) },
+                        text = { Text(stringResource(R.string.chat_configure_api_key), fontSize = 13.sp, color = colors.accent) },
                         onClick = { showModelMenu = false; onSettings() },
                     )
                 } else {
@@ -583,13 +584,13 @@ private fun ChatTopBar(
                         )
                     } else {
                         DropdownMenuItem(
-                            text = { Text("No local model downloaded", fontSize = 13.sp, color = colors.textTertiary) },
+                            text = { Text(stringResource(R.string.chat_no_local_model_downloaded), fontSize = 13.sp, color = colors.textTertiary) },
                             onClick = { showModelMenu = false; onSettings() },
                         )
                     }
                     HorizontalDivider()
                     DropdownMenuItem(
-                        text = { Text("Download models...", fontSize = 13.sp, color = colors.accent) },
+                        text = { Text(stringResource(R.string.chat_download_models), fontSize = 13.sp, color = colors.accent) },
                         onClick = { showModelMenu = false; onSettings() },
                     )
                 }
@@ -620,7 +621,7 @@ private fun PermissionBanner(onClick: () -> Unit, colors: PokeclawColors) {
             Icon(Icons.Outlined.Shield, contentDescription = null, tint = colors.accent, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
             Text(
-                "Permissions needed. Tap to fix.",
+                stringResource(R.string.chat_permissions_needed),
                 color = colors.accent,
                 fontSize = 13.sp,
                 modifier = Modifier.weight(1f),
@@ -742,11 +743,10 @@ private fun AssistantBubble(text: String, timestamp: Long, colors: PokeclawColor
                     shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp),
                     border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.aiBubbleBorder),
                 ) {
-                    Text(
-                        text = text,
+                    MarkdownText(
+                        markdown = text,
                         color = colors.aiText,
-                        fontSize = 15.sp,
-                        lineHeight = 21.sp,
+                        style = TextStyle(fontSize = 15.sp, lineHeight = 21.sp),
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     )
                 }
@@ -930,7 +930,7 @@ private fun ChatInputBar(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
-                        "💬 Chat",
+                        "💬 " + stringResource(R.string.chat_tab_chat),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (!isTaskMode) colors.textPrimary else colors.textTertiary,
@@ -947,7 +947,7 @@ private fun ChatInputBar(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
-                        "🤖 Task",
+                        "🤖 " + stringResource(R.string.chat_tab_task),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isTaskMode) Color.White else colors.textTertiary,
@@ -971,9 +971,9 @@ private fun ChatInputBar(
                 placeholder = {
                     Text(
                         when {
-                            isLocalModel && isTaskMode -> "Describe a phone task..."
-                            !isLocalModel -> "Chat or give a task..."
-                            else -> "Chat with local AI..."
+                            isLocalModel && isTaskMode -> stringResource(R.string.chat_placeholder_task)
+                            !isLocalModel -> stringResource(R.string.chat_placeholder_cloud)
+                            else -> stringResource(R.string.chat_placeholder_chat)
                         },
                         color = if (isTaskMode && isLocalModel) colors.accent.copy(alpha = 0.5f) else colors.textTertiary,
                         fontSize = 14.sp,
@@ -1140,7 +1140,7 @@ private fun SkillShortcutBar(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "Skills",
+                    stringResource(R.string.chat_skills_label),
                     fontSize = 12.sp,
                     color = colors.textTertiary,
                     modifier = Modifier.weight(1f),
@@ -1232,14 +1232,14 @@ private fun DownloadOverlay(progress: Int, colors: PokeclawColors) {
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Downloading your AI brain",
+                    stringResource(R.string.chat_downloading_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.textPrimary,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "This only happens once",
+                    stringResource(R.string.chat_downloading_sub),
                     fontSize = 13.sp,
                     color = colors.textTertiary,
                 )

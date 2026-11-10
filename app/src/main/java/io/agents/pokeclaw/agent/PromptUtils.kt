@@ -22,19 +22,21 @@ object PromptUtils {
     private const val SEPARATOR = "\n\n---\n\n"
 
     /**
-     * Returns the base prompt, prepended with the user's global instructions if any.
-     * Stable separator so downstream debug-report tooling can detect injection.
+     * Returns the base prompt with the fork language policy appended (Gulf Arabic
+     * comprehension + written-Arabic replies, see LanguagePolicy), prepended-with
+     * the user's global instructions when present (user instructions come last so
+     * they can intentionally override the default policy).
      */
     fun applyGlobalPrompt(basePrompt: String): String {
         val global = KVUtils.getGlobalPrompt()
         if (global.isBlank()) {
-            XLog.d(TAG, "applyGlobalPrompt: no global prompt set, returning base (${basePrompt.length} chars)")
-            return basePrompt
+            XLog.d(TAG, "applyGlobalPrompt: no global prompt set, applying language policy (${basePrompt.length} chars)")
+            return LanguagePolicy.apply(basePrompt)
         }
         XLog.i(
             TAG,
             "applyGlobalPrompt: injecting global prompt (${global.length} chars) into base prompt (${basePrompt.length} chars)"
         )
-        return "$PREFIX_HEADER\n$global$SEPARATOR$basePrompt"
+        return LanguagePolicy.compose(basePrompt, global, SEPARATOR, PREFIX_HEADER)
     }
 }
