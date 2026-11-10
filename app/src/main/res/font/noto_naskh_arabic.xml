@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Noto Naskh Arabic (OFL, see docs/licenses/NotoNaskhArabic-OFL.txt). Variable font: wght 400..700 -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+    <font
+        android:font="@font/noto_naskh_arabic_variable"
+        android:fontStyle="normal"
+        android:fontWeight="400" />
+    <font
+        android:font="@font/noto_naskh_arabic_variable"
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        android:fontVariationSettings="'wght' 700" />
+</font-family>

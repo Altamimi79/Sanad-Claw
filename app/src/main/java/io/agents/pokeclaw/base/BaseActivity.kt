@@ -3,6 +3,7 @@
 
 package io.agents.pokeclaw.base
 
+import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
@@ -21,6 +22,10 @@ import io.agents.pokeclaw.R
  * Screen adaptation uses pt; using dp on some devices causes toast line breaks at incorrect positions
  */
 open class BaseActivity : AppCompatActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(io.agents.pokeclaw.utils.AppLocale.wrap(newBase, newBase))
+    }
 
     override fun getResources(): Resources {
         val resources = super.getResources()

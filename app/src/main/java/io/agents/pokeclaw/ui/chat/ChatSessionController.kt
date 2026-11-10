@@ -10,6 +10,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.UserMessage
+import io.agents.pokeclaw.R
 import io.agents.pokeclaw.agent.ModelPricing
 import io.agents.pokeclaw.agent.llm.LlmClient
 import io.agents.pokeclaw.agent.llm.LlmSessionManager
@@ -76,7 +77,7 @@ class ChatSessionController(
                 val previousModel = cloudModelName
                 cloudClient = LlmSessionManager.createCloudClient(temperature = 0.7)
                 if (cloudClient == null) {
-                    uiState.modelStatus.value = "No model selected"
+                    uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                     isModelReady = false
                     setButtonsEnabled(false)
                     return
@@ -101,7 +102,7 @@ class ChatSessionController(
                 setButtonsEnabled(true)
                 XLog.i(TAG, "Cloud chat ready: ${cloudConfig.modelName} via ${cloudConfig.resolvedBaseUrl}")
             } else {
-                uiState.modelStatus.value = "No model selected"
+                uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                 isModelReady = false
                 setButtonsEnabled(false)
             }
@@ -187,7 +188,7 @@ class ChatSessionController(
         }
 
         val restoredSystemPrompt = buildRestoredSystemPrompt(conversationId, visibleMessages)
-        uiState.modelStatus.value = "Loading..."
+        uiState.modelStatus.value = activity.getString(R.string.chat_loading)
         setButtonsEnabled(false)
         val generation = ++localUiGeneration
         executor.submit { loadModel(modelPath, generation, restoredSystemPrompt) }
@@ -381,7 +382,7 @@ class ChatSessionController(
 
     fun switchModel(modelId: String, displayName: String) {
         if (modelId == "NONE") {
-            uiState.modelStatus.value = "No model selected"
+            uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
             isModelReady = false
             setButtonsEnabled(false)
             XLog.i(TAG, "switchModel: NONE — no model configured for current tab")
@@ -390,7 +391,7 @@ class ChatSessionController(
         if (modelId == "LOCAL") {
             val localConfig = ModelConfigRepository.snapshot().local
             if (!localConfig.isConfigured) {
-                uiState.modelStatus.value = "No model selected"
+                uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                 isModelReady = false
                 setButtonsEnabled(false)
                 XLog.i(TAG, "switchModel: LOCAL requested but no local default configured")
@@ -398,14 +399,14 @@ class ChatSessionController(
             }
             ModelConfigRepository.activateLocal(localConfig.modelPath, localConfig.modelId)
             uiState.modelStatus.value = "● ${localConfig.displayName} · On-device"
-            addSystem("Switched to local model")
+            addSystem(activity.getString(R.string.chat_switched_to_local))
             loadModelIfReady()
         } else {
             localUiGeneration++
             ModelConfigRepository.activateCloudSelection(modelId)
             suppressNextCloudSwitchMessage = true
             loadModelIfReady()
-            addSystem("Switched to $displayName")
+            addSystem(activity.getString(R.string.chat_switched_to_model, displayName))
         }
         XLog.i(TAG, "Model switched to: $modelId ($displayName)")
     }
@@ -415,7 +416,7 @@ class ChatSessionController(
             cloudHistory.clear()
             cloudHistory.add(SystemMessage.from(BASE_SYSTEM_PROMPT))
             postToMain {
-                addSystem("New conversation started.")
+                addSystem(activity.getString(R.string.chat_new_conversation_started))
                 onRefreshSidebarHistory()
             }
             return
@@ -434,7 +435,7 @@ class ChatSessionController(
                 isModelReady = true
             }
             postToMain {
-                addSystem("New conversation started.")
+                addSystem(activity.getString(R.string.chat_new_conversation_started))
                 onRefreshSidebarHistory()
             }
         }
@@ -627,7 +628,7 @@ class ChatSessionController(
 
     private fun updateLocalModelStatus(modelPath: String?) {
         if (modelPath.isNullOrEmpty()) {
-            uiState.modelStatus.value = "No model selected"
+            uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
             return
         }
         val modelInfo = LocalModelManager.AVAILABLE_MODELS.find { modelPath.endsWith(it.fileName) }
@@ -641,7 +642,7 @@ class ChatSessionController(
         if (config.isLocalActive()) {
             val modelPath = config.local.modelPath
             if (modelPath.isNullOrBlank()) {
-                uiState.modelStatus.value = "No model selected"
+                uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
                 setButtonsEnabled(false)
                 return
             }
@@ -656,7 +657,7 @@ class ChatSessionController(
 
         val cloud = config.activeCloud
         if (!cloud.isConfigured) {
-            uiState.modelStatus.value = "No model selected"
+            uiState.modelStatus.value = activity.getString(R.string.chat_no_model_selected)
             setButtonsEnabled(false)
             return
         }
@@ -702,3 +703,4 @@ class ChatSessionController(
         activity.runOnUiThread(action)
     }
 }
+

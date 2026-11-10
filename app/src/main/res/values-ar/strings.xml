@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PokeClaw</string>
+
+    <!-- Common -->
+    <string name="common_confirm">موافق</string>
+    <string name="common_cancel">إلغاء</string>
+    <string name="common_close">إغلاق</string>
+    <string name="common_save">حفظ</string>
+    <string name="common_agree">أوافق</string>
+    <string name="common_bound">متصل</string>
+    <string name="common_unbound">غير متصل</string>
+    <string name="common_unconfigured">غير مُعدّ</string>
+    <string name="common_unbound_success">تم قطع الاتصال</string>
+    <string name="channel_discord">Discord</string>
+    <string name="channel_telegram">Telegram</string>
+    <string name="channel_wechat">WeChat</string>
+    <string name="common_load_failed">فشل التحميل: %s</string>
+
+    <string name="app_slogan">وكلاء ذكاء اصطناعي ينجزون المهام</string>
+
+    <!-- Guide -->
+    <string name="guide_page_title">إعداد الأذونات</string>
+    <string name="guide_page_subtitle">يرجى تفعيل الأذونات التالية ليعمل التطبيق بشكل صحيح</string>
+    <string name="guide_skip">تخطي</string>
+    <string name="guide_start">ابدأ الآن</string>
+    <string name="guide_title_accessibility">خدمة إمكانية الوصول</string>
+    <string name="guide_desc_accessibility">تتيح لـ PokeClaw قراءة الشاشة والضغط على الأزرار نيابةً عنك. اضغط للتفعيل.</string>
+    <string name="guide_title_notification">إشعارات المهام</string>
+    <string name="guide_desc_notification">تتيح لـ PokeClaw عرض التقدم أثناء تشغيل مهمة أو مراقبة. اضغط للتفعيل.</string>
+    <string name="guide_title_overlay">النظام العائم</string>
+    <string name="guide_desc_overlay">يعرض لوحة حالة عائمة أثناء تنفيذ المهام. اضغط للتفعيل.</string>
+    <string name="guide_title_battery">استثناء البطارية</string>
+    <string name="guide_desc_battery">يمنع النظام من إغلاق PokeClaw. اضغط للسماح.</string>
+    <string name="guide_title_storage">الوصول إلى الملفات</string>
+    <string name="guide_desc_storage">يتيح لـ PokeClaw قراءة وكتابة الملفات على جهازك. اضغط للتفعيل.</string>
+
+    <!-- Home -->
+    <string name="home_need_notification_permission">إذن الإشعارات مطلوب</string>
+    <string name="home_enable_accessibility">يرجى تفعيل خدمة إمكانية الوصول لـ PokeClaw</string>
+    <string name="home_accessibility_enabled">خدمة إمكانية الوصول مفعّلة</string>
+    <string name="home_notification_enabled">إشعارات المهام مفعّلة</string>
+    <string name="home_overlay_enabled">إذن النوافذ العائمة مفعّل</string>
+    <string name="home_battery_ignored">تحسين البطارية متجاهَل</string>
+    <string name="home_permission_enabled">مفعّل</string>
+    <string name="home_card_accessibility_title">خدمة إمكانية الوصول</string>
+    <string name="home_card_accessibility_subtitle">للتحكم الآلي بالهاتف</string>
+    <string name="home_card_notification_title">إشعارات المهام</string>
+    <string name="home_card_notification_subtitle">أثناء تنفيذ المهام أو المراقبة فقط</string>
+    <string name="home_card_system_window_title">نافذة النظام</string>
+    <string name="home_card_system_window_subtitle">لوحة عائمة</string>
+    <string name="home_card_battery_title">استثناء البطارية</string>
+    <string name="home_card_battery_subtitle">منع الإغلاق في الخلفية</string>
+    <string name="home_card_storage_title">الوصول إلى الملفات</string>
+    <string name="home_card_storage_subtitle">قراءة وكتابة ملفات الجهاز</string>
+    <string name="home_storage_enabled">تم منح إذن الوصول إلى الملفات</string>
+    <string name="home_enable_storage">يرجى السماح بالوصول إلى جميع الملفات</string>
+    <string name="home_cancel_task">إيقاف المهمة الحالية</string>
+    <string name="home_cancel_task_success">تم إيقاف مهمة الذكاء الاصطناعي</string>
+    <string name="home_no_task_running">لا توجد مهمة قيد التشغيل</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_group_channel">القنوات</string>
+    <string name="settings_group_model">النموذج</string>
+
+    <!-- Unbind -->
+    <string name="unbind_title">قطع الاتصال</string>
+    <string name="unbind_message">قطع الاتصال عن %1$s؟ لن تتلقى رسائل عبر %2$s بعد الآن.</string>
+    <string name="unbind_action">قطع الاتصال</string>
+
+    <!-- Channel Config -->
+    <string name="channel_config_discord_title">إعداد Discord</string>
+    <string name="channel_config_discord_tip">أدخل رمز البوت (من Discord Developer Portal ← صفحة Bot). يجب تفعيل Message Content Intent.</string>
+    <string name="channel_config_discord_hint1">أدخل رمز البوت</string>
+    <string name="channel_config_telegram_title">إعداد Telegram</string>
+    <string name="channel_config_telegram_tip">أدخل رمز البوت (أنشئ بوتًا عبر @BotFather على Telegram للحصول على الرمز)</string>
+    <string name="channel_config_telegram_hint1">أدخل رمز البوت</string>
+    <string name="channel_config_wechat_title">إعداد WeChat</string>
+    <string name="channel_config_wechat_tip">امسح رمز QR عبر WeChat لتفويض البوت. سيتم حفظ الرمز وعنوان API تلقائيًا بعد التأكيد.</string>
+    <string name="channel_config_wechat_btn_scan">الحصول على رمز QR</string>
+    <string name="channel_config_wechat_scanning">بانتظار المسح…</string>
+    <string name="channel_config_wechat_confirmed">تم تأكيد التفويض</string>
+    <string name="wechat_qr_failed">تعذر الحصول على رمز QR لـ WeChat</string>
+    <string name="wechat_unsupported_media">تم استلام رسالة %s، هذا النوع غير مدعوم بعد. يرجى إرسال أمر نصي.</string>
+    <string name="wechat_media_image">صورة</string>
+    <string name="wechat_media_video">فيديو</string>
+    <string name="wechat_media_file">ملف</string>
+    <string name="wechat_media_voice">صوت</string>
+    <string name="wechat_media_unknown">وسيط</string>
+    <string name="channel_config_saved">تم حفظ الإعدادات</string>
+    <string name="channel_config_lan_hint">💡 فعّل «إعداد الشبكة المحلية» في الإعدادات للتحكم عبر المتصفح</string>
+    <string name="channel_config_lan_hint_running">💡 افتح %s في المتصفح للإعداد</string>
+    <string name="channel_config_lan_copied">تم نسخ العنوان</string>
+
+    <!-- LLM Config -->
+    <string name="llm_config_title">إعداد الذكاء الاصطناعي</string>
+    <string name="llm_config_tip">أدخل مفتاح API وعنوان Base URL واسم النموذج. البيانات تُحفظ محليًا فقط.</string>
+    <string name="llm_config_api_key">مفتاح API</string>
+    <string name="llm_config_api_key_hint">مثال: sk-xxx (OpenAI) أو مفتاح مزودك</string>
+    <string name="llm_config_base_url">Base URL</string>
+    <string name="llm_config_base_url_hint">مثال: https://api.openai.com/v1 (اتركه فارغًا الافتراضي OpenAI)</string>
+    <string name="llm_config_model_name">اسم النموذج</string>
+    <string name="llm_config_model_name_hint">مثال: gpt-4o، gpt-4o-mini، claude-3-5-sonnet</string>
+    <string name="llm_config_saved">تم حفظ إعدادات الذكاء الاصطناعي</string>
+    <string name="llm_config_api_key_required">يرجى إدخال مفتاح API</string>
+    <string name="menu_llm_config">إعداد LLM</string>
+
+    <!-- Settings Menu -->
+    <string name="menu_discord">Discord</string>
+    <string name="menu_telegram">Telegram</string>
+    <string name="menu_wechat">WeChat</string>
+    <string name="menu_lan_config">إعداد الشبكة المحلية</string>
+    <string name="lan_config_stopped">متوقف</string>
+    <string name="lan_config_no_wifi">يرجى الاتصال بشبكة WiFi أولًا</string>
+
+    <!-- Protocol -->
+    <string name="protocol_agree_title">إرشادات الخصوصية</string>
+    <string name="protocol_alert_title">الشروط والخصوصية</string>
+    <string name="protocol_disagree">لا أوافق</string>
+    <string name="protocol_agree_continue">أوافق وأتابع</string>
+
+    <!-- Floating -->
+    <string name="floating_ai_label">AI</string>
+    <string name="floating_task_received">تم الاستلام: \"%s\"</string>
+
+    <!-- Foreground Service Notification -->
+    <string name="notification_channel_name">حالة PokeClaw</string>
+    <string name="notification_channel_description">يعرض حالة PokeClaw وإحصاءاتها أثناء التشغيل</string>
+    <string name="notification_content_title">PokeClaw · مهمة قيد التنفيذ</string>
+    <string name="notification_content_text">جارٍ تنفيذ مهمة…</string>
+
+    <!-- Channel Messages -->
+    <string name="channel_msg_task_cancelled">تم إلغاء المهمة يدويًا</string>
+    <string name="channel_msg_service_not_ready">الخدمة غير جاهزة، يرجى المحاولة لاحقًا</string>
+    <string name="channel_msg_tool_success">نجح</string>
+    <string name="channel_msg_tool_failure">فشل</string>
+    <string name="channel_msg_tool_execution">[%1$s]: %2$s</string>
+    <string name="channel_msg_task_error">خطأ: %s</string>
+    <string name="channel_msg_no_accessibility">إذن إمكانية الوصول مفقود، تعذر تنفيذ المهمة</string>
+    <string name="channel_msg_task_in_progress">توجد مهمة قيد التشغيل بالفعل، يرجى الانتظار</string>
+    <string name="channel_msg_system_dialog_blocked">قد تحجب نافذة نظام الشاشة. يرجى التحقق والتعامل معها يدويًا ثم المحاولة.</string>
+
+    <!-- Accessibility -->
+    <string name="cd_back_button">رجوع</string>
+    <string name="cd_settings">الإعدادات</string>
+    <string name="cd_clear_input">مسح الإدخال</string>
+    <string name="cd_checkbox">تبديل الاختيار</string>
+    <string name="cd_selected">محدد</string>
+    <string name="cd_task_success">اكتملت المهمة</string>
+    <string name="cd_task_error">فشلت المهمة</string>
+    <string name="cd_channel_logo">شعار القناة</string>
+    <string name="cd_app_logo">شعار التطبيق</string>
+    <string name="cd_floating_idle">PokeClaw — اضغط للتركيز</string>
+    <string name="cd_qr_code">رمز QR</string>
+    <string name="cd_toggle_password">إظهار أو إخفاء كلمة المرور</string>
+    <string name="cd_copy">نسخ</string>
+    <string name="cd_arrow_right">المزيد</string>
+    <string name="cd_empty_state">لا بيانات</string>
+    <string name="cd_error_state">فشل التحميل</string>
+
+    <!-- Agent -->
+    <string name="agent_accessibility_not_enabled">خدمة إمكانية الوصول غير مفعلة</string>
+    <string name="agent_task_cancelled">تم إلغاء المهمة</string>
+    <string name="agent_task_completed">اكتملت المهمة</string>
+    <string name="agent_task_cancel">تم إلغاء المهمة</string>
+    <string name="agent_api_call_failed">فشل استدعاء خدمة الذكاء الاصطناعي: %s</string>
+    <string name="agent_max_iterations">تم بلوغ الحد الأقصى للتكرارات (%d) دون إكمال المهمة</string>
+
+    <!-- File Tool -->
+    <string name="tool_no_storage_permission">لا يوجد إذن قراءة/كتابة ملفات</string>
+    <string name="tool_file_not_found">الملف غير موجود: %s</string>
+    <string name="tool_not_a_file">المسار ليس ملفًا: %s</string>
+    <string name="tool_no_task_channel">لا توجد قناة مهمة نشطة</string>
+    <string name="tool_file_sent">تم إرسال الملف: %s</string>
+    <string name="tool_file_send_failed">فشل إرسال الملف: %s</string>
+
+    <!-- Tool Names -->
+    <string name="tool_name_screenshot">لقطة شاشة</string>
+    <string name="tool_name_send_file">إرسال ملف</string>
+    <string name="tool_name_wait">انتظار</string>
+    <string name="tool_name_get_screen_info">قراءة الشاشة</string>
+    <string name="tool_name_finish">إنهاء المهمة</string>
+    <string name="tool_name_open_app">فتح تطبيق</string>
+    <string name="tool_name_get_installed_apps">عرض التطبيقات المثبتة</string>
+    <string name="tool_name_system_key">مفتاح نظام</string>
+    <string name="tool_name_tap">ضغط</string>
+    <string name="tool_name_swipe">سحب</string>
+    <string name="tool_name_input_text">إدخال نص</string>
+    <string name="tool_name_find_node_info">بحث عنصر</string>
+    <string name="tool_name_long_press">ضغط مطول</string>
+    <string name="tool_name_repeat_actions">تكرار الإجراءات</string>
+    <string name="tool_name_volume_up">رفع الصوت</string>
+    <string name="tool_name_volume_down">خفض الصوت</string>
+    <string name="tool_name_dpad_up">سهم لأعلى</string>
+    <string name="tool_name_dpad_down">سهم لأسفل</string>
+    <string name="tool_name_dpad_left">سهم لليسار</string>
+    <string name="tool_name_dpad_right">سهم لليمين</string>
+    <string name="tool_name_dpad_center">وسط الأزرار</string>
+    <string name="tool_name_press_menu">القائمة</string>
+    <string name="tool_name_press_power">التشغيل</string>
+    <string name="tool_name_search_app">بحث تطبيق</string>
+    <string name="tool_name_clipboard">الحافظة</string>
+    <string name="tool_name_scroll_to_find">تمرير للبحث</string>
+
+    <!-- Input Dialog -->
+    <string name="input_dialog_need_more">أدخل %d حرفًا على الأقل</string>
+    <string name="input_dialog_need_less">أدخل %d حرفًا كحد أقصى</string>
+    <string name="input_dialog_no_zero">يرجى إدخال قيمة غير صفرية</string>
+
+    <!-- Voice Input (#44) -->
+    <string name="voice_input_button_cd">إدخال صوتي</string>
+    <string name="voice_input_prompt">تحدث الآن…</string>
+    <string name="voice_input_unavailable">التعرف على الكلام غير متوفر على هذا الجهاز</string>
+    <string name="voice_input_error">فشل الإدخال الصوتي. حاول مجددًا.</string>
+
+    <!-- Global Prompt (#45) -->
+    <string name="global_prompt_title">التعليمات العامة</string>
+    <string name="global_prompt_dialog_title">تعديل التعليمات العامة</string>
+    <string name="global_prompt_hint">تعليمات تُطبق على كل محادثة. اتركه فارغًا للتعطيل.</string>
+    <string name="global_prompt_not_set">غير مضبوط</string>
+    <string name="global_prompt_set_status">مضبوط (%d حرفًا)</string>
+
+    <!-- Custom Local Model URL (#36) -->
+    <string name="custom_local_model_url_title">رابط نموذج محلي مخصص</string>
+    <string name="custom_local_model_url_dialog_title">رابط تحميل نموذج مخصص</string>
+    <string name="custom_local_model_url_hint">https://… رابط مباشر لملف .litertlm. متقدم: التحقق من حجم الملف مُرخٍ للنماذج المخصصة.</string>
+    <string name="custom_local_model_url_not_set">غير مضبوط</string>
+    <string name="custom_local_model_url_set">تم ضبط رابط مخصص</string>
+    <string name="custom_local_model_url_invalid">يجب أن يبدأ الرابط بـ http:// أو https://</string>
+
+    <!-- Chat UI (phase 2) -->
+    <string name="chat_tab_chat">دردشة</string>
+    <string name="chat_tab_task">مهمة</string>
+    <string name="chat_placeholder_chat">دردش مع الذكاء المحلي…</string>
+    <string name="chat_placeholder_task">صف مهمة على الهاتف…</string>
+    <string name="chat_placeholder_cloud">دردش أو اطلب مهمة…</string>
+    <string name="chat_no_model_selected">لم يتم اختيار نموذج</string>
+    <string name="chat_loading">جارٍ التحميل…</string>
+    <string name="chat_error_prefix">خطأ: %s</string>
+    <string name="chat_new_conversation_started">بدأت محادثة جديدة.</string>
+    <string name="chat_switched_to_local">تم التبديل إلى النموذج المحلي</string>
+    <string name="chat_switched_to_model">تم التبديل إلى %s</string>
+    <string name="chat_downloading_title">جارٍ تحميل الذكاء الاصطناعي</string>
+    <string name="chat_downloading_sub">يحدث هذا مرة واحدة فقط</string>
+    <string name="chat_permissions_needed">الأذونات مطلوبة. اضغط للإصلاح.</string>
+    <string name="chat_skills_label">المهارات</string>
+    <string name="chat_configure_api_key">إعداد مفتاح API…</string>
+    <string name="chat_no_api_key_configured">لم يتم إعداد مفتاح API</string>
+    <string name="chat_download_models">تحميل النماذج…</string>
+    <string name="chat_no_local_model_downloaded">لم يتم تحميل نموذج محلي</string>
+
+    <!-- Provider settings (phase 2) -->
+    <string name="models_title">النماذج</string>
+    <string name="provider_test_connection">اختبار الاتصال</string>
+    <string name="provider_testing">جارٍ الاختبار…</string>
+    <string name="provider_save_activate">حفظ وتفعيل</string>
+    <string name="provider_enter_api_key_first">أدخل مفتاح API أولًا</string>
+    <string name="provider_enter_api_key">يرجى إدخال مفتاح API</string>
+    <string name="provider_select_model">اختر نموذجًا</string>
+    <string name="provider_api_key_cleared">تم مسح مفتاح API</string>
+    <string name="provider_saved_default">تم حفظ النموذج السحابي: %s</string>
+    <string name="provider_connection_ok">✓ الاتصال ناجح</string>
+    <string name="provider_connection_failed">✗ %s</string>
+    <string name="provider_base_url_label">Base URL</string>
+    <string name="provider_api_key_label">مفتاح API</string>
+    <string name="provider_model_name_label">اسم النموذج</string>
+    <string name="provider_connection_unauthorized">مفتاح API غير صالح أو غير مصرح (401)</string>
+    <string name="provider_connection_model_not_found">النموذج غير موجود لدى هذا المزود (404): %s</string>
+    <string name="provider_connection_timeout">انتهت مهلة الاتصال — تحقق من Base URL وشبكتك</string>
+    <string name="provider_connection_network_error">خطأ شبكة: %s</string>
+    <string name="provider_connection_generic">فشل الاتصال: %s</string>
+
+    <!-- Models screen labels (phase 2) -->
+    <string name="llm_active_model">النموذج الحالي</string>
+    <string name="llm_available_models">النماذج المتوفرة</string>
+    <string name="llm_default_models">النماذج الافتراضية</string>
+    <string name="llm_default_local_model">النموذج المحلي الافتراضي</string>
+    <string name="llm_default_cloud_model">النموذج السحابي الافتراضي</string>
+    <string name="llm_choose_local_model">اختر نموذجًا محليًا أدناه</string>
+    <string name="llm_configure_cloud_below">أعدّ نموذجًا سحابيًا أدناه</string>
+    <string name="llm_cloud_llm">ذكاء اصطناعي سحابي</string>
+    <string name="llm_tap_download_model">اضغط لتحميل نموذج</string>
+    <string name="llm_clear">مسح</string>
+    <string name="llm_test">اختبار</string>
+    <string name="llm_compatible_hint">متوافق مع: OpenRouter وGroq وTogether AI وOllama وأي مزود متوافق مع OpenAI</string>
+    <string name="status_not_configured">● غير مُعدّ</string>
+    <string name="status_ready">● جاهز</string>
+    <string name="llm_use">استخدام</string>
+    <string name="llm_download">↓ تحميل</string>
+    <string name="llm_downloading">جارٍ التحميل…</string>
+    <string name="llm_already_downloading">التحميل جارٍ بالفعل</string>
+    <string name="llm_model_file_not_found">ملف النموذج غير موجود</string>
+    <string name="llm_set_default_local">تم ضبط النموذج المحلي الافتراضي: %s</string>
+    <string name="llm_deleted">تم حذف %s</string>
+    <string name="llm_active_badge">✓ حالي</string>
+    <string name="llm_active_warning_badge">⚠ حالي</string>
+    <string name="llm_default_badge">✓ افتراضي</string>
+    <string name="llm_needs_ram">يتطلب %dGB+</string>
+    <string name="llm_ready_to_save">✓ جاهز للحفظ</string>
+    <string name="llm_status_connected">● متصل</string>
+    <string name="llm_no_default_cloud_model">لا يوجد نموذج سحابي افتراضي</string>
+    <string name="llm_downloaded_done">تم التحميل!</string>
+</resources>

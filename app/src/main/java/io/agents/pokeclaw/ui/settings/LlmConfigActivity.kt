@@ -57,7 +57,7 @@ class LlmConfigActivity : BaseActivity() {
         (contentFrame?.getChildAt(0) as? View)?.setBackgroundColor(tc.bg)
 
         findViewById<CommonToolbar>(R.id.toolbar).apply {
-            setTitle("Models")
+            setTitle(getString(R.string.models_title))
             showBackButton(true) { finish() }
             setBackgroundColor(tc.toolbarBg)
             setTitleColor(tc.aiText)
@@ -122,12 +122,12 @@ class LlmConfigActivity : BaseActivity() {
                 activeModelName.text = cloudModel
                 val providerName = resolvedConfig.activeCloud.provider.displayName
                 activeModelMeta.text = "$providerName · Cloud"
-                activeModelStatus.text = "● Connected"
+                activeModelStatus.text = getString(R.string.llm_status_connected)
                 activeModelStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
             } else {
-                activeModelName.text = "No model selected"
-                activeModelMeta.text = "Configure a cloud model below"
-                activeModelStatus.text = "● Not configured"
+                activeModelName.text = getString(R.string.chat_no_model_selected)
+                activeModelMeta.text = getString(R.string.llm_configure_cloud_below)
+                activeModelStatus.text = getString(R.string.status_not_configured)
                 activeModelStatus.setTextColor(Color.parseColor("#8b949e"))
             }
         }
@@ -147,12 +147,12 @@ class LlmConfigActivity : BaseActivity() {
         if (resolvedConfig.defaultCloud.isConfigured) {
             defaultCloudName.text = resolvedConfig.defaultCloud.modelName
             defaultCloudMeta.text = "${resolvedConfig.defaultCloud.provider.displayName} · Cloud"
-            defaultCloudStatus.text = "● Ready"
+            defaultCloudStatus.text = getString(R.string.status_ready)
             defaultCloudStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
         } else {
-            defaultCloudName.text = "No default cloud model"
-            defaultCloudMeta.text = "Configure a cloud model below"
-            defaultCloudStatus.text = "● Not configured"
+            defaultCloudName.text = getString(R.string.llm_no_default_cloud_model)
+            defaultCloudMeta.text = getString(R.string.llm_configure_cloud_below)
+            defaultCloudStatus.text = getString(R.string.status_not_configured)
             defaultCloudStatus.setTextColor(Color.parseColor("#8b949e"))
         }
 
@@ -219,7 +219,7 @@ class LlmConfigActivity : BaseActivity() {
             if (downloaded) {
                 if (isActive) {
                     val check = TextView(this).apply {
-                        text = if (supportedOnDevice) "✓ Active" else "⚠ Active"
+                        text = if (supportedOnDevice) getString(R.string.llm_active_badge) else getString(R.string.llm_active_warning_badge)
                         textSize = 12f
                         setTextColor(if (supportedOnDevice) getColor(R.color.colorSuccessPrimary) else getColor(R.color.colorWarningPrimary))
                     }
@@ -227,7 +227,7 @@ class LlmConfigActivity : BaseActivity() {
                 } else {
                     if (isDefaultLocal) {
                         row.addView(TextView(this).apply {
-                            text = "✓ Default"
+                            text = getString(R.string.llm_default_badge)
                             textSize = 12f
                             setTextColor(getColor(R.color.colorSuccessPrimary))
                             setPadding(dp(12), dp(6), dp(12), dp(6))
@@ -235,7 +235,7 @@ class LlmConfigActivity : BaseActivity() {
                     }
                     if (supportedOnDevice) {
                         val useBtn = TextView(this).apply {
-                            text = "Use"
+                            text = getString(R.string.llm_use)
                             textSize = 13f
                             setTextColor(getColor(R.color.colorBrandPrimary))
                             setPadding(dp(12), dp(6), dp(12), dp(6))
@@ -248,17 +248,17 @@ class LlmConfigActivity : BaseActivity() {
                                     ModelConfigRepository.saveLocalDefault(path, model.id, shouldActivateLocal)
                                     ClawApplication.appViewModelInstance.updateAgentConfig()
                                     ClawApplication.appViewModelInstance.initAgent()
-                                    Toast.makeText(this@LlmConfigActivity, "Set default local: ${model.displayName}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@LlmConfigActivity, getString(R.string.llm_set_default_local, model.displayName), Toast.LENGTH_SHORT).show()
                                     recreate()
                                 } else {
-                                    Toast.makeText(this@LlmConfigActivity, "Model file not found", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@LlmConfigActivity, getString(R.string.llm_model_file_not_found), Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
                         row.addView(useBtn)
                     } else {
                         row.addView(TextView(this).apply {
-                            text = "Needs ${model.minRamGb}GB+"
+                            text = getString(R.string.llm_needs_ram, model.minRamGb)
                             textSize = 12f
                             setTextColor(getColor(R.color.colorWarningPrimary))
                             setPadding(dp(12), dp(6), dp(12), dp(6))
@@ -273,7 +273,7 @@ class LlmConfigActivity : BaseActivity() {
                             alpha = 0.4f
                             setOnClickListener {
                                 LocalModelManager.deleteModel(this@LlmConfigActivity, model)
-                                Toast.makeText(this@LlmConfigActivity, "Deleted ${model.displayName}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@LlmConfigActivity, getString(R.string.llm_deleted, model.displayName), Toast.LENGTH_SHORT).show()
                                 recreate()
                             }
                         }
@@ -283,17 +283,17 @@ class LlmConfigActivity : BaseActivity() {
             } else {
                 if (supportedOnDevice) {
                     val dlBtn = TextView(this).apply {
-                        text = "↓ Download"
+                        text = getString(R.string.llm_download)
                         textSize = 13f
                         setTextColor(getColor(R.color.colorInfoPrimary))
                         setPadding(dp(12), dp(6), dp(12), dp(6))
                         setOnClickListener {
                             if (isDownloading) {
-                                Toast.makeText(this@LlmConfigActivity, "Already downloading", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@LlmConfigActivity, getString(R.string.llm_already_downloading), Toast.LENGTH_SHORT).show()
                                 return@setOnClickListener
                             }
                             isDownloading = true
-                            text = "Downloading..."
+                            text = getString(R.string.llm_downloading)
                             isEnabled = false
 
                             executor.submit {
@@ -310,14 +310,14 @@ class LlmConfigActivity : BaseActivity() {
                                                 activateNow = false
                                             )
                                             isDownloading = false
-                                            Toast.makeText(this@LlmConfigActivity, "Downloaded!", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(this@LlmConfigActivity, getString(R.string.llm_downloaded_done), Toast.LENGTH_SHORT).show()
                                             recreate()
                                         }
                                     }
                                     override fun onError(error: String) {
                                         runOnUiThread {
                                             isDownloading = false
-                                            text = "↓ Download"
+                                            text = getString(R.string.llm_download)
                                             isEnabled = true
                                             Toast.makeText(this@LlmConfigActivity, error, Toast.LENGTH_LONG).show()
                                         }
@@ -329,7 +329,7 @@ class LlmConfigActivity : BaseActivity() {
                     row.addView(dlBtn)
                 } else {
                     row.addView(TextView(this).apply {
-                        text = "Needs ${model.minRamGb}GB+"
+                        text = getString(R.string.llm_needs_ram, model.minRamGb)
                         textSize = 12f
                         setTextColor(getColor(R.color.colorWarningPrimary))
                         setPadding(dp(12), dp(6), dp(12), dp(6))
@@ -392,7 +392,7 @@ class LlmConfigActivity : BaseActivity() {
             etApiKey.setText("")
             KVUtils.setApiKeyForProvider(selectedProvider.name, "")
             KVUtils.setLlmApiKey("")
-            Toast.makeText(this, "API key cleared", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.provider_api_key_cleared), Toast.LENGTH_SHORT).show()
         }
 
         // Determine current provider from saved config
@@ -543,11 +543,11 @@ class LlmConfigActivity : BaseActivity() {
         btnTest.setOnClickListener {
             val apiKey = etApiKey.text.toString().trim()
             if (apiKey.isEmpty()) {
-                Toast.makeText(this, "Enter API Key first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.provider_enter_api_key_first), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             tvStatus.visibility = View.VISIBLE
-            tvStatus.text = "Testing..."
+            tvStatus.text = getString(R.string.provider_testing)
             tvStatus.setTextColor(Color.parseColor("#8b949e"))
 
             executor.submit {
@@ -560,7 +560,7 @@ class LlmConfigActivity : BaseActivity() {
                     if (apiKey.length < 10) throw RuntimeException("API key too short")
                     if (modelId.isEmpty()) throw RuntimeException("No model selected")
                     runOnUiThread {
-                        tvStatus.text = "✓ Ready to save"
+                        tvStatus.text = getString(R.string.llm_ready_to_save)
                         tvStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
                     }
                 } catch (e: Exception) {
@@ -576,7 +576,7 @@ class LlmConfigActivity : BaseActivity() {
         btnSave.setOnClickListener {
             val apiKey = etApiKey.text.toString().trim()
             if (apiKey.isEmpty()) {
-                Toast.makeText(this, "Enter API Key", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.provider_enter_api_key), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -585,7 +585,7 @@ class LlmConfigActivity : BaseActivity() {
             val modelId = if (isCustom) etModelName.text.toString().trim() else selectedModelId
 
             if (modelId.isEmpty()) {
-                Toast.makeText(this, "Select a model", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.provider_select_model), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -600,7 +600,7 @@ class LlmConfigActivity : BaseActivity() {
             ClawApplication.appViewModelInstance.updateAgentConfig()
             ClawApplication.appViewModelInstance.initAgent()
             ClawApplication.appViewModelInstance.afterInit()
-            Toast.makeText(this, "Saved cloud default: $modelId", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.provider_saved_default, modelId), Toast.LENGTH_SHORT).show()
             finish()
         }
 
@@ -660,3 +660,4 @@ class LlmConfigActivity : BaseActivity() {
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 }
+

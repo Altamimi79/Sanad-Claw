@@ -27,6 +27,10 @@ class ClawApplication : BaseApp() {
         lateinit var appViewModelInstance: AppViewModel
     }
 
+    override fun attachBaseContext(base: android.content.Context) {
+        super.attachBaseContext(io.agents.pokeclaw.utils.AppLocale.wrap(base, base))
+    }
+
     override fun onCreate() {
         super.onCreate()
         AppCapabilityCoordinator.markProcessStart()
