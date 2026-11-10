@@ -22,3 +22,26 @@ CLAUDE.local.md
 thoughts/
 .claudeignore
 /.kotlin/
+
+# --- Sanad fork hardening (phase 1) ---
+# Secrets / signing material: never commit
+*.keystore
+*.jks
+*.p12
+*.pem
+keys/
+secrets/
+signing/
+keystores/
+.env.local
+.env.*.local
+# Upstream SOPS+age-encrypted env is intentionally tracked; keep it committable
+!.env.enc
+
+# Build outputs at any level (app/build, modules, gradle reports)
+**/build/
+**/.gradle/
+app/release/
+*.apk
+*.aab
+
