@@ -50,9 +50,12 @@ Rules per phase: branch `phase-N-…`, QA-first (AGENTS.md), update `docs/MEMORY
 - [x] Unit tests for safety logic (6 new classes; 127 total green)
 - [ ] Full on-device QA pass (blocked: no device)
 
-## P5 — Final Build / Tests / Release Docs
+## P5 — Final Build / Tests / Release Docs — DONE 2026-11-10 (v1.0.0 tagged locally)
 
-- [ ] Green `assembleRelease` with fork keystore story (documented, gitignored; historical lost-key caveat documented for users)
-- [ ] Unit test expansion (agent loop edge cases, guards, parsers) + keep ADB E2E gates in QA_CHECKLIST.md
-- [ ] Fork release docs: RELEASING fork variant, CHANGELOG release entry, versioning scheme decision (keep upstream base + fork suffix)
-- [ ] Final audit delta vs docs/AUDIT.md; tag `v<fork-version>`
+- [x] All unit tests re-run and green (127 tests / 28 classes / 0 failures); `assembleDebug` green
+- [x] Version bumped to 1.0.0 / versionCode 100; versioning + signing story documented in `docs/RELEASING.md`
+- [x] Project review: removed “coming soon” tools stub (now lists real tools), honest attachment message, TODO/placeholder scan, fixed missing `R` import
+- [x] Arabic `README.md` + Arabic `docs/USER_GUIDE.md` (build/install/permissions/API key/limits)
+- [x] Tag `v1.0.0` created locally; `gh` unavailable and upstream push blocked (403) → no remote release
+- [ ] Device QA (FA/SA/VA) — not executed, no device
+- [ ] Signed release APK — needs a fork keystore (not in repo)

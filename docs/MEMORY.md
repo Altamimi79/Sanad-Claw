@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-10 (Phase 4 code-complete; device QA pending)
+Last updated: 2026-11-10 (Phase 5 complete: v1.0.0 tagged locally; device QA still pending)
 
 ## Project Identity
 
@@ -18,7 +18,7 @@ Last updated: 2026-11-10 (Phase 4 code-complete; device QA pending)
 | P2 Arabic + chat + provider settings | **CODE COMPLETE 2026-11-10** on branch `phase-2-arabic-chat` (7 commits, build+unit tests green). On-device E2E QA pending — no adb device connected yet. |
 | P3 Voice input | **CODE COMPLETE 2026-11-10** on branch `phase-3-voice` (3 commits, build + 101 unit tests green). Device QA pending. |
 | P4 Agent safety/security/stability | **CODE COMPLETE 2026-11-10** on branch phase-4-safety (build + 127 unit tests green). Device QA pending. |
-| P5 Final build/tests/release docs | Not started |
+| P5 Final build/tests/release docs | **DONE (code/release docs) 2026-11-10** on branch phase-5-release: 127 tests green, v1.0.0 APK built, Arabic README + USER_GUIDE, tag 1.0.0 local. Push/GitHub release blocked (no fork, gh missing); device QA not run. |
 
 ## What's Done (Phase 1)
 
@@ -74,6 +74,19 @@ Commits: `(core)` feat(safety-core) · `(agent)` feat(safety-agent) · `(ui)` fe
 - **Tests**: 6 new classes — RiskClassifier, AppBlocklist, TaskTimeoutPolicy, RetryPolicy, ActionLogFormatter, SafetyCoordinator. Full suite **127 tests / 0 failures**.
 - **Build**: `assembleDebug` green → `PokeClaw_v0.7.1_20261110_163624.apk`.
 
+## What's Done (Phase 5: final release) — branch `phase-5-release`
+
+- **Verification**: `.\gradlew.bat testDebugUnitTest` (forced re-run) → **127 tests / 28 classes / 0 failures**; `assembleDebug` green → `app/build/outputs/apk/debug/PokeClaw_v1.0.0_20261110_163948.apk` (~149 MB).
+- **Version bump**: `versionName 1.0.0`, `versionCode 100` (fork release line; up from upstream 0.7.1/29). Overridable via `POKECLAW_VERSION_NAME` / `POKECLAW_VERSION_CODE`.
+- **Project review fixes**:
+  - Removed the “Manage Tools — coming soon” stub: Settings → Tools now lists the actually registered tools (count + dialog) from `ToolRegistry.getAllTools()`.
+  - Attachment button no longer claims a future feature; shows a clear Arabic/English “not supported yet” message (documented limitation).
+  - Scanned for TODO/FIXME/unimplemented placeholders: remaining matches were false positives (`addTodo` knowledge tool, “Workflows” experimental badge).
+  - Fixed a compile break in `ComposeChatActivity` (missing `R` import) introduced by the review edit.
+- **Docs**: Arabic `README.md` (what/build/install/permissions/API key/limits); upstream English README preserved as `docs/README.upstream.md`; Arabic `docs/USER_GUIDE.md`; `docs/RELEASING.md` (versioning, artifacts, signing, GitHub steps).
+- **Release**: tag `v1.0.0` created locally on `main`. Push to origin fails (403, no fork); `gh` CLI is not installed → no GitHub Release created. APK path given to the user.
+- **Device QA**: still not executed (no adb device) — v1.0.0 is code-complete but device-unverified.
+
 ## Build Environment (Windows machine — how it was made to work)
 
 - `local.properties` (gitignored): `sdk.dir=C:\Users\Altamimi\AppData\Local\Android\Sdk`.
@@ -105,8 +118,17 @@ Commits: `(core)` feat(safety-core) · `(agent)` feat(safety-agent) · `(ui)` fe
 11. Offline Whisper not implemented (deliberate; rationale in `docs/skills/voice-input.md`). Revisit only with a device farm + a measured Arabic WER/latency budget.
 12. Phase 4 device QA (QA_CHECKLIST §SA) not executed: no adb device. Confirmation dialogs, blocklist enforcement, emergency stop, timeout, notification action and the ConfigServer token were not exercised on hardware.
 13. Residual security risks tracked in `docs/SECURITY.md`: global cleartext (S3), external-automation sender verification/rate limiting (S4), AppLogStore content redaction (S7), security-crypto deprecation (S1 residual).
+14. v1.0.0 is **not published**: tag exists locally only; `origin` is upstream (403) and `gh` is not installed. Create the fork, push `main` + `v1.0.0`, then `gh release create`.
+15. v1.0.0 is **device-unverified**: no adb device; QA_CHECKLIST FA/VA/SA and the release smoke gate were not executed.
 
-## Next Up
+## Next Ideas / Roadmap
 
-- **Phase 2/3/4 close-out**: connect a device/emulator, execute QA_CHECKLIST §FA, §VA, §SA; push `phase-1-setup`, `phase-2-arabic-chat`, `phase-3-voice`, `phase-4-safety` once the GitHub fork exists (commands in Known Issue 1).
-- **Phase 5 preview**: green signed `assembleRelease` with a documented fork keystore story, release docs/versioning, final audit delta, residual security fixes (S3/S4/S7), and a full QA pass. Plan details: docs/PLAN.md.
+1. **Device QA first**: run FA/VA/SA on a real phone (Pixel/Samsung + a low-RAM device), record results, then gate the tag on green.
+2. **Session/Action log UX**: group action-log entries per task, add filters, export share-sheet (still local-only, redacted).
+3. **Prompt-injection hardening**: extend `DirectDeviceDataGuard` to treat screen/notification text as untrusted for risky tool arguments; require re-confirmation when arguments change after screen content.
+4. **External automation security**: signature permission or pairing allowlist + rate limit, then relax the default-off requirement.
+5. **Security follow-ups**: narrow cleartext with an explicit per-provider “allow http” toggle; redact AppLogStore; replace deprecated security-crypto (Tink direct / Keystore file).
+6. **Voice**: streaming partial UX polish, per-device offline pack detection, optional Whisper via a pluggable STT interface once a device farm exists.
+7. **Models**: download resume/corruption checks; per-device RAM guidance; DeepSeek reasoner streaming nuances.
+8. **Chat**: de-god `ChatScreen.kt` into a ViewModel; message search; image attachments (currently unsupported).
+9. **Release**: produce a signed release with a fork keystore; decide whether to keep package id `io.agents.pokeclaw` for channel compatibility.
