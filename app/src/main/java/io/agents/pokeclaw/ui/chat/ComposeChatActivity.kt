@@ -254,6 +254,7 @@ class ComposeChatActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        io.agents.pokeclaw.safety.SafetyCoordinator.setUiAvailable(true)
         _needsPermission.value =
             AppCapabilityCoordinator.accessibilityState(this) != ServiceBindingState.READY
         _isLocalModelActive.value = ModelConfigRepository.isLocalActive()
@@ -272,6 +273,7 @@ class ComposeChatActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
+        io.agents.pokeclaw.safety.SafetyCoordinator.setUiAvailable(false)
         saveChat()
         permHandler.removeCallbacks(permPoller)
         activeTaskShellController.onPause()

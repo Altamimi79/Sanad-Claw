@@ -486,6 +486,79 @@ class SettingsActivity : BaseActivity() {
             )
         }
 
+        // Phase 4 safety controls
+        var confirmRiskyItem: MenuItem? = null
+        confirmRiskyItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_lock_lock,
+            title = getString(R.string.safety_confirm_risky_setting),
+            onClick = {
+                val next = !KVUtils.isSafetyConfirmRiskyEnabled()
+                KVUtils.setSafetyConfirmRiskyEnabled(next)
+                confirmRiskyItem?.setTrailingText(
+                    getString(if (next) R.string.settings_enabled else R.string.settings_disabled)
+                )
+            },
+            showDivider = true
+        ).apply {
+            setTrailingText(
+                getString(
+                    if (KVUtils.isSafetyConfirmRiskyEnabled()) R.string.settings_enabled
+                    else R.string.settings_disabled
+                )
+            )
+        }
+
+        var timeoutItem: MenuItem? = null
+        timeoutItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_recent_history,
+            title = getString(R.string.safety_timeout_setting),
+            onClick = {
+                val next = io.agents.pokeclaw.safety.TaskTimeoutPolicy.nextPreset(
+                    KVUtils.getSafetyTaskTimeoutSec()
+                )
+                KVUtils.setSafetyTaskTimeoutSec(next)
+                timeoutItem?.setTrailingText(getString(R.string.safety_seconds_format, next))
+            },
+            showDivider = true
+        ).apply {
+            setTrailingText(
+                getString(R.string.safety_seconds_format, KVUtils.getSafetyTaskTimeoutSec())
+            )
+        }
+
+        var blocklistItem: MenuItem? = null
+        blocklistItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_manage,
+            title = getString(R.string.safety_blocklist_setting),
+            onClick = {
+                InputDialog.show(
+                    context = this,
+                    title = getString(R.string.safety_blocklist_setting),
+                    presetText = KVUtils.getSafetyBlocklistRaw(),
+                    hint = getString(R.string.safety_blocklist_hint),
+                    confirmText = getString(R.string.safety_saved),
+                ) { text ->
+                    KVUtils.setSafetyBlocklistRaw(text)
+                    val count = io.agents.pokeclaw.safety.AppBlocklist.effectivePatterns(text).size
+                    blocklistItem?.setTrailingText(getString(R.string.safety_blocklist_count, count))
+                    Toast.makeText(this, R.string.safety_saved, Toast.LENGTH_SHORT).show()
+                }
+            },
+            showDivider = true
+        ).apply {
+            val count = io.agents.pokeclaw.safety.AppBlocklist.effectivePatterns(
+                KVUtils.getSafetyBlocklistRaw()
+            ).size
+            setTrailingText(getString(R.string.safety_blocklist_count, count))
+        }
+
+        toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_sort_by_size,
+            title = getString(R.string.safety_action_log_setting),
+            onClick = { startActivity(Intent(this, ActionLogActivity::class.java)) },
+            showDivider = false
+        )
+
         // Remote Control
         val remoteGroup = findViewById<MenuGroup>(R.id.remoteGroup)
         remoteGroup.setTitle("Remote Control")

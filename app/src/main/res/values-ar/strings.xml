@@ -235,6 +235,38 @@
     <string name="settings_enabled">ممكّن</string>
     <string name="settings_disabled">معطّل</string>
 
+    <!-- Safety (Phase 4) -->
+    <string name="safety_confirm_title">تأكيد إجراء حسّاس</string>
+    <string name="safety_confirm_allow">السماح</string>
+    <string name="safety_confirm_deny">رفض</string>
+    <string name="safety_confirm_message">يريد الوكيل تنفيذ إجراء حسّاس (%1$s) عبر %2$s. هل تسمح؟</string>
+    <string name="safety_action_denied">تم رفض الإجراء. أُوقفت المهمة.</string>
+    <string name="safety_blocked_app">أُوقفت المهمة: التطبيق الحالي (%1$s) محظور لحماية بياناتك (تطبيق مصرفي أو كلمات مرور).</string>
+    <string name="safety_task_timeout">انتهت مهلة المهمة (%1$d ثانية) وأُوقفت.</string>
+    <string name="safety_emergency_stop">إيقاف طارئ</string>
+    <string name="safety_task_running">المهمة قيد التنفيذ</string>
+    <string name="safety_confirm_risky_setting">تأكيد الإجراءات الحساسة</string>
+    <string name="safety_timeout_setting">مهلة المهمة</string>
+    <string name="safety_blocklist_setting">تطبيقات محظورة</string>
+    <string name="safety_action_log_setting">سجل الإجراءات</string>
+    <string name="safety_action_log_title">سجل الإجراءات (محلي فقط)</string>
+    <string name="safety_action_log_empty">لا توجد إجراءات مسجلة بعد.</string>
+    <string name="safety_action_log_clear">مسح السجل</string>
+    <string name="safety_action_log_cleared">تم مسح السجل</string>
+    <string name="safety_seconds_format">%d ثانية</string>
+    <string name="risk_send_message">إرسال رسالة</string>
+    <string name="risk_send_file">إرسال ملف</string>
+    <string name="risk_call">إجراء مكالمة</string>
+    <string name="risk_delete">حذف بيانات</string>
+    <string name="risk_payment">دفع أو تحويل مالي</string>
+    <string name="risk_install">تثبيت تطبيق</string>
+    <string name="risk_publish">نشر محتوى</string>
+    <string name="risk_generic">إجراء حسّاس</string>
+    <string name="safety_retry_notice">إعادة محاولة إجراء مؤقت (%1$d/%2$d)</string>
+    <string name="safety_blocklist_hint">bank، wallet، password…</string>
+    <string name="safety_blocklist_count">%d تطبيق</string>
+    <string name="safety_saved">تم الحفظ</string>
+
     <!-- Global Prompt (#45) -->
     <string name="global_prompt_title">التعليمات العامة</string>
     <string name="global_prompt_dialog_title">تعديل التعليمات العامة</string>

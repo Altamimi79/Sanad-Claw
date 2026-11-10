@@ -234,6 +234,38 @@
     <string name="settings_enabled">Enabled</string>
     <string name="settings_disabled">Disabled</string>
 
+    <!-- Safety (Phase 4) -->
+    <string name="safety_confirm_title">Confirm sensitive action</string>
+    <string name="safety_confirm_allow">Allow</string>
+    <string name="safety_confirm_deny">Deny</string>
+    <string name="safety_confirm_message">The agent wants to perform a sensitive action (%1$s) via %2$s. Do you allow it?</string>
+    <string name="safety_action_denied">Action denied by the user. The task was stopped.</string>
+    <string name="safety_blocked_app">Task stopped: the current app (%1$s) is blocked to protect your data (banking or password app).</string>
+    <string name="safety_task_timeout">Task timeout reached (%1$d s); the task was stopped.</string>
+    <string name="safety_emergency_stop">Emergency stop</string>
+    <string name="safety_task_running">Task running</string>
+    <string name="safety_confirm_risky_setting">Confirm sensitive actions</string>
+    <string name="safety_timeout_setting">Task timeout</string>
+    <string name="safety_blocklist_setting">Blocked apps</string>
+    <string name="safety_action_log_setting">Action log</string>
+    <string name="safety_action_log_title">Action log (local only)</string>
+    <string name="safety_action_log_empty">No actions recorded yet.</string>
+    <string name="safety_action_log_clear">Clear log</string>
+    <string name="safety_action_log_cleared">Action log cleared</string>
+    <string name="safety_seconds_format">%d s</string>
+    <string name="risk_send_message">sending a message</string>
+    <string name="risk_send_file">sending a file</string>
+    <string name="risk_call">making a call</string>
+    <string name="risk_delete">deleting data</string>
+    <string name="risk_payment">a payment or money transfer</string>
+    <string name="risk_install">installing an app</string>
+    <string name="risk_publish">publishing content</string>
+    <string name="risk_generic">a sensitive action</string>
+    <string name="safety_retry_notice">Retrying a transient tool failure (%1$d/%2$d)</string>
+    <string name="safety_blocklist_hint">bank, wallet, password…</string>
+    <string name="safety_blocklist_count">%d apps</string>
+    <string name="safety_saved">Saved</string>
+
     <!-- Global Prompt (#45) -->
     <string name="global_prompt_title">Global instructions</string>
     <string name="global_prompt_dialog_title">Edit global instructions</string>

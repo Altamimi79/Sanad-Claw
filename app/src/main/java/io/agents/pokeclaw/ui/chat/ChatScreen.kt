@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import io.agents.pokeclaw.utils.KVUtils
 import io.agents.pokeclaw.utils.XLog
+import io.agents.pokeclaw.safety.SafetyCoordinator
 import io.agents.pokeclaw.ui.voice.VoiceRecordingBar
 import io.agents.pokeclaw.voice.SpeechRecognizerController
 import io.agents.pokeclaw.voice.VoiceDictationPolicy
@@ -199,6 +200,9 @@ fun ChatScreen(
     LaunchedEffect(isLocalModel) {
         selectedTab = if (isLocalModel) "local" else "cloud"
     }
+
+    // Phase 4: risky-action confirmation dialog (agent thread is blocked meanwhile)
+    SafetyConfirmationHost()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -1094,6 +1098,36 @@ private fun ChatInputBar(
             }
         }
 
+        // Phase 4: always-visible emergency stop while a task runs
+        if (isTaskRunning) {
+            Surface(
+                color = Color(0xFFF44336).copy(alpha = 0.12f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.safety_task_running),
+                        color = Color(0xFFF44336),
+                        fontSize = 12.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = onStopAll) {
+                        Text(
+                            text = stringResource(R.string.safety_emergency_stop),
+                            color = Color(0xFFF44336),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+
         // Voice dictation state strip (phase 3)
         if (voiceActive || voiceProcessing) {
             VoiceRecordingBar(
@@ -1230,6 +1264,27 @@ private fun ChatInputBar(
             }
         }
     }
+}
+
+@Composable
+private fun SafetyConfirmationHost() {
+    val pending by SafetyCoordinator.pending.collectAsState()
+    val request = pending ?: return
+    AlertDialog(
+        onDismissRequest = { SafetyCoordinator.denyPending() },
+        title = { Text(stringResource(R.string.safety_confirm_title)) },
+        text = { Text(request.message) },
+        confirmButton = {
+            TextButton(onClick = { SafetyCoordinator.approvePending() }) {
+                Text(stringResource(R.string.safety_confirm_allow))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { SafetyCoordinator.denyPending() }) {
+                Text(stringResource(R.string.safety_confirm_deny))
+            }
+        },
+    )
 }
 
 private fun voiceErrorRes(error: VoiceError): Int = when (error) {
