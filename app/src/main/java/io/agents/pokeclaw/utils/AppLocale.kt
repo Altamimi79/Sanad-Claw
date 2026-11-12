@@ -36,7 +36,10 @@ object AppLocale {
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_LANGUAGE, normalized)
-            .apply()
+            // commit(), not apply(): switchAppLanguage calls finishAffinity() right after,
+            // and an async disk write can be lost when the OEM kills the process —
+            // the relaunched app would then read the stale language and not switch.
+            .commit()
     }
 
     fun locale(context: Context): Locale =
