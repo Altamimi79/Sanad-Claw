@@ -70,7 +70,7 @@
     <string name="settings_language">اللغة</string>
     <string name="language_name_arabic">العربية</string>
     <string name="language_name_english">English</string>
-    <string name="provider_fetch_models">جلب الموديلات المتاحة من هذا الرابط</string>
+    <string name="provider_fetch_models">جلب الموديلات المتاحة</string>
     <string name="provider_fetch_models_loading">جارٍ التحميل…</string>
     <string name="provider_fetch_models_failed">تعذّر جلب الموديلات: %1$s</string>
     <string name="provider_fetch_models_empty">لم يُرجع هذا الرابط أي موديلات</string>

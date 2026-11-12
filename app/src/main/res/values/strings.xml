@@ -69,7 +69,7 @@
     <string name="settings_language">Language</string>
     <string name="language_name_arabic">العربية</string>
     <string name="language_name_english">English</string>
-    <string name="provider_fetch_models">Fetch available models from this URL</string>
+    <string name="provider_fetch_models">Fetch available models</string>
     <string name="provider_fetch_models_loading">Loading…</string>
     <string name="provider_fetch_models_failed">Failed to fetch models: %1$s</string>
     <string name="provider_fetch_models_empty">No models returned by this endpoint</string>
