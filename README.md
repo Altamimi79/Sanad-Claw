@@ -1,120 +1,81 @@
-# Sanad-Agent — وكيل ذكي للهاتف (نسخة عربية من PokeClaw)
+# Sanad Claw (سند كلو) — an Arabic-first phone agent
 
-**Sanad-Agent** تطبيق أندرويد يتيح لك التحكم بهاتفك بالعربية: محادثة ذكية، وتنفيذ مهام على التطبيقات تلقائيًا (فتح تطبيق، كتابة نص، إرسال رسالة، البحث، قراءة الشاشة)، مع إدخال صوتي عربي، وحماية بإجراءات تأكيد قبل الأفعال الحسّاسة.
+**Sanad Claw** is an Android on-device phone agent: chat with a model, or let the agent operate
+your phone (open apps, type, tap, scroll, read the screen, send messages, search) through the
+Accessibility service — with confirmation gates before sensitive actions.
 
-- الحزمة: `io.agents.pokeclaw` · الإصدار: **1.0.0** (versionCode 100)
-- أقل إصدار أندرويد مدعوم: **8.0 (API 28)** · المستهدف: API 36
-- الرخصة: Apache-2.0 (انظر `LICENSE` و`NOTICE`)
+A fork of [agents-io/PokeClaw](https://github.com/agents-io/PokeClaw) (Apache-2.0), focused on a
+fully Arabic interface (RTL) and a cloud-first model experience. The Arabic overview lives in
+[`docs/README.ar.md`](docs/README.ar.md); the upstream English README is kept in
+[`docs/README.upstream.md`](docs/README.upstream.md).
 
-> ⚠️ هذا المشروع **fork عربي** لمشروع [agents-io/PokeClaw](https://github.com/agents-io/PokeClaw). النسخة الأصلية بالإنجليزية متاحة في `docs/README.upstream.md`. هذا الإصدار بُني واجتاز الاختبارات الآلية، لكن **لم يُختبر على جهاز حقيقي** في هذه المرحلة (التفاصيل في «حدود معروفة»).
+- Package: `io.agents.pokeclaw` (kept intentionally for settings/data continuity)
+- Version: **1.0.0** (versionCode 100) · Min SDK 28 (Android 8.0) · Target SDK 36
+- License: **Apache-2.0** — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)
 
----
+## What it does
 
-## ماذا يفعل التطبيق؟
+1. **Chat** with cloud models — OpenAI, Anthropic, DeepSeek, Google, **OpenRouter**,
+   **OpenCode Zen**, or any OpenAI-compatible endpoint — or with on-device models
+   (Gemma via LiteRT-LM, optional).
+2. **Phone tasks**: the agent reads the screen and presses/types/scrolls to complete tasks such
+   as "send a message to X" or "open Y and search for Z".
+3. **Safety rails**: confirmation before sending messages/files, calls, payments, deletions and
+   installs; blocked-app list (banking/password apps); local action log; emergency stop; task timeout.
+4. **Secrets**: API keys and bot tokens are stored via EncryptedSharedPreferences (Android
+   Keystore) and are never written to logs.
 
-1. **محادثة عربية** مع نماذج سحابية (OpenAI · Anthropic/Claude · Google · DeepSeek · أي مزود متوافق مع OpenAI) أو نماذج محلية على الجهاز (Gemma 4 E2B/E4B عبر LiteRT-LM).
-2. **تنفيذ مهام على الهاتف**: يعمل الوكيل عبر خدمة إمكانية الوصول (Accessibility) لقراءة الشاشة والضغط والكتابة والتمرير، فينجز مهامًا مثل «أرسل رسالة لفلان» أو «افتح كذا وابحث عن كذا».
-3. **إدخال صوتي عربي** داخل التطبيق (ar-SA) مع مؤقت وشريط تسجيل وإلغاء، ويُدرج النص في مربع الإدخال لتعديله (أو إرساله تلقائيًا إن فعّلت الخيار).
-4. **حواجز أمان**:
-   - تأكيد قبل الإجراءات الحسّاسة: إرسال رسالة/ملف، مكالمة، دفع/تحويل، حذف، تثبيت تطبيق، نشر.
-   - حظر العمل داخل تطبيقات البنوك وكلمات المرور (قائمة افتراضية + قائمة مخصّصة).
-   - سجل إجراءات محلي، زر إيقاف طارئ، ومهلة قصوى للمهمة.
-5. **أسرار مشفّرة**: مفاتيح API ورموز البوتات تُخزَّن عبر EncryptedSharedPreferences (Android Keystore)، ولا تُسجَّل في السجلات.
+## Models — paste a key, pick a model
 
----
+Every cloud provider tab has a pre-filled Base URL, so the flow is:
 
-## البناء من المصدر
+1. Open **Settings → Model → Cloud LLM**, pick a provider tab.
+2. Paste your API key (the model list is fetched automatically from `GET {baseUrl}/models`;
+   the "Fetch available models" action re-runs it manually).
+3. Search/filter the returned list (OpenRouter returns hundreds) and tap the model to select it —
+   the choice is saved for that provider immediately.
 
-المتطلبات: **JDK 21**، Android SDK (رخصة مقبولة)، Gradle يأتي عبر الـ wrapper.
+The chat model switcher lists only the models you have configured (one entry per provider with a
+saved key + model, tagged with the provider name) and activates the right provider configuration
+when you switch. The full catalogue stays in Settings.
+
+Provider-aware fetching: Anthropic uses `x-api-key` + `anthropic-version`; other providers use
+`Authorization: Bearer`. Keys are never logged.
+
+## Arabic UI and branding
+
+- Full Arabic UI with `values-ar` (plus `en`, `ja`, `zh`); RTL layout; in-app language switch
+  (Settings → Appearance → Language) that persists across restarts.
+- App name and icon: **Sanad Claw** (Arabic: سند كلو), adaptive icon with a black background.
+- Foldable-friendly: settings rows use single-line ellipsized labels so narrow cover screens stay
+  readable.
+
+## Build from source
+
+Requirements: **JDK 21**, Android SDK (licenses accepted). Gradle comes from the wrapper.
 
 ```powershell
-# ويندوز
-.\gradlew.bat testDebugUnitTest assembleDebug
-
-# macOS / Linux
-./gradlew testDebugUnitTest assembleDebug
+.\gradlew.bat assembleDebug      # debug APK -> app\build\outputs\apk\debug\
+.\gradlew.bat testDebugUnitTest  # JVM unit tests (127 tests)
 ```
 
-- ناتج الـ APK: `app/build/outputs/apk/debug/PokeClaw_v1.0.0_<timestamp>.apk`
-- إن فشل البناء بسبب JDK: تأكد أن Gradle يستخدم JDK 21 (`org.gradle.java.installations.paths` في `~/.gradle/gradle.properties`).
-- إذا لم يُعثر على SDK: أنشئ `local.properties` بالمفتاح `sdk.dir=<مسار Android SDK>` (هذا الملف غير مُتعقَّب).
-- بناء نسخة موقّعة (`assembleRelease`) يحتاج مفاتيح توقيع غير مُتعقَّبة؛ انظر `docs/RELEASING.md`.
+macOS/Linux: `./gradlew assembleDebug`.
 
-## تثبيت الـ APK
+## Repository layout
 
-```bash
-adb install -r "app/build/outputs/apk/debug/PokeClaw_v1.0.0_<timestamp>.apk"
-```
+- `app/src/main/java/io/agents/pokeclaw/` — agent, tools, channels, UI (Compose + Views)
+- `app/src/main/res/` — resources, themes, localized strings, icons
+- `docs/MEMORY.md` — project memory (decisions, status, known issues)
+- `QA_CHECKLIST.md` — manual QA cases (device-verified items are marked as executed)
 
-- `-r` يعيد التثبيت فوق نسخة موجودة بنفس التوقيع.
-- إن ظهر `INSTALL_FAILED_UPDATE_INCOMPATIBLE` فالنسخة المثبّتة موقّعة بمفتاح مختلف (شائع في نسخ debug/release المختلفة): أزل التطبيق أولًا `adb uninstall io.agents.pokeclaw` ثم ثبّت.
-- إصدار 1.0.0 يرفع versionCode إلى 100، لذا لن تُرفض الترقية من نسخ أقدم بسبب رقم الإصدار.
+## Known limits
 
----
+- Voice **wake word** ("Hi Sanad") is not implemented; the in-app microphone uses the system
+  speech-recognition service, which some OEMs (e.g. HONOR) do not expose.
+- Local (on-device) model downloads are hidden in this fork's UI; the engine remains in the code.
 
-## الأذونات المطلوبة (وكيف تمنحها)
+## Attribution
 
-| الإذن | لماذا | الطريقة |
-|---|---|---|
-| **Accessibility (إمكانية الوصول)** | قراءة الشاشة والضغط/الكتابة لتنفيذ المهام | الإعدادات ← إمكانية الوصول ← التطبيقات المثبّتة ← PokeClaw ← تشغيل |
-| **الميكروفون (RECORD_AUDIO)** | الإدخال الصوتي | يُطلب تلقائيًا عند أول ضغط على الميكروفون؛ يمكن منعه لاحقًا من إعدادات التطبيق |
-| **الإشعارات** | إشعار المهمة الجارية وزر الإيقاف الطارئ | يُطلب عند التشغيل الأول (أندرويد 13+) |
-| **الظهور فوق التطبيقات (Overlay)** | الفقاعة العائمة وزر الإيقاف أثناء المهام | الإعدادات ← التطبيقات ← PokeClaw ← الظهور فوق التطبيقات |
-| **الملفات** | تحميل النماذج المحلية وحفظ/إرسال الملفات | حسب نسخة أندرويد (إذن تخزين أو «كل الملفات») |
-| **البطارية غير مقيّدة** | منع قتل المهمة في الخلفية | الإعدادات ← البطارية ← غير مقيّد |
-| **الاتصال بالإنترنت** | النماذج السحابية | تلقائي |
-
-> التطبيق لا يستطيع العمل دون خدمة إمكانية الوصول للمهام التي تتحكم بالشاشة. المحادثة النصية وحدها تعمل بدونها.
-
-## أين أُدخل مفتاح API؟
-
-1. افتح التطبيق ← أيقونة الإعدادات ← **النماذج** (أو من صفحة النماذج مباشرة).
-2. اختر المزوّد: OpenAI / Anthropic / DeepSeek / Google / Custom.
-3. أدخل **API Key**، وعدّل **Base URL** إن استخدمت وكيلًا أو مزودًا متوافقًا مع OpenAI.
-4. اختر النموذج (أو اكتب اسمه في Custom)، ثم **اختبار** (Test) للتأكد من صحة الاتصال.
-5. **Save & Activate**. المفتاح يُحفظ مشفّرًا.
-
-للنماذج المحلية: صفحة النماذج ← قسم النماذج المحلية ← تحميل النموذج المناسب لذاكرة جهازك ← تعيينه افتراضيًا.
-
----
-
-## الإعدادات المهمة
-
-- **الإعدادات ← الأدوات**:
-  - *تأكيد الإجراءات الحساسة* (مفعّل افتراضيًا).
-  - *مهلة المهمة* (120/180/300/600 ثانية؛ الافتراضي 180).
-  - *تطبيقات محظورة*: قائمة مفصولة بفواصل تطغى على الافتراضية (مثل `bank, wallet, password`).
-  - *سجل الإجراءات*: عرض محلي (بدون رفع) مع تنقيح للمفاتيح وكلمات المرور، وزر مسح.
-  - *إرسال الإدخال الصوتي تلقائيًا* (معطّل افتراضيًا).
-- **الإيقاف الطارئ**: زر أحمر في شريط المحادثة أثناء تشغيل مهمة، وزر في إشعار الخدمة، والفقاعة العائمة.
-
-## الخصوصية
-
-- مفاتيح API ورموز البوتات: مشفّرة على الجهاز (Android Keystore).
-- سجل الإجراءات: محلي فقط، 200 عنصر كحد أقصى، منقّح، قابل للمسح.
-- خادم الإعدادات المحلي (إن فُعّل) يستمع على **127.0.0.1** فقط ويتطلب رمزًا لكل طلب API.
-- المحادثات تُرسَل إلى مزوّد النموذج الذي تختاره فقط (سحابي)، أو تُعالَج محليًا إن اخترت نموذجًا على الجهاز.
-
-## حدود معروفة (Known limitations)
-
-- **لم يُنفَّذ اختبار E2E على جهاز حقيقي** لهذه المرحلة؛ الاختبارات الآلية (127 اختبار وحدة) والبناء ناجحان، لكن سلوك الواجهة والأذونات وخدمة التعرف الصوتي والقيود على الأجهزة لم تُتحقَّق فعليًا. راجع `QA_CHECKLIST.md` الأقسام FA/VA/SA.
-- **الإدخال الصوتي** يعتمد على خدمة التعرف على الكلام في الجهاز مع حزمة العربية (ar-SA)؛ بعض الأجهزة تعمل أونلاين فقط. **Whisper المحلي غير مضمّن** (انظر `docs/skills/voice-input.md`).
-- **إرفاق الصور غير مدعوم** بعد (زر الإرفاق يعرض رسالة توضيحية).
-- **النماذج المحلية** تحتاج ذاكرة كافية (قد لا تعمل على أجهزة قليلة RAM).
-- **الأتمتة الخارجية** (Tasker/MacroDroid) معطّلة افتراضيًا؛ عند تفعيلها يستطيع أي تطبيق على الجهاز استدعاءها (مخاطرة موثّقة في `docs/SECURITY.md`).
-- **Build السحابة والتوقيع**: مفتاح توقيع الإصدار الأصلي مفقود تاريخيًا؛ ترقية نسخة موقّعة قد تتطلب إعادة تثبيت.
-- هذه النسخة **غير منشورة على GitHub** بعد (لا يوجد fork تحت الحساب)؛ الدفع/الوسم محلي.
-
-## التوثيق
-
-- `docs/USER_GUIDE.md` — دليل المستخدم الكامل بالعربية.
-- `docs/MEMORY.md` — ذاكرة المشروع والقرارات والحالة.
-- `docs/PLAN.md` — خطة الخمس مراحل.
-- `docs/SECURITY.md` — المراجعة الأمنية.
-- `docs/CHANGELOG.md` — سجل التغييرات.
-- `docs/skills/` — أدلة تنفيذية (بناء، مزود جديد، أدوات، عربية، صوت، أسرار، أمان).
-- `docs/README.upstream.md` — README الأصلي بالإنجليزية.
-
-## الإسناد والرخصة
-
-هذا المشروع fork من PokeClaw (agents.io) بموجب Apache-2.0. حقوق المشروع الأصلي محفوظة كما في `NOTICE`، وأي توزيع يجب أن يحتفظ بـ `LICENSE` و`NOTICE`. اسم PokeClaw وعلاماته تخص أصحابها؛ راجع قسم العلامات في README الأصلي قبل إعادة التسمية أو النشر.
+Forked from PokeClaw © agents.io, licensed under Apache-2.0. The original `LICENSE` and `NOTICE`
+are preserved; upstream trademarks remain with their owner. See
+[`NOTICE`](NOTICE) for details.
