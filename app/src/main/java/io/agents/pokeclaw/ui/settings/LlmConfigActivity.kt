@@ -696,7 +696,9 @@ class LlmConfigActivity : BaseActivity() {
             etModelSearch.setText("")
             selectedModelId = when {
                 provider == CloudProvider.CUSTOM -> cloudSeed.modelName
-                provider == cloudSeed.provider && provider.models.any { it.id == cloudSeed.modelName } -> cloudSeed.modelName
+                // Keep the saved model when returning to the provider that owns the active config
+                // (static catalogues are empty now — models come from the live endpoint list).
+                provider == cloudSeed.provider -> cloudSeed.modelName
                 else -> provider.models.firstOrNull()?.id ?: ""
             }
             updateTabStyles()
@@ -751,6 +753,15 @@ class LlmConfigActivity : BaseActivity() {
                             // The rows below are the picker — no duplicate dialog.
                             modelsLoading = false
                             renderModels()
+                            // Bring the user to the top of the freshly fetched list so the
+                            // search box and first results are visible without scrolling up.
+                            scrollView.post {
+                                val rect = Rect()
+                                etModelSearch.getDrawingRect(rect)
+                                scrollView.offsetDescendantRectToMyCoords(etModelSearch, rect)
+                                val top = (rect.top + scrollView.scrollY - dp(8)).coerceAtLeast(0)
+                                scrollView.smoothScrollTo(0, top)
+                            }
                             Toast.makeText(
                                 this, getString(R.string.provider_fetch_models_found, ids.size), Toast.LENGTH_SHORT
                             ).show()

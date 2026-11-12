@@ -36,39 +36,26 @@ enum class CloudProvider(
     OPENAI(
         displayName = "OpenAI",
         defaultBaseUrl = "https://api.openai.com/v1",
-        models = listOf(
-            CloudModel("gpt-4o-mini", "GPT-4o Mini", 0.15, 0.60, ModelTier.FAST, 128_000, recommended = true),
-            CloudModel("gpt-4o", "GPT-4o", 2.50, 10.00, ModelTier.SMART, 128_000),
-            CloudModel("gpt-4.1", "GPT-4.1", 2.00, 8.00, ModelTier.PRO, 1_000_000),
-            CloudModel("gpt-4.1-mini", "GPT-4.1 Mini", 0.40, 1.60, ModelTier.FAST, 1_000_000),
-            CloudModel("gpt-4.1-nano", "GPT-4.1 Nano", 0.10, 0.40, ModelTier.LITE, 1_000_000),
-        )
+        // Sanad fork: no hardcoded catalogue — the live list comes from GET /models
+        // as soon as the user pastes a key (same flow for every provider).
+        models = emptyList()
     ),
     ANTHROPIC(
         displayName = "Anthropic",
         defaultBaseUrl = "https://api.anthropic.com/v1",
-        models = listOf(
-            CloudModel("claude-sonnet-4-6", "Claude Sonnet 4.6", 3.00, 15.00, ModelTier.PRO, 200_000),
-            CloudModel("claude-haiku-4-5", "Claude Haiku 4.5", 0.80, 4.00, ModelTier.FAST, 200_000, recommended = true),
-        )
+        models = emptyList()
     ),
     DEEPSEEK(
         displayName = "DeepSeek",
         defaultBaseUrl = "https://api.deepseek.com/v1",
-        models = listOf(
-            CloudModel("deepseek-chat", "DeepSeek Chat", 0.27, 1.10, ModelTier.FAST, 163_840, recommended = true),
-            CloudModel("deepseek-reasoner", "DeepSeek Reasoner", 0.80, 2.40, ModelTier.SMART, 163_840),
-        ),
+        models = emptyList(),
         showBaseUrl = true
     ),
     GOOGLE(
         displayName = "Google",
         // OpenAI-compatible compatibility layer; /models works with a Bearer key.
         defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai",
-        models = listOf(
-            CloudModel("gemini-2.5-flash", "Gemini 2.5 Flash", 0.15, 0.60, ModelTier.FAST, 1_000_000, recommended = true),
-            CloudModel("gemini-2.5-pro", "Gemini 2.5 Pro", 1.25, 10.00, ModelTier.PRO, 1_000_000),
-        )
+        models = emptyList()
     ),
     OPENROUTER(
         displayName = "OpenRouter",
