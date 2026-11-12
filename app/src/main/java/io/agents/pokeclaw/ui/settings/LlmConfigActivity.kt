@@ -33,6 +33,7 @@ import io.agents.pokeclaw.agent.llm.ModelConfigRepository
 import io.agents.pokeclaw.base.BaseActivity
 import io.agents.pokeclaw.ui.chat.ThemeManager
 import io.agents.pokeclaw.utils.KVUtils
+import io.agents.pokeclaw.utils.XLog
 import io.agents.pokeclaw.widget.CommonToolbar
 import io.agents.pokeclaw.widget.KButton
 import java.util.concurrent.Executors
@@ -548,6 +549,45 @@ class LlmConfigActivity : BaseActivity() {
             tab.setOnClickListener { switchProvider(provider, tc) }
         }
 
+        // Fetch model list from the configured endpoint (Custom / OpenAI-compatible: GET {baseUrl}/models)
+        val btnFetchModels = findViewById<TextView>(R.id.btnFetchModels)
+        btnFetchModels.setOnClickListener {
+            val baseUrl = etBaseUrl.text.toString().trim()
+            if (baseUrl.isEmpty()) {
+                Toast.makeText(this, getString(R.string.provider_missing_base_url), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val apiKey = etApiKey.text.toString().trim()
+            val defaultLabel = getString(R.string.provider_fetch_models)
+            btnFetchModels.isEnabled = false
+            btnFetchModels.text = getString(R.string.provider_fetch_models_loading)
+
+            executor.submit {
+                val (ids, error) = fetchModelIds(baseUrl, apiKey)
+                runOnUiThread {
+                    btnFetchModels.isEnabled = true
+                    btnFetchModels.text = defaultLabel
+                    when {
+                        error != null -> Toast.makeText(
+                            this, getString(R.string.provider_fetch_models_failed, error), Toast.LENGTH_LONG
+                        ).show()
+                        ids.isEmpty() -> Toast.makeText(
+                            this, getString(R.string.provider_fetch_models_empty), Toast.LENGTH_SHORT
+                        ).show()
+                        else -> android.app.AlertDialog.Builder(this)
+                            .setTitle(defaultLabel)
+                            .setItems(ids.toTypedArray()) { _, which ->
+                                val picked = ids[which]
+                                selectedModelId = picked
+                                etModelName.setText(picked)
+                            }
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show()
+                    }
+                }
+            }
+        }
+
         // Test Connection — real probe against the configured endpoint/model
         btnTest.setOnClickListener {
             val apiKey = etApiKey.text.toString().trim()
@@ -700,6 +740,45 @@ class LlmConfigActivity : BaseActivity() {
         }
     }
 
+    /**
+     * GET {baseUrl}/models (OpenAI-compatible). Returns (modelIds, errorOrNull).
+     * Never logs the API key. Runs on the executor thread only.
+     */
+    private fun fetchModelIds(baseUrl: String, apiKey: String): Pair<List<String>, String?> {
+        return try {
+            val url = java.net.URL(baseUrl.trimEnd('/') + "/models")
+            val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
+                connectTimeout = 15_000
+                readTimeout = 15_000
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/json")
+                if (apiKey.isNotEmpty()) setRequestProperty("Authorization", "Bearer $apiKey")
+            }
+            val code = conn.responseCode
+            XLog.i(TAG, "fetchModels: GET ${url.host}${url.path} -> HTTP $code")
+            if (code !in 200..299) {
+                conn.disconnect()
+                return emptyList<String>() to "HTTP $code"
+            }
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            conn.disconnect()
+            val data = org.json.JSONObject(body).optJSONArray("data")
+                ?: return emptyList<String>() to null
+            val ids = (0 until data.length())
+                .map { data.getJSONObject(it).optString("id") }
+                .filter { it.isNotBlank() }
+                .sorted()
+            ids to null
+        } catch (e: Exception) {
+            XLog.e(TAG, "fetchModels failed: ${e.javaClass.simpleName}")
+            emptyList<String>() to (e.message ?: e.javaClass.simpleName)
+        }
+    }
+
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+    companion object {
+        private const val TAG = "LlmConfigActivity"
+    }
 }
 
