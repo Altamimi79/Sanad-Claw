@@ -8,7 +8,7 @@ Last updated: 2026-11-12 (fork branding/UI round on HONOR device: committed + ve
 
 - Fork of **agents-io/PokeClaw** (Apache-2.0), cloned from upstream `main` @ commit `936eca3` ("Add encrypted .env secrets (SOPS + age)"), app version v0.7.1 / versionCode 29.
 - Working copy: `E:\Sanad-Claw`. Upstream remote `origin` = https://github.com/agents-io/PokeClaw.git (no personal fork repo existed on GitHub at clone time — see Known Issues).
-- **App display name: Sanad Claw / سند كلو.** Planned GitHub repo name: **Sanad-Claw** (account Altamimi79). Package id intentionally stays `io.agents.pokeclaw` (data/settings continuity).
+- **App display name: Sanad Claw / سند كلو.** GitHub repo: **https://github.com/Altamimi79/Sanad-Claw** (public; `origin` = that repo, `upstream` = agents-io/PokeClaw). Package id intentionally stays `io.agents.pokeclaw` (data/settings continuity).
 - Must keep: `LICENSE` (Apache-2.0 full text), `NOTICE` (agents.io attribution), per-file Apache headers, CLA machinery. README Trademark section applies to naming decisions.
 
 ## Current Status
