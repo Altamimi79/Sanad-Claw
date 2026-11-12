@@ -124,15 +124,35 @@ class SettingsActivity : BaseActivity() {
         permAccessibility?.setTrailingText(capabilities.accessibilityStatusLabel)
         permNotification?.setTrailingText(capabilities.notificationPermissionStatusLabel)
         permNotifAccess?.setTrailingText(capabilities.notificationAccessStatusLabel)
-        permOverlay?.setTrailingText(if (capabilities.overlayGranted) "Enabled" else "Disabled")
-        permBattery?.setTrailingText(if (capabilities.batteryOptimizationIgnored) "Unrestricted" else "Restricted")
-        permStorage?.setTrailingText(if (capabilities.storageAccessGranted) "Enabled" else "Disabled")
+        permOverlay?.setTrailingText(if (capabilities.overlayGranted) getString(R.string.settings_enabled) else getString(R.string.settings_disabled))
+        permBattery?.setTrailingText(if (capabilities.batteryOptimizationIgnored) getString(R.string.status_unrestricted) else getString(R.string.status_restricted))
+        permStorage?.setTrailingText(if (capabilities.storageAccessGranted) getString(R.string.settings_enabled) else getString(R.string.settings_disabled))
     }
 
     private fun refreshExternalAutomation() {
         externalAutomationItem?.setTrailingText(
-            if (KVUtils.isExternalAutomationEnabled()) "Enabled" else "Disabled"
+            if (KVUtils.isExternalAutomationEnabled()) getString(R.string.settings_enabled) else getString(R.string.settings_disabled)
         )
+    }
+
+    /** Toggles app UI language between Arabic and English, then restarts the app so every
+     *  activity re-attaches its base context with the new locale. */
+    private fun switchAppLanguage() {
+        val current = io.agents.pokeclaw.utils.AppLocale.getLanguage(this)
+        val next = if (current == io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH)
+            io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ARABIC
+        else
+            io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH
+        io.agents.pokeclaw.utils.AppLocale.setLanguage(this, next)
+        XLog.i("SettingsActivity", "language switched to $next; restarting app")
+        val launch = packageManager.getLaunchIntentForPackage(packageName)
+        if (launch != null) {
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            finishAffinity()
+            startActivity(launch)
+        } else {
+            recreate()
+        }
     }
 
     /** Refreshes the trailing label on the global-prompt row (#45). */
@@ -204,7 +224,7 @@ class SettingsActivity : BaseActivity() {
 
         ConfirmDialog.showWarm(
             context = this,
-            title = "Enable External Automation?",
+            title = getString(R.string.enable_external_automation_question),
             message = "This lets trusted apps like Tasker, MacroDroid, or ADB start PokeClaw tasks with explicit Android intents. Keep it off unless you control the automation that will call it.",
             actionTitle = "Enable",
             cancelTitle = getString(R.string.common_cancel),
@@ -219,7 +239,7 @@ class SettingsActivity : BaseActivity() {
     private fun initMenuGroups() {
         // Permissions
         val permissionsGroup = findViewById<MenuGroup>(R.id.permissionsGroup)
-        permissionsGroup.setTitle("Permissions")
+        permissionsGroup.setTitle(getString(R.string.settings_group_permissions))
 
         permAccessibility = permissionsGroup.addMenuItem(
             leadingIcon = R.drawable.ic_accessibility,
@@ -252,7 +272,7 @@ class SettingsActivity : BaseActivity() {
 
         permNotifAccess = permissionsGroup.addMenuItem(
             leadingIcon = R.drawable.ic_notification,
-            title = "Notification Access",
+            title = getString(R.string.notif_access_title),
             onClick = {
                 AppCapabilityCoordinator.openSystemSettings(this, AppRequirement.NOTIFICATION_ACCESS)
             },
@@ -343,7 +363,7 @@ class SettingsActivity : BaseActivity() {
         // Task Budget (inline in model group)
         modelGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_recent_history,
-            title = "Task Budget",
+            title = getString(R.string.task_budget_title),
             onClick = { showBudgetDialog() },
             showDivider = true
         ).apply {
@@ -426,11 +446,11 @@ class SettingsActivity : BaseActivity() {
 
         // Appearance
         val appearanceGroup = findViewById<MenuGroup>(R.id.appearanceGroup)
-        appearanceGroup.setTitle("Appearance")
+        appearanceGroup.setTitle(getString(R.string.appearance_title))
 
         appearanceGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_slideshow,
-            title = "Theme",
+            title = getString(R.string.theme_title),
             onClick = {
                 startActivity(Intent(this, ThemeActivity::class.java))
             },
@@ -441,14 +461,27 @@ class SettingsActivity : BaseActivity() {
             setTrailingText(label)
         }
 
+        // App language (Sanad fork): Arabic default, switchable to English.
+        val currentLang = io.agents.pokeclaw.utils.AppLocale.getLanguage(this)
+        appearanceGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_view,
+            title = getString(R.string.settings_language),
+            trailingText = if (currentLang == io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH)
+                getString(R.string.language_name_english)
+            else
+                getString(R.string.language_name_arabic),
+            onClick = { switchAppLanguage() },
+            showDivider = false,
+        )
+
         // Tools
         val toolsGroup = findViewById<MenuGroup>(R.id.toolsGroup)
-        toolsGroup.setTitle("Tools")
+        toolsGroup.setTitle(getString(R.string.tools_group_title))
 
         val registeredTools = io.agents.pokeclaw.tool.ToolRegistry.getInstance().getAllTools()
         toolsGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_manage,
-            title = "Available tools",
+            title = getString(R.string.tools_available_title),
             onClick = {
                 val names = registeredTools
                     .map { it.getDisplayName() }
@@ -568,11 +601,11 @@ class SettingsActivity : BaseActivity() {
 
         // Remote Control
         val remoteGroup = findViewById<MenuGroup>(R.id.remoteGroup)
-        remoteGroup.setTitle("Remote Control")
+        remoteGroup.setTitle(getString(R.string.remote_group_title))
 
         remoteGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_send,
-            title = "Telegram Bot",
+            title = getString(R.string.telegram_bot_title),
             onClick = {
                 channelConfigLauncher.launch(ChannelConfigActivity.ChannelType.TELEGRAM)
             },
@@ -584,11 +617,11 @@ class SettingsActivity : BaseActivity() {
 
         externalAutomationItem = remoteGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_share,
-            title = "External Automation",
+            title = getString(R.string.external_automation_title),
             onClick = { toggleExternalAutomation() },
             showDivider = true
         ).apply {
-            setTrailingText(if (KVUtils.isExternalAutomationEnabled()) "Enabled" else "Disabled")
+            setTrailingText(if (KVUtils.isExternalAutomationEnabled()) getString(R.string.settings_enabled) else getString(R.string.settings_disabled))
         }
 
         remoteGroup.addMenuItem(
@@ -597,25 +630,25 @@ class SettingsActivity : BaseActivity() {
             onClick = { },
             showDivider = true
         ).apply {
-            setTrailingText("Coming soon")
+            setTrailingText(getString(R.string.coming_soon))
         }
 
         remoteGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_myplaces,
-            title = "Web Dashboard",
+            title = getString(R.string.web_dashboard_title),
             onClick = { },
             showDivider = false
         ).apply {
-            setTrailingText("Coming soon")
+            setTrailingText(getString(R.string.coming_soon))
         }
 
         // About
         val aboutGroup = findViewById<MenuGroup>(R.id.aboutGroup)
-        aboutGroup.setTitle("About")
+        aboutGroup.setTitle(getString(R.string.about_group_title))
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_info_details,
-            title = "PokeClaw",
+            title = "Sanad Claw",
             onClick = { },
             showDivider = true
         ).apply {
@@ -624,7 +657,7 @@ class SettingsActivity : BaseActivity() {
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_send,
-            title = "Report a Bug",
+            title = getString(R.string.report_bug_title),
             onClick = { reportBug() },
             showDivider = true
         ).apply {
@@ -633,7 +666,7 @@ class SettingsActivity : BaseActivity() {
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_upload,
-            title = "Share Debug Report",
+            title = getString(R.string.share_debug_report_title),
             onClick = { shareDebugReport() },
             showDivider = true
         ).apply {
@@ -653,7 +686,7 @@ class SettingsActivity : BaseActivity() {
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_compass,
-            title = "Built by",
+            title = getString(R.string.built_by_title),
             onClick = {
                 startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/ithiria894".toUri()))
             },
@@ -902,7 +935,7 @@ class SettingsActivity : BaseActivity() {
         }
 
         val tokenLabel = android.widget.TextView(this).apply {
-            text = "Max tokens per task"
+            text = getString(R.string.max_tokens_per_task)
             setTextColor(getColor(R.color.colorTextPrimary))
         }
         layout.addView(tokenLabel)
@@ -932,14 +965,14 @@ class SettingsActivity : BaseActivity() {
 
         val costInput = android.widget.EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-            hint = "Blank = no cost cap"
+            hint = getString(R.string.blank_no_cost_cap)
             setText(currentCost?.let { String.format("%.2f", it) } ?: "")
             setTextColor(getColor(R.color.colorTextPrimary))
         }
         layout.addView(costInput)
 
         android.app.AlertDialog.Builder(this)
-            .setTitle("Task Budget")
+            .setTitle(getString(R.string.task_budget_title))
             .setView(layout)
             .setPositiveButton("Save") { _, _ ->
                 val newTokens = tokenValues[tokenSpinner.selectedItemPosition]

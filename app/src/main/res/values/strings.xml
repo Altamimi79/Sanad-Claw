@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PokeClaw</string>
+    <string name="app_name">Sanad Claw</string>
 
     <!-- Common -->
     <string name="common_confirm">OK</string>
@@ -24,19 +24,19 @@
     <string name="guide_skip">Skip</string>
     <string name="guide_start">Get Started</string>
     <string name="guide_title_accessibility">Accessibility Service</string>
-    <string name="guide_desc_accessibility">Lets PokeClaw read the screen and tap buttons for you. Tap to enable.</string>
+    <string name="guide_desc_accessibility">Lets Sanad read the screen and tap buttons for you. Tap to enable.</string>
     <string name="guide_title_notification">Task Notifications</string>
-    <string name="guide_desc_notification">Lets PokeClaw show progress while a task or monitor is active. Tap to enable.</string>
+    <string name="guide_desc_notification">Lets Sanad show progress while a task or monitor is active. Tap to enable.</string>
     <string name="guide_title_overlay">System Overlay</string>
     <string name="guide_desc_overlay">Shows a floating status panel while tasks run. Tap to enable.</string>
     <string name="guide_title_battery">Battery Whitelist</string>
-    <string name="guide_desc_battery">Prevents the system from killing PokeClaw. Tap to allow.</string>
+    <string name="guide_desc_battery">Prevents the system from killing Sanad. Tap to allow.</string>
     <string name="guide_title_storage">File Access</string>
-    <string name="guide_desc_storage">Lets PokeClaw read and write files on your device. Tap to enable.</string>
+    <string name="guide_desc_storage">Lets Sanad read and write files on your device. Tap to enable.</string>
 
     <!-- Home -->
     <string name="home_need_notification_permission">Notification permission is required</string>
-    <string name="home_enable_accessibility">Please enable PokeClaw Accessibility Service</string>
+    <string name="home_enable_accessibility">Please enable Sanad Accessibility Service</string>
     <string name="home_accessibility_enabled">Accessibility service enabled</string>
     <string name="home_notification_enabled">Task notifications enabled</string>
     <string name="home_overlay_enabled">Overlay permission enabled</string>
@@ -60,6 +60,93 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+    <string name="chat_new_chat">New Chat</string>
+    <string name="chat_recent">Recent</string>
+    <string name="chat_no_conversations">No conversations yet</string>
+    <string name="chat_rename_conversation">Rename conversation</string>
+    <string name="appearance_title">Appearance</string>
+    <string name="theme_title">Theme</string>
+    <string name="settings_language">Language</string>
+    <string name="language_name_arabic">العربية</string>
+    <string name="language_name_english">English</string>
+    <string name="provider_fetch_models">Fetch available models from this URL</string>
+    <string name="provider_fetch_models_loading">Loading…</string>
+    <string name="provider_fetch_models_failed">Failed to fetch models: %1$s</string>
+    <string name="provider_fetch_models_empty">No models returned by this endpoint</string>
+    <!-- UI literals previously hardcoded (Arabic default fork) -->
+    <string name="cd_menu">Menu</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_switch_model">Switch model</string>
+    <string name="cd_toggle">Toggle</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_send">Send</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_stop_all">Stop All</string>
+    <string name="chat_delete_confirm_title">Delete conversation?</string>
+    <string name="skill_monitor_messages">Monitor Messages</string>
+    <string name="skill_send_message">Send Message</string>
+    <string name="send_example_hint">e.g. Mom, +1 555 123 4567</string>
+    <string name="send_smart_llm_hint">With a smarter LLM, you can just type:</string>
+    <string name="send_word_send">Send </string>
+    <string name="send_placeholder_message">message</string>
+    <string name="send_word_to">to </string>
+    <string name="send_placeholder_name">name</string>
+    <string name="quick_task_templates">Quick Task Templates</string>
+    <string name="background_badge">BACKGROUND</string>
+    <string name="monitor_auto_reply_title">Monitor &amp; Auto-Reply</string>
+    <string name="monitor_auto_reply_subtitle">Watch messages and reply automatically</string>
+    <string name="tmpl_open_reddit">🦞 Open Reddit and search for pokeclaw</string>
+    <string name="tmpl_youtube_cats">🎬 Search YouTube for funny cat fails</string>
+    <string name="tmpl_install_telegram">📦 Install Telegram from Play Store</string>
+    <string name="tmpl_trending_twitter">🐦 Check what\'s trending on Twitter and tell me</string>
+    <string name="tmpl_whatsapp_summary">💬 Check my latest WhatsApp chat and summarize it</string>
+    <string name="tmpl_email_search">📋 Copy the latest email subject and Google it</string>
+    <string name="tmpl_email_late">📧 Write an email saying I\'ll be late today</string>
+    <string name="tmpl_notifications_important">📵 Check my notifications — anything important?</string>
+    <string name="tmpl_clipboard_explain">📋 Read my clipboard and explain what it says</string>
+    <string name="tmpl_storage_delete">🧹 Check my storage and apps — what can I delete?</string>
+    <string name="tmpl_notif_summarize">🔔 Read my notifications and summarize</string>
+    <string name="tmpl_battery_charge">🔋 Check my battery and tell me if I need to charge</string>
+    <string name="tmpl_send_hi_mom">💬 Send hi to Mom on WhatsApp</string>
+    <string name="tmpl_list_apps">📱 What apps do I have?</string>
+    <string name="tmpl_phone_temp">🌡️ How hot is my phone?</string>
+    <string name="tmpl_bluetooth_on">🔵 Is bluetooth on?</string>
+    <string name="tmpl_battery_left">🔋 How much battery left?</string>
+    <string name="tmpl_call_mom">📞 Call Mom</string>
+    <string name="tmpl_storage_left">💾 How much storage do I have?</string>
+    <string name="tmpl_android_version">📲 What Android version am I running?</string>
+    <string name="monitor_active_badge">Active</string>
+    <string name="monitor_active_hint">Monitoring active — use the top bar to stop</string>
+    <string name="skills_panel_subtitle">Background tasks powered by AI — things a single prompt can\'t do.</string>
+    <string name="skill_monitor_desc">Auto-reply to someone\'s messages in background</string>
+    <string name="skill_running_bg">Running in background</string>
+    <string name="monitor_sheet_title">👁️ Monitor &amp; Auto-Reply</string>
+    <string name="header_cloud_ai">Cloud AI</string>
+    <string name="header_local_ai">Local AI</string>
+    <string name="settings_group_permissions">Permissions</string>
+    <string name="notif_access_title">Notification Access</string>
+    <string name="task_budget_title">Task Budget</string>
+    <string name="tools_group_title">Tools</string>
+    <string name="tools_available_title">Available tools</string>
+    <string name="remote_group_title">Remote Control</string>
+    <string name="telegram_bot_title">Telegram Bot</string>
+    <string name="external_automation_title">External Automation</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="web_dashboard_title">Web Dashboard</string>
+    <string name="about_group_title">About</string>
+    <string name="report_bug_title">Report a Bug</string>
+    <string name="share_debug_report_title">Share Debug Report</string>
+    <string name="built_by_title">Built by</string>
+    <string name="max_tokens_per_task">Max tokens per task</string>
+    <string name="blank_no_cost_cap">Blank = no cost cap</string>
+    <string name="enable_external_automation_question">Enable External Automation?</string>
+    <string name="current_theme_label">Current: %1$s</string>
+    <string name="channel_bot_token_label">Bot Token</string>
+    <string name="status_unrestricted">Unrestricted</string>
+    <string name="status_restricted">Restricted</string>
     <string name="settings_group_channel">Channels</string>
     <string name="settings_group_model">Model</string>
 
@@ -124,9 +211,9 @@
     <string name="floating_task_received">Received: \"%s\"</string>
 
     <!-- Foreground Service Notification -->
-    <string name="notification_channel_name">PokeClaw Status</string>
-    <string name="notification_channel_description">Shows PokeClaw running status and stats</string>
-    <string name="notification_content_title">PokeClaw · Task in progress</string>
+    <string name="notification_channel_name">Sanad Claw Status</string>
+    <string name="notification_channel_description">Shows Sanad running status and stats</string>
+    <string name="notification_content_title">Sanad Claw · Task in progress</string>
     <string name="notification_content_text">Running task...</string>
 
     <!-- Channel Messages -->
@@ -142,7 +229,6 @@
 
     <!-- Accessibility -->
     <string name="cd_back_button">Back</string>
-    <string name="cd_settings">Settings</string>
     <string name="cd_clear_input">Clear input</string>
     <string name="cd_checkbox">Toggle checkbox</string>
     <string name="cd_selected">Selected</string>
@@ -150,7 +236,7 @@
     <string name="cd_task_error">Task failed</string>
     <string name="cd_channel_logo">Channel logo</string>
     <string name="cd_app_logo">App logo</string>
-    <string name="cd_floating_idle">PokeClaw — tap to focus</string>
+    <string name="cd_floating_idle">Sanad Claw — tap to focus</string>
     <string name="cd_qr_code">QR code</string>
     <string name="cd_toggle_password">Show or hide password</string>
     <string name="cd_copy">Copy</string>

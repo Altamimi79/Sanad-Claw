@@ -70,7 +70,7 @@ class ChannelConfigActivity : BaseActivity() {
         when (channelType) {
             ChannelType.DISCORD -> {
                 tvTip.text = getString(R.string.channel_config_discord_tip)
-                tvLabel1.text = "Bot Token"
+                tvLabel1.text = getString(R.string.channel_bot_token_label)
                 tvLabel2.visibility = View.GONE
                 (etInput2.parent.parent as View).visibility = View.GONE
                 etInput1.hint = getString(R.string.channel_config_discord_hint1)
@@ -78,7 +78,7 @@ class ChannelConfigActivity : BaseActivity() {
             }
             ChannelType.TELEGRAM -> {
                 tvTip.text = getString(R.string.channel_config_telegram_tip)
-                tvLabel1.text = "Bot Token"
+                tvLabel1.text = getString(R.string.channel_bot_token_label)
                 tvLabel2.visibility = View.GONE
                 (etInput2.parent.parent as View).visibility = View.GONE
                 etInput1.hint = getString(R.string.channel_config_telegram_hint1)

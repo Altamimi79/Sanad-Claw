@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PokeClaw</string>
+    <string name="app_name">سند كلو</string>
 
     <!-- Common -->
     <string name="common_confirm">موافق</string>
@@ -25,19 +25,19 @@
     <string name="guide_skip">تخطي</string>
     <string name="guide_start">ابدأ الآن</string>
     <string name="guide_title_accessibility">خدمة إمكانية الوصول</string>
-    <string name="guide_desc_accessibility">تتيح لـ PokeClaw قراءة الشاشة والضغط على الأزرار نيابةً عنك. اضغط للتفعيل.</string>
+    <string name="guide_desc_accessibility">تتيح لـ سند قراءة الشاشة والضغط على الأزرار نيابةً عنك. اضغط للتفعيل.</string>
     <string name="guide_title_notification">إشعارات المهام</string>
-    <string name="guide_desc_notification">تتيح لـ PokeClaw عرض التقدم أثناء تشغيل مهمة أو مراقبة. اضغط للتفعيل.</string>
+    <string name="guide_desc_notification">تتيح لـ سند عرض التقدم أثناء تشغيل مهمة أو مراقبة. اضغط للتفعيل.</string>
     <string name="guide_title_overlay">النظام العائم</string>
     <string name="guide_desc_overlay">يعرض لوحة حالة عائمة أثناء تنفيذ المهام. اضغط للتفعيل.</string>
     <string name="guide_title_battery">استثناء البطارية</string>
-    <string name="guide_desc_battery">يمنع النظام من إغلاق PokeClaw. اضغط للسماح.</string>
+    <string name="guide_desc_battery">يمنع النظام من إغلاق سند. اضغط للسماح.</string>
     <string name="guide_title_storage">الوصول إلى الملفات</string>
-    <string name="guide_desc_storage">يتيح لـ PokeClaw قراءة وكتابة الملفات على جهازك. اضغط للتفعيل.</string>
+    <string name="guide_desc_storage">يتيح لـ سند قراءة وكتابة الملفات على جهازك. اضغط للتفعيل.</string>
 
     <!-- Home -->
     <string name="home_need_notification_permission">إذن الإشعارات مطلوب</string>
-    <string name="home_enable_accessibility">يرجى تفعيل خدمة إمكانية الوصول لـ PokeClaw</string>
+    <string name="home_enable_accessibility">يرجى تفعيل خدمة إمكانية الوصول لـ سند</string>
     <string name="home_accessibility_enabled">خدمة إمكانية الوصول مفعّلة</string>
     <string name="home_notification_enabled">إشعارات المهام مفعّلة</string>
     <string name="home_overlay_enabled">إذن النوافذ العائمة مفعّل</string>
@@ -61,6 +61,93 @@
 
     <!-- Settings -->
     <string name="settings_title">الإعدادات</string>
+    <string name="chat_new_chat">محادثة جديدة</string>
+    <string name="chat_recent">الأخيرة</string>
+    <string name="chat_no_conversations">لا توجد محادثات بعد</string>
+    <string name="chat_rename_conversation">إعادة تسمية المحادثة</string>
+    <string name="appearance_title">المظهر</string>
+    <string name="theme_title">السِمة</string>
+    <string name="settings_language">اللغة</string>
+    <string name="language_name_arabic">العربية</string>
+    <string name="language_name_english">English</string>
+    <string name="provider_fetch_models">جلب الموديلات المتاحة من هذا الرابط</string>
+    <string name="provider_fetch_models_loading">جارٍ التحميل…</string>
+    <string name="provider_fetch_models_failed">تعذّر جلب الموديلات: %1$s</string>
+    <string name="provider_fetch_models_empty">لم يُرجع هذا الرابط أي موديلات</string>
+    <!-- UI literals previously hardcoded (Arabic default fork) -->
+    <string name="cd_menu">القائمة</string>
+    <string name="cd_settings">الإعدادات</string>
+    <string name="cd_switch_model">تبديل النموذج</string>
+    <string name="cd_toggle">تبديل</string>
+    <string name="action_rename">إعادة تسمية</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_send">إرسال</string>
+    <string name="action_stop">إيقاف</string>
+    <string name="action_stop_all">إيقاف الكل</string>
+    <string name="chat_delete_confirm_title">حذف المحادثة؟</string>
+    <string name="skill_monitor_messages">مراقبة الرسائل</string>
+    <string name="skill_send_message">إرسال رسالة</string>
+    <string name="send_example_hint">مثال: الوالدة، ‎+1 555 123 4567</string>
+    <string name="send_smart_llm_hint">مع نموذج أكثر ذكاءً يكفي أن تكتب:</string>
+    <string name="send_word_send">أرسل </string>
+    <string name="send_placeholder_message">الرسالة</string>
+    <string name="send_word_to">إلى </string>
+    <string name="send_placeholder_name">الاسم</string>
+    <string name="quick_task_templates">مهام سريعة جاهزة</string>
+    <string name="background_badge">في الخلفية</string>
+    <string name="monitor_auto_reply_title">المراقبة والرد التلقائي</string>
+    <string name="monitor_auto_reply_subtitle">راقب الرسائل وردّ تلقائيًا</string>
+    <string name="tmpl_open_reddit">🦞 افتح Reddit وابحث عن pokeclaw</string>
+    <string name="tmpl_youtube_cats">🎬 ابحث في يوتيوب عن مقاطع قطط مضحكة</string>
+    <string name="tmpl_install_telegram">📦 ثبّت تطبيق تيليجرام من متجر Play</string>
+    <string name="tmpl_trending_twitter">🐦 تحقق من الأكثر رواجًا على X وأخبرني</string>
+    <string name="tmpl_whatsapp_summary">💬 تحقق من آخر محادثة واتساب ولخّصها</string>
+    <string name="tmpl_email_search">📋 انسخ عنوان آخر بريد وارِشه في جوجل</string>
+    <string name="tmpl_email_late">📧 اكتب بريدًا إلكترونيًا أخبر فيه أنني سأصل متأخرًا اليوم</string>
+    <string name="tmpl_notifications_important">📵 تحقق من الإشعارات — هل هناك ما هو مهم؟</string>
+    <string name="tmpl_clipboard_explain">📋 اقرأ الحافظة واشرح محتواها</string>
+    <string name="tmpl_storage_delete">🧹 افحص التخزين والتطبيقات — ما الذي يمكن حذفه؟</string>
+    <string name="tmpl_notif_summarize">🔔 اقرأ الإشعارات ولخّصها</string>
+    <string name="tmpl_battery_charge">🔋 تحقق من البطارية وأخبرني إن احتجت الشحن</string>
+    <string name="tmpl_send_hi_mom">💬 أرسل «مرحبًا» لوالدتي على واتساب</string>
+    <string name="tmpl_list_apps">📱 ما التطبيقات المثبتة لدي؟</string>
+    <string name="tmpl_phone_temp">🌡️ ما درجة حرارة هاتفي؟</string>
+    <string name="tmpl_bluetooth_on">🔵 هل البلوتوث مفعّل؟</string>
+    <string name="tmpl_battery_left">🔋 كم بقي من البطارية؟</string>
+    <string name="tmpl_call_mom">📞 اتصل بوالدتي</string>
+    <string name="tmpl_storage_left">💾 كم مساحة التخزين المتبقية؟</string>
+    <string name="tmpl_android_version">📲 ما إصدار أندرويد الذي أستخدمه؟</string>
+    <string name="monitor_active_badge">نشِط</string>
+    <string name="monitor_active_hint">المراقبة تعمل — استخدم الشريط العلوي للإيقاف</string>
+    <string name="skills_panel_subtitle">مهام خلفية مدعومة بالذكاء الاصطناعي — ما يعجز عنه أمر واحد.</string>
+    <string name="skill_monitor_desc">رد تلقائي على رسائل شخص ما في الخلفية</string>
+    <string name="skill_running_bg">يعمل في الخلفية</string>
+    <string name="monitor_sheet_title">👁️ المراقبة والرد التلقائي</string>
+    <string name="header_cloud_ai">الذكاء السحابي</string>
+    <string name="header_local_ai">الذكاء المحلي</string>
+    <string name="settings_group_permissions">الأذونات</string>
+    <string name="notif_access_title">الوصول إلى الإشعارات</string>
+    <string name="task_budget_title">ميزانية المهمة</string>
+    <string name="tools_group_title">الأدوات</string>
+    <string name="tools_available_title">الأدوات المتاحة</string>
+    <string name="remote_group_title">التحكم عن بُعد</string>
+    <string name="telegram_bot_title">بوت تيليجرام</string>
+    <string name="external_automation_title">الأتمتة الخارجية</string>
+    <string name="coming_soon">قريبًا</string>
+    <string name="web_dashboard_title">لوحة تحكم الويب</string>
+    <string name="about_group_title">حول التطبيق</string>
+    <string name="report_bug_title">الإبلاغ عن خطأ</string>
+    <string name="share_debug_report_title">مشاركة تقرير التشخيص</string>
+    <string name="built_by_title">طوَّره</string>
+    <string name="max_tokens_per_task">الحد الأقصى للرموز لكل مهمة</string>
+    <string name="blank_no_cost_cap">فارغ = بدون حد للتكلفة</string>
+    <string name="enable_external_automation_question">هل تريد تفعيل الأتمتة الخارجية؟</string>
+    <string name="current_theme_label">الحالية: %1$s</string>
+    <string name="channel_bot_token_label">رمز البوت</string>
+    <string name="status_unrestricted">غير مقيَّد</string>
+    <string name="status_restricted">مقيَّد</string>
     <string name="settings_group_channel">القنوات</string>
     <string name="settings_group_model">النموذج</string>
 
@@ -125,9 +212,9 @@
     <string name="floating_task_received">تم الاستلام: \"%s\"</string>
 
     <!-- Foreground Service Notification -->
-    <string name="notification_channel_name">حالة PokeClaw</string>
-    <string name="notification_channel_description">يعرض حالة PokeClaw وإحصاءاتها أثناء التشغيل</string>
-    <string name="notification_content_title">PokeClaw · مهمة قيد التنفيذ</string>
+    <string name="notification_channel_name">حالة سند كلو</string>
+    <string name="notification_channel_description">يعرض حالة سند كلو وإحصاءاتها أثناء التشغيل</string>
+    <string name="notification_content_title">سند كلو · مهمة قيد التنفيذ</string>
     <string name="notification_content_text">جارٍ تنفيذ مهمة…</string>
 
     <!-- Channel Messages -->
@@ -143,7 +230,6 @@
 
     <!-- Accessibility -->
     <string name="cd_back_button">رجوع</string>
-    <string name="cd_settings">الإعدادات</string>
     <string name="cd_clear_input">مسح الإدخال</string>
     <string name="cd_checkbox">تبديل الاختيار</string>
     <string name="cd_selected">محدد</string>
@@ -151,7 +237,7 @@
     <string name="cd_task_error">فشلت المهمة</string>
     <string name="cd_channel_logo">شعار القناة</string>
     <string name="cd_app_logo">شعار التطبيق</string>
-    <string name="cd_floating_idle">PokeClaw — اضغط للتركيز</string>
+    <string name="cd_floating_idle">سند كلو — اضغط للتركيز</string>
     <string name="cd_qr_code">رمز QR</string>
     <string name="cd_toggle_password">إظهار أو إخفاء كلمة المرور</string>
     <string name="cd_copy">نسخ</string>

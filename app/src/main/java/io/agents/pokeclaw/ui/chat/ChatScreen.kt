@@ -30,6 +30,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -426,7 +428,7 @@ private fun ChatTopBar(
             title = {
                 Text(
                     buildAnnotatedString {
-                        append("Poke")
+                        append("Sanad ")
                         withStyle(SpanStyle(color = colors.accent)) {
                             append("Claw")
                         }
@@ -438,7 +440,7 @@ private fun ChatTopBar(
             },
             navigationIcon = {
                 IconButton(onClick = onMenuClick) {
-                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.cd_menu))
                 }
             },
             actions = {
@@ -471,7 +473,7 @@ private fun ChatTopBar(
                     )
                 }
                 IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.cd_settings))
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -500,7 +502,7 @@ private fun ChatTopBar(
             Spacer(Modifier.width(4.dp))
             Icon(
                 Icons.Default.UnfoldMore,
-                contentDescription = "Switch model",
+                contentDescription = stringResource(R.string.cd_switch_model),
                 tint = colors.textTertiary,
                 modifier = Modifier.size(12.dp),
             )
@@ -732,7 +734,7 @@ private fun AssistantBubble(text: String, timestamp: Long, colors: PokeclawColor
             // Avatar
             androidx.compose.foundation.Image(
                 painter = painterResource(R.drawable.pokeclaw_avatar),
-                contentDescription = "PokeClaw",
+                contentDescription = "Sanad Claw",
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape),
@@ -1314,7 +1316,7 @@ private fun SkillShortcutBar(
         SkillCategory.INPUT to Icons.Outlined.Keyboard,
         SkillCategory.DISMISS to Icons.Outlined.Close,
         SkillCategory.NAVIGATION to Icons.Outlined.Navigation,
-        SkillCategory.MESSAGING to Icons.Outlined.Chat,
+        SkillCategory.MESSAGING to Icons.AutoMirrored.Outlined.Chat,
         SkillCategory.MEDIA to Icons.Outlined.CameraAlt,
         SkillCategory.GENERAL to Icons.Outlined.AutoAwesome,
     )
@@ -1424,7 +1426,7 @@ private fun DownloadOverlay(progress: Int, colors: PokeclawColors) {
             ) {
                 androidx.compose.foundation.Image(
                     painter = painterResource(R.drawable.pokeclaw_avatar),
-                    contentDescription = "PokeClaw",
+                    contentDescription = "Sanad Claw",
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(16.dp)),
@@ -1491,7 +1493,7 @@ private fun EmptyStateWithPrompts(
         )
     }
 
-    val headerText = if (!isLocalModel) "Cloud AI" else "Local AI"
+    val headerText = if (!isLocalModel) stringResource(R.string.header_cloud_ai) else stringResource(R.string.header_local_ai)
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -1500,17 +1502,19 @@ private fun EmptyStateWithPrompts(
         Spacer(Modifier.height(40.dp))
         androidx.compose.foundation.Image(
             painter = painterResource(R.drawable.pokeclaw_avatar),
-            contentDescription = "PokeClaw",
+            contentDescription = "Sanad Claw",
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(12.dp)),
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "PokeClaw",
+            "Sanad Claw",
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             color = colors.textPrimary,
+            maxLines = 1,
+            softWrap = false,
         )
         Spacer(Modifier.height(3.dp))
         Text(
@@ -1607,32 +1611,32 @@ private fun QuickTasksPanel(
     // Cloud-only tasks at the top (multi-step, Siri/GA can't do these)
     // Cloud-only tasks (multi-step, Siri can't do)
     val cloudOnlyTasks = listOf(
-        "🦞 Open Reddit and search for pokeclaw",
-        "🎬 Search YouTube for funny cat fails",
-        "📦 Install Telegram from Play Store",
-        "🐦 Check what's trending on Twitter and tell me",
-        "💬 Check my latest WhatsApp chat and summarize it",
-        "📋 Copy the latest email subject and Google it",
-        "📧 Write an email saying I'll be late today",
+        stringResource(R.string.tmpl_open_reddit),
+        stringResource(R.string.tmpl_youtube_cats),
+        stringResource(R.string.tmpl_install_telegram),
+        stringResource(R.string.tmpl_trending_twitter),
+        stringResource(R.string.tmpl_whatsapp_summary),
+        stringResource(R.string.tmpl_email_search),
+        stringResource(R.string.tmpl_email_late),
     )
     // Reasoning tasks (1-2 tool calls + LLM analysis) — impressive, work on both
     val reasoningTasks = listOf(
-        "📵 Check my notifications — anything important?",
-        "📋 Read my clipboard and explain what it says",
-        "🧹 Check my storage and apps — what can I delete?",
-        "🔔 Read my notifications and summarize",
-        "🔋 Check my battery and tell me if I need to charge",
+        stringResource(R.string.tmpl_notifications_important),
+        stringResource(R.string.tmpl_clipboard_explain),
+        stringResource(R.string.tmpl_storage_delete),
+        stringResource(R.string.tmpl_notif_summarize),
+        stringResource(R.string.tmpl_battery_charge),
     )
     // Simple deterministic tasks (1 tool, no reasoning)
     val deterministicTasks = listOf(
-        "💬 Send hi to Mom on WhatsApp",
-        "📱 What apps do I have?",
-        "🌡️ How hot is my phone?",
-        "🔵 Is bluetooth on?",
-        "🔋 How much battery left?",
-        "📞 Call Mom",
-        "💾 How much storage do I have?",
-        "📲 What Android version am I running?",
+        stringResource(R.string.tmpl_send_hi_mom),
+        stringResource(R.string.tmpl_list_apps),
+        stringResource(R.string.tmpl_phone_temp),
+        stringResource(R.string.tmpl_bluetooth_on),
+        stringResource(R.string.tmpl_battery_left),
+        stringResource(R.string.tmpl_call_mom),
+        stringResource(R.string.tmpl_storage_left),
+        stringResource(R.string.tmpl_android_version),
     )
     // Cloud: cloud-only → reasoning → deterministic
     // Local: reasoning first (impressive) → deterministic
@@ -1658,13 +1662,13 @@ private fun QuickTasksPanel(
         ) {
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = "Toggle",
+                contentDescription = stringResource(R.string.cd_toggle),
                 tint = colors.accent,
                 modifier = Modifier.size(12.dp),
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                "Quick Task Templates",
+                stringResource(R.string.quick_task_templates),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 color = colors.accent,
@@ -1672,7 +1676,7 @@ private fun QuickTasksPanel(
             Spacer(Modifier.width(6.dp))
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = "Toggle",
+                contentDescription = stringResource(R.string.cd_toggle),
                 tint = colors.accent,
                 modifier = Modifier.size(12.dp),
             )
@@ -1721,7 +1725,7 @@ private fun QuickTasksPanel(
             // Background section — always visible, NOT inside scroll
             Column(modifier = Modifier.padding(horizontal = 12.dp)) {
                 Text(
-                    "BACKGROUND",
+                    stringResource(R.string.background_badge),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = colors.textTertiary,
@@ -1760,13 +1764,13 @@ private fun QuickTasksPanel(
                         Spacer(Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                if (monitorActive) "Active" else "Monitor & Auto-Reply",
+                                if (monitorActive) stringResource(R.string.monitor_active_badge) else stringResource(R.string.monitor_auto_reply_title),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = colors.textPrimary,
                             )
                             Text(
-                                if (monitorActive) "Monitoring active — use the top bar to stop" else "Watch messages and reply automatically",
+                                if (monitorActive) stringResource(R.string.monitor_active_hint) else stringResource(R.string.monitor_auto_reply_subtitle),
                                 fontSize = 9.sp,
                                 color = colors.textTertiary,
                             )
@@ -1819,7 +1823,7 @@ private fun SidebarContent(
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Edit, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(12.dp))
-                            Text("Rename", color = colors.textPrimary)
+                            Text(stringResource(R.string.action_rename), color = colors.textPrimary)
                         }
                     }
                     TextButton(
@@ -1832,14 +1836,14 @@ private fun SidebarContent(
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFF87171), modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(12.dp))
-                            Text("Delete", color = Color(0xFFF87171))
+                            Text(stringResource(R.string.action_delete), color = Color(0xFFF87171))
                         }
                     }
                 }
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { actionTarget = null }) { Text("Cancel", color = colors.textSecondary) }
+                TextButton(onClick = { actionTarget = null }) { Text(stringResource(R.string.action_cancel), color = colors.textSecondary) }
             },
             containerColor = colors.surface,
         )
@@ -1849,16 +1853,16 @@ private fun SidebarContent(
     if (deleteTarget != null) {
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete conversation?", color = colors.textPrimary) },
+            title = { Text(stringResource(R.string.chat_delete_confirm_title), color = colors.textPrimary) },
             text = { Text(deleteTarget!!.title, color = colors.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis) },
             confirmButton = {
                 TextButton(onClick = {
                     onDeleteConversation(deleteTarget!!)
                     deleteTarget = null
-                }) { Text("Delete", color = Color(0xFFF87171)) }
+                }) { Text(stringResource(R.string.action_delete), color = Color(0xFFF87171)) }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = colors.textSecondary) }
+                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.action_cancel), color = colors.textSecondary) }
             },
             containerColor = colors.surface,
         )
@@ -1868,7 +1872,7 @@ private fun SidebarContent(
     if (renameTarget != null) {
         AlertDialog(
             onDismissRequest = { renameTarget = null },
-            title = { Text("Rename conversation", color = colors.textPrimary) },
+            title = { Text(stringResource(R.string.chat_rename_conversation), color = colors.textPrimary) },
             text = {
                 androidx.compose.material3.OutlinedTextField(
                     value = renameText,
@@ -1891,10 +1895,10 @@ private fun SidebarContent(
                         onRenameConversation(renameTarget!!, newName)
                     }
                     renameTarget = null
-                }) { Text("Save", color = colors.accent) }
+                }) { Text(stringResource(R.string.action_save), color = colors.accent) }
             },
             dismissButton = {
-                TextButton(onClick = { renameTarget = null }) { Text("Cancel", color = colors.textSecondary) }
+                TextButton(onClick = { renameTarget = null }) { Text(stringResource(R.string.action_cancel), color = colors.textSecondary) }
             },
             containerColor = colors.surface,
         )
@@ -1918,7 +1922,7 @@ private fun SidebarContent(
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                "PokeClaw",
+                "Sanad Claw",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.textPrimary,
@@ -1936,7 +1940,7 @@ private fun SidebarContent(
         ) {
             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("New Chat")
+            Text(stringResource(R.string.chat_new_chat))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -1945,7 +1949,7 @@ private fun SidebarContent(
 
         // Recent label
         Text(
-            "Recent",
+            stringResource(R.string.chat_recent),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = colors.textTertiary,
@@ -1957,7 +1961,7 @@ private fun SidebarContent(
             if (conversations.isEmpty()) {
                 item {
                     Text(
-                        "No conversations yet",
+                        stringResource(R.string.chat_no_conversations),
                         fontSize = 13.sp,
                         color = colors.textTertiary,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
@@ -1990,7 +1994,7 @@ private fun SidebarContent(
                     )
                     Icon(
                         Icons.Default.Edit,
-                        contentDescription = "Rename conversation",
+                        contentDescription = stringResource(R.string.chat_rename_conversation),
                         tint = colors.textTertiary,
                         modifier = Modifier
                             .padding(end = 12.dp)
@@ -2019,7 +2023,7 @@ private fun SidebarContent(
             ) {
                 Icon(Icons.Outlined.Settings, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Settings", color = colors.textSecondary)
+                Text(stringResource(R.string.settings_title), color = colors.textSecondary)
             }
         }
         TextButton(
@@ -2034,7 +2038,7 @@ private fun SidebarContent(
             ) {
                 Icon(Icons.Outlined.SmartToy, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Models", color = colors.textSecondary)
+                Text(stringResource(R.string.models_title), color = colors.textSecondary)
             }
         }
 
@@ -2061,7 +2065,7 @@ private fun TaskSkillsPanel(
         SkillCategory.INPUT to Icons.Outlined.Keyboard,
         SkillCategory.DISMISS to Icons.Outlined.Close,
         SkillCategory.NAVIGATION to Icons.Outlined.Navigation,
-        SkillCategory.MESSAGING to Icons.Outlined.Chat,
+        SkillCategory.MESSAGING to Icons.AutoMirrored.Outlined.Chat,
         SkillCategory.GENERAL to Icons.Outlined.AutoAwesome,
     )
 
@@ -2078,7 +2082,7 @@ private fun TaskSkillsPanel(
                 color = colors.textPrimary,
             )
             Text(
-                "Background tasks powered by AI — things a single prompt can't do.",
+                stringResource(R.string.skills_panel_subtitle),
                 fontSize = 12.sp,
                 color = colors.textTertiary,
                 modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
@@ -2101,8 +2105,8 @@ private fun TaskSkillsPanel(
         item {
             SkillCard(
                 icon = Icons.Outlined.Visibility,
-                title = "Monitor Messages",
-                description = "Auto-reply to someone's messages in background",
+                title = stringResource(R.string.skill_monitor_messages),
+                description = stringResource(R.string.skill_monitor_desc),
                 onClick = onMonitorClick,
                 isActivating = activatingSkill == "monitor",
                 isActive = monitorActive,
@@ -2113,8 +2117,8 @@ private fun TaskSkillsPanel(
         // Send Message — available on both (workflow card shortcut)
         item {
             SkillCard(
-                icon = Icons.Outlined.Send,
-                title = "Send Message",
+                icon = Icons.AutoMirrored.Outlined.Send,
+                title = stringResource(R.string.skill_send_message),
                 description = "Send a message to someone via any messaging app",
                 onClick = onSendClick,
                 colors = colors,
@@ -2144,7 +2148,7 @@ private fun TaskSkillsPanel(
             item {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Recent",
+                    stringResource(R.string.chat_recent),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.textTertiary,
@@ -2225,7 +2229,7 @@ private fun SkillCard(
                     Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = if (isActive) activeOrange else colors.textPrimary)
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        if (isActive) "Running in background" else description,
+                        if (isActive) stringResource(R.string.skill_running_bg) else description,
                         fontSize = 12.sp,
                         color = if (isActive) activeOrange.copy(alpha = 0.7f) else colors.textTertiary,
                         lineHeight = 16.sp,
@@ -2302,7 +2306,7 @@ private fun MonitorDialog(
 
                 // Title
                 Text(
-                    "\uD83D\uDC41\uFE0F Monitor & Auto-Reply",
+                    stringResource(R.string.monitor_sheet_title),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = colors.textPrimary,
@@ -2340,7 +2344,7 @@ private fun MonitorDialog(
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             ) {
                                 if (contact.isEmpty()) {
-                                    Text("e.g. Mom, +1 555 123 4567", fontSize = 12.sp, color = colors.textTertiary)
+                                    Text(stringResource(R.string.send_example_hint), fontSize = 12.sp, color = colors.textTertiary)
                                 }
                                 innerTextField()
                             }
@@ -2478,7 +2482,7 @@ private fun SendMessageDialog(
         onDismissRequest = onDismiss,
         containerColor = colors.surface,
         title = {
-            Text("Send Message", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+            Text(stringResource(R.string.skill_send_message), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
         },
         text = {
             Column {
@@ -2572,12 +2576,12 @@ private fun SendMessageDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
                 shape = RoundedCornerShape(10.dp),
             ) {
-                Text("Send")
+                Text(stringResource(R.string.action_send))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = colors.textSecondary)
+                Text(stringResource(R.string.action_cancel), color = colors.textSecondary)
             }
         },
     )
@@ -2659,7 +2663,7 @@ private fun ActiveTaskBar(
                         modifier = Modifier.weight(1f),
                     )
                     Text(
-                        text = "Stop",
+                        text = stringResource(R.string.action_stop),
                         color = androidx.compose.ui.graphics.Color(0xFFF44336),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
@@ -2677,7 +2681,7 @@ private fun ActiveTaskBar(
                     horizontalArrangement = Arrangement.End,
                 ) {
                     Text(
-                        text = "Stop All",
+                        text = stringResource(R.string.action_stop_all),
                         color = androidx.compose.ui.graphics.Color(0xFFF44336),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,

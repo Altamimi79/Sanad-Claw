@@ -22,7 +22,9 @@ object AppLocale {
     const val LANGUAGE_ENGLISH = "en"
 
     fun getLanguage(context: Context): String {
-        val stored = context.applicationContext
+        // NOTE: must not use context.applicationContext here — attachBaseContext runs
+        // while the Application is still being attached, so applicationContext is null then.
+        val stored = context
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_LANGUAGE, LANGUAGE_ARABIC)
         return if (stored == LANGUAGE_ENGLISH) LANGUAGE_ENGLISH else LANGUAGE_ARABIC
@@ -30,7 +32,7 @@ object AppLocale {
 
     fun setLanguage(context: Context, language: String) {
         val normalized = if (language == LANGUAGE_ENGLISH) LANGUAGE_ENGLISH else LANGUAGE_ARABIC
-        context.applicationContext
+        context
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_LANGUAGE, normalized)
