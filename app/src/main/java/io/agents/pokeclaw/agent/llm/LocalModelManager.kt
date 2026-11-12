@@ -217,9 +217,9 @@ object LocalModelManager {
         val modelPath = localConfig.modelPath
         if (modelPath.isBlank()) {
             return ActiveModelState(
-                displayName = "No model selected",
-                metaText = "Download a model below",
-                statusText = "● Not configured",
+                displayName = context.getString(io.agents.pokeclaw.R.string.chat_no_model_selected),
+                metaText = context.getString(io.agents.pokeclaw.R.string.llm_download_model_below),
+                statusText = context.getString(io.agents.pokeclaw.R.string.status_not_configured),
                 statusKind = StatusKind.NEUTRAL,
             )
         }
@@ -229,11 +229,11 @@ object LocalModelManager {
             val availability = availabilityForModel(context, matchedModel, localConfig)
             return ActiveModelState(
                 displayName = matchedModel.displayName,
-                metaText = "${matchedModel.fileName} · On-device",
+                metaText = "${matchedModel.fileName} · " + context.getString(io.agents.pokeclaw.R.string.llm_on_device),
                 statusText = when (availability.source) {
-                    AvailabilitySource.MANAGED_DOWNLOAD -> "● Ready"
-                    AvailabilitySource.LINKED_FILE -> "● Ready"
-                    AvailabilitySource.MISSING -> "● Missing file"
+                    AvailabilitySource.MANAGED_DOWNLOAD -> context.getString(io.agents.pokeclaw.R.string.status_ready)
+                    AvailabilitySource.LINKED_FILE -> context.getString(io.agents.pokeclaw.R.string.status_ready)
+                    AvailabilitySource.MISSING -> context.getString(io.agents.pokeclaw.R.string.llm_status_missing_file)
                 },
                 statusKind = if (availability.isAvailable) StatusKind.READY else StatusKind.WARNING,
             )
@@ -241,8 +241,8 @@ object LocalModelManager {
 
         return ActiveModelState(
             displayName = localConfig.displayName.ifBlank { File(modelPath).nameWithoutExtension },
-            metaText = "On-device",
-            statusText = if (File(modelPath).exists()) "● Ready" else "● Missing file",
+            metaText = context.getString(io.agents.pokeclaw.R.string.llm_on_device),
+            statusText = if (File(modelPath).exists()) context.getString(io.agents.pokeclaw.R.string.status_ready) else context.getString(io.agents.pokeclaw.R.string.llm_status_missing_file),
             statusKind = if (File(modelPath).exists()) StatusKind.READY else StatusKind.WARNING,
         )
     }

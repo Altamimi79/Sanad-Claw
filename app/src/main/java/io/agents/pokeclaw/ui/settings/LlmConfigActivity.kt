@@ -52,6 +52,11 @@ class LlmConfigActivity : BaseActivity() {
 
         // Apply dark theme from ThemeManager to match rest of app
         val tc = ThemeManager.getColors()
+        retintStaticTexts(tc)
+        // Sanad fork: theme-aware secondary text color. The old hardcoded #8b949e was a
+        // GitHub-dark gray that looked muddy/low-contrast on the dark palettes (Abyss etc.);
+        // deriving from aiText keeps every theme's own hue and stays readable in dark mode.
+        val metaGray = metaGrayFor(tc)
         window.statusBarColor = tc.toolbarBg
         window.decorView.setBackgroundColor(tc.bg)
         val contentFrame = findViewById<android.view.ViewGroup>(android.R.id.content)
@@ -84,11 +89,14 @@ class LlmConfigActivity : BaseActivity() {
 
         // Apply theme to active model card text
         activeModelName.setTextColor(tc.aiText)
-        activeModelMeta.setTextColor(Color.parseColor("#8b949e"))
+        activeModelName.setTypeface(activeModelName.typeface, android.graphics.Typeface.BOLD)
+        activeModelMeta.setTextColor(metaGray)
         defaultLocalName.setTextColor(tc.aiText)
-        defaultLocalMeta.setTextColor(Color.parseColor("#8b949e"))
+        defaultLocalName.setTypeface(defaultLocalName.typeface, android.graphics.Typeface.BOLD)
+        defaultLocalMeta.setTextColor(metaGray)
         defaultCloudName.setTextColor(tc.aiText)
-        defaultCloudMeta.setTextColor(Color.parseColor("#8b949e"))
+        defaultCloudName.setTypeface(defaultCloudName.typeface, android.graphics.Typeface.BOLD)
+        defaultCloudMeta.setTextColor(metaGray)
 
         // Apply theme to all CardViews in XML layout
         val scrollContent = findViewById<LinearLayout>(R.id.layoutModelList)?.parent as? LinearLayout
@@ -97,7 +105,8 @@ class LlmConfigActivity : BaseActivity() {
                 val child = scrollContent.getChildAt(i)
                 if (child is TextView && child.id == View.NO_ID) {
                     // Section headers ("Active Model", "Available Models", "Cloud LLM")
-                    child.setTextColor(Color.parseColor("#8b949e"))
+                    child.setTextColor(metaGray)
+                    child.setTypeface(child.typeface, android.graphics.Typeface.BOLD)
                 }
                 if (child is CardView) {
                     child.setCardBackgroundColor(tc.toolbarBg)
@@ -115,7 +124,7 @@ class LlmConfigActivity : BaseActivity() {
                 when (activeState.statusKind) {
                     LocalModelManager.StatusKind.READY -> getColor(R.color.colorSuccessPrimary)
                     LocalModelManager.StatusKind.WARNING -> getColor(R.color.colorWarningPrimary)
-                    LocalModelManager.StatusKind.NEUTRAL -> Color.parseColor("#8b949e")
+                    LocalModelManager.StatusKind.NEUTRAL -> metaGray
                 }
             )
         } else {
@@ -123,14 +132,14 @@ class LlmConfigActivity : BaseActivity() {
             if (cloudModel.isNotEmpty()) {
                 activeModelName.text = cloudModel
                 val providerName = resolvedConfig.activeCloud.provider.displayName
-                activeModelMeta.text = "$providerName · Cloud"
+                activeModelMeta.text = "$providerName · " + getString(R.string.llm_cloud_suffix)
                 activeModelStatus.text = getString(R.string.llm_status_connected)
                 activeModelStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
             } else {
                 activeModelName.text = getString(R.string.chat_no_model_selected)
                 activeModelMeta.text = getString(R.string.llm_configure_cloud_below)
                 activeModelStatus.text = getString(R.string.status_not_configured)
-                activeModelStatus.setTextColor(Color.parseColor("#8b949e"))
+                activeModelStatus.setTextColor(metaGray)
             }
         }
 
@@ -142,28 +151,36 @@ class LlmConfigActivity : BaseActivity() {
             when (defaultLocalState.statusKind) {
                 LocalModelManager.StatusKind.READY -> getColor(R.color.colorSuccessPrimary)
                 LocalModelManager.StatusKind.WARNING -> getColor(R.color.colorWarningPrimary)
-                LocalModelManager.StatusKind.NEUTRAL -> Color.parseColor("#8b949e")
+                LocalModelManager.StatusKind.NEUTRAL -> metaGray
             }
         )
 
         if (resolvedConfig.defaultCloud.isConfigured) {
             defaultCloudName.text = resolvedConfig.defaultCloud.modelName
-            defaultCloudMeta.text = "${resolvedConfig.defaultCloud.provider.displayName} · Cloud"
+            defaultCloudMeta.text = "${resolvedConfig.defaultCloud.provider.displayName} · " + getString(R.string.llm_cloud_suffix)
             defaultCloudStatus.text = getString(R.string.status_ready)
             defaultCloudStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
         } else {
             defaultCloudName.text = getString(R.string.llm_no_default_cloud_model)
             defaultCloudMeta.text = getString(R.string.llm_configure_cloud_below)
             defaultCloudStatus.text = getString(R.string.status_not_configured)
-            defaultCloudStatus.setTextColor(Color.parseColor("#8b949e"))
+            defaultCloudStatus.setTextColor(metaGray)
         }
 
         val activeLocalModelId = if (resolvedConfig.activeMode == ActiveModelMode.LOCAL) resolvedConfig.local.modelId else ""
         val defaultLocalModelId = resolvedConfig.local.modelId
         val configuredBuiltInLocal = LocalModelManager.configuredBuiltInModel(resolvedConfig.local)
 
-        // Build model list
-        models.forEach { model ->
+        // Sanad fork: cloud-only setup — hide the local-model UI (default-local row + divider in
+        // the defaults card, and the "Available Models" download list). The local engine stays
+        // intact; flip these visibilities back to VISIBLE to re-expose on-device models.
+        findViewById<View>(R.id.layoutDefaultLocal)?.visibility = View.GONE
+        findViewById<View>(R.id.divDefaultLocal)?.visibility = View.GONE
+        findViewById<TextView>(R.id.tvSectionAvailableModels)?.visibility = View.GONE
+        modelList.visibility = View.GONE
+
+        // Build model list (skipped while the local section is hidden)
+        if (modelList.visibility == View.VISIBLE) models.forEach { model ->
             val modelEntry = catalog[model.id]
             val availability = LocalModelManager.availabilityForModel(this, model, resolvedConfig.local)
             val downloaded = availability.isAvailable
@@ -203,15 +220,15 @@ class LlmConfigActivity : BaseActivity() {
                 text = model.displayName
                 textSize = 14f
                 setTextColor(tc.aiText)
-                if (isActive) setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
             }
             info.addView(nameTV)
 
             val descTV = TextView(this).apply {
                 val baseText = "${model.sizeBytes / 1_000_000} MB · ${model.minRamGb}GB+ RAM"
-                text = if (supportedOnDevice) baseText else "$baseText · This phone reports ${deviceSupport.deviceRamGb}GB"
+                text = if (supportedOnDevice) baseText else "$baseText · " + getString(R.string.llm_this_phone_reports, deviceSupport.deviceRamGb)
                 textSize = 12f
-                setTextColor(if (supportedOnDevice) Color.parseColor("#8b949e") else getColor(R.color.colorWarningPrimary))
+                setTextColor(if (supportedOnDevice) metaGray else getColor(R.color.colorWarningPrimary))
             }
             info.addView(descTV)
 
@@ -370,6 +387,7 @@ class LlmConfigActivity : BaseActivity() {
     }
 
     private fun setupCloudLlm(tc: ThemeManager.ChatColors) {
+        val metaGray = metaGrayFor(tc)
         val tabLayout = findViewById<LinearLayout>(R.id.layoutProviderTabs)
         val modelListLayout = findViewById<LinearLayout>(R.id.layoutCloudModels)
         val layoutBaseUrl = findViewById<View>(R.id.layoutBaseUrl)
@@ -430,7 +448,7 @@ class LlmConfigActivity : BaseActivity() {
                         setColor(getColor(R.color.colorBrandPrimary))
                     }
                 } else {
-                    tab.setTextColor(Color.parseColor("#8b949e"))
+                    tab.setTextColor(metaGray)
                     tab.background = null
                 }
             }
@@ -466,7 +484,7 @@ class LlmConfigActivity : BaseActivity() {
                     ).apply { bottomMargin = dp(6) }
                     radius = dp(10).toFloat()
                     cardElevation = dp(1).toFloat()
-                    setCardBackgroundColor(if (isSelected) Color.parseColor("#2A1F1A") else tc.toolbarBg)
+                    setCardBackgroundColor(if (isSelected) tc.aiBubble else tc.toolbarBg)
                     if (isSelected) {
                         // Orange border for selected
                         setContentPadding(dp(2), dp(2), dp(2), dp(2))
@@ -487,7 +505,7 @@ class LlmConfigActivity : BaseActivity() {
                 val dot = TextView(this).apply {
                     text = if (isSelected) "◉" else "○"
                     textSize = 16f
-                    setTextColor(if (isSelected) getColor(R.color.colorBrandPrimary) else Color.parseColor("#8b949e"))
+                    setTextColor(if (isSelected) getColor(R.color.colorBrandPrimary) else metaGray)
                     setPadding(0, 0, dp(10), 0)
                 }
                 row.addView(dot)
@@ -520,7 +538,7 @@ class LlmConfigActivity : BaseActivity() {
                 info.addView(TextView(this).apply {
                     text = "${model.tier.stars} ${model.tier.label} · \$${model.inputPricePerM} / \$${model.outputPricePerM} per 1M"
                     textSize = 11f
-                    setTextColor(Color.parseColor("#8b949e"))
+                    setTextColor(metaGray)
                 })
                 row.addView(info)
 
@@ -608,7 +626,7 @@ class LlmConfigActivity : BaseActivity() {
             }
             tvStatus.visibility = View.VISIBLE
             tvStatus.text = getString(R.string.provider_testing)
-            tvStatus.setTextColor(Color.parseColor("#8b949e"))
+            tvStatus.setTextColor(metaGray)
             btnTest.isEnabled = false
 
             executor.submit {
@@ -776,6 +794,39 @@ class LlmConfigActivity : BaseActivity() {
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+    /** Theme-aware secondary text color (see onCreate note). */
+    private fun metaGrayFor(tc: ThemeManager.ChatColors): Int =
+        androidx.core.graphics.ColorUtils.setAlphaComponent(tc.aiText, 205)
+
+    /**
+     * The XML layout uses static light-mode text colors (colorTextSecondary #AD000000 and
+     * colorTextTertiary #61000000) which are near-invisible on the dark ThemeManager palettes.
+     * Walk the inflated tree once and swap those static colors for theme-derived ones.
+     */
+    private fun retintStaticTexts(tc: ThemeManager.ChatColors) {
+        val root = findViewById<View>(android.R.id.content) ?: return
+        val sec = metaGrayFor(tc)
+        val ter = androidx.core.graphics.ColorUtils.setAlphaComponent(tc.aiText, 150)
+        val secondaryStatic = getColor(R.color.colorTextSecondary)
+        val tertiaryStatic = getColor(R.color.colorTextTertiary)
+        fun walk(v: View) {
+            if (v is android.widget.TextView) {
+                when (v.currentTextColor) {
+                    secondaryStatic -> v.setTextColor(sec)
+                    tertiaryStatic -> v.setTextColor(ter)
+                }
+                if (v is android.widget.EditText) {
+                    v.setTextColor(tc.aiText)
+                    v.setHintTextColor(ter)
+                }
+            }
+            if (v is android.view.ViewGroup) {
+                for (i in 0 until v.childCount) walk(v.getChildAt(i))
+            }
+        }
+        walk(root)
+    }
 
     companion object {
         private const val TAG = "LlmConfigActivity"

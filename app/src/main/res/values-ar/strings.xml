@@ -443,6 +443,11 @@
     <string name="llm_needs_ram">يتطلب %dGB+</string>
     <string name="llm_ready_to_save">✓ جاهز للحفظ</string>
     <string name="llm_status_connected">● متصل</string>
+    <string name="llm_download_model_below">حمّل نموذجًا من الأسفل</string>
+    <string name="llm_on_device">على الجهاز</string>
+    <string name="llm_status_missing_file">● الملف مفقود</string>
+    <string name="llm_this_phone_reports">هذا الهاتف يوفّر %1$dGB</string>
+    <string name="llm_cloud_suffix">سحابي</string>
     <string name="llm_no_default_cloud_model">لا يوجد نموذج سحابي افتراضي</string>
     <string name="llm_downloaded_done">تم التحميل!</string>
 </resources>
