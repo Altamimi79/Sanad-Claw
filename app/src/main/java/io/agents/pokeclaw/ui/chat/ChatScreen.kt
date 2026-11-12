@@ -436,6 +436,9 @@ private fun ChatTopBar(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = colors.textPrimary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             },
             navigationIcon = {
@@ -444,34 +447,9 @@ private fun ChatTopBar(
                 }
             },
             actions = {
-                // Local/Cloud toggle — two plain buttons, no container
-                Surface(
-                    onClick = { onTabChange("local") },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (selectedTab == "local") colors.aiBubble else Color.Transparent,
-                    border = if (selectedTab == "local") androidx.compose.foundation.BorderStroke(1.dp, colors.aiBubbleBorder) else null,
-                ) {
-                    Text(
-                        "Local",
-                        fontSize = 12.sp,
-                        color = if (selectedTab == "local") colors.accent else colors.textTertiary,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                    )
-                }
-                Spacer(Modifier.width(4.dp))
-                Surface(
-                    onClick = { onTabChange("cloud") },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (selectedTab == "cloud") colors.aiBubble else Color.Transparent,
-                    border = if (selectedTab == "cloud") androidx.compose.foundation.BorderStroke(1.dp, colors.aiBubbleBorder) else null,
-                ) {
-                    Text(
-                        "Cloud",
-                        fontSize = 12.sp,
-                        color = if (selectedTab == "cloud") colors.accent else colors.textTertiary,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                    )
-                }
+                // Sanad fork: the Local/Cloud toggle was removed — the active model kind
+                // drives everything (selectedTab stays synced via LaunchedEffect), and
+                // local model management remains available in Settings > Model.
                 IconButton(onClick = onSettings) {
                     Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.cd_settings))
                 }
@@ -496,8 +474,13 @@ private fun ChatTopBar(
         ) {
             Text(
                 text = modelStatus,
-                fontSize = 11.sp,
-                color = colors.textTertiary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.textSecondary,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
             Spacer(Modifier.width(4.dp))
             Icon(
