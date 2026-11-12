@@ -424,6 +424,8 @@ class LlmConfigActivity : BaseActivity() {
         // Determine current provider from saved config
         selectedProvider = CloudProvider.fromName(cloudSeed.providerName)
         selectedModelId = cloudSeed.modelName
+        // Backfill the per-provider model map so the chat switcher can list configured models.
+        if (selectedModelId.isNotEmpty()) KVUtils.setModelNameForProvider(selectedProvider.name, selectedModelId)
         etApiKey.setText(cloudSeed.apiKey)
 
         // Build provider tabs
@@ -491,6 +493,7 @@ class LlmConfigActivity : BaseActivity() {
                 apiKey = key,
                 activateNow = !ModelConfigRepository.isLocalActive()
             )
+            KVUtils.setModelNameForProvider(selectedProvider.name, modelId)
             ClawApplication.appViewModelInstance.updateAgentConfig()
             ClawApplication.appViewModelInstance.initAgent()
             XLog.i(TAG, "persistSelection: saved ${selectedProvider.name} / $modelId")
@@ -862,6 +865,9 @@ class LlmConfigActivity : BaseActivity() {
                 apiKey = apiKey,
                 activateNow = !ModelConfigRepository.isLocalActive()
             )
+            KVUtils.setModelNameForProvider(selectedProvider.name, modelId)
+            KVUtils.setBaseUrlForProvider(selectedProvider.name, baseUrl)
+            KVUtils.setApiKeyForProvider(selectedProvider.name, apiKey)
             ClawApplication.appViewModelInstance.updateAgentConfig()
             ClawApplication.appViewModelInstance.initAgent()
             ClawApplication.appViewModelInstance.afterInit()

@@ -307,6 +307,12 @@ object KVUtils {
     fun getLlmProvider(): String = getString(KEY_LLM_PROVIDER, "OPENAI")
     fun setLlmProvider(value: String) = putString(KEY_LLM_PROVIDER, value)
 
+    /** Per-provider model choice — lets the chat switcher list every configured model. */
+    fun getModelNameForProvider(provider: String): String =
+        getString("KEY_LLM_MODEL_${provider.uppercase()}", "")
+    fun setModelNameForProvider(provider: String, value: String) =
+        putString("KEY_LLM_MODEL_${provider.uppercase()}", value)
+
     /** Cached model ids fetched from an OpenAI-compatible endpoint, keyed by base URL. */
     fun getFetchedModelsForBaseUrl(baseUrl: String): List<String> =
         if (baseUrl.isBlank()) emptyList()

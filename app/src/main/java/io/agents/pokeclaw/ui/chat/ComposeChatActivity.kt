@@ -233,6 +233,7 @@ class ComposeChatActivity : ComponentActivity() {
                     ).show()
                 },
                 onModelSwitch = { modelId, displayName -> switchModel(modelId, displayName) },
+                onSelectCloudModel = { providerName, modelId -> selectCloudModel(providerName, modelId) },
                 colors = composeColors,
             )
             }
@@ -425,6 +426,35 @@ class ComposeChatActivity : ComponentActivity() {
             syncTaskAgentConfig()
         }
         XLog.i(TAG, "Model switched to: $modelId ($displayName)")
+    }
+
+    /**
+     * Activate a model that belongs to a specific cloud provider: saves that provider's own
+     * API key / base URL / model as the active cloud config, then refreshes the agent.
+     */
+    private fun selectCloudModel(providerName: String, modelId: String) {
+        val provider = io.agents.pokeclaw.agent.CloudProvider.fromName(providerName)
+        val apiKey = io.agents.pokeclaw.utils.KVUtils.getApiKeyForProvider(provider.name)
+        val baseUrl = io.agents.pokeclaw.utils.KVUtils.getBaseUrlForProvider(provider.name)
+            .ifBlank { provider.defaultBaseUrl }
+        if (apiKey.isEmpty() || modelId.isEmpty()) {
+            XLog.w(TAG, "selectCloudModel: missing key/model for ${provider.name}")
+            return
+        }
+        ModelConfigRepository.saveCloudDefault(
+            providerName = provider.name,
+            modelId = modelId,
+            baseUrl = baseUrl,
+            apiKey = apiKey,
+            activateNow = !ModelConfigRepository.isLocalActive()
+        )
+        io.agents.pokeclaw.utils.KVUtils.setModelNameForProvider(provider.name, modelId)
+        appViewModel.updateAgentConfig()
+        appViewModel.initAgent()
+        _isLocalModelActive.value = false
+        chatSessionController.switchModel(modelId, modelId)
+        syncTaskAgentConfig()
+        XLog.i(TAG, "selectCloudModel: ${provider.name} / $modelId activated")
     }
 
     private fun newChat() {
