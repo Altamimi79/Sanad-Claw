@@ -540,7 +540,15 @@ class LlmConfigActivity : BaseActivity() {
             // this write used the previous provider's URL (stale list under the new tab).
             etBaseUrl.setText(savedBaseUrlFor(selectedProvider))
             val baseUrlNow = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
-            val fetched = KVUtils.getFetchedModelsForBaseUrl(baseUrlNow)
+            var fetched = KVUtils.getFetchedModelsForProvider(selectedProvider.name)
+            // One-time migration from the old URL-keyed cache (kept for existing installs).
+            if (fetched.isEmpty() && baseUrlNow.isNotBlank()) {
+                val legacy = KVUtils.getFetchedModelsForBaseUrl(baseUrlNow)
+                if (legacy.isNotEmpty()) {
+                    KVUtils.setFetchedModelsForProvider(selectedProvider.name, legacy)
+                    fetched = legacy
+                }
+            }
             // The free-text model field is only a fallback when no live list is available.
             layoutModelName.visibility = if (isCustom && fetched.isEmpty() && !modelsLoading) View.VISIBLE else View.GONE
             tvCustomHint?.visibility = if (isCustom) View.VISIBLE else View.GONE
@@ -675,13 +683,13 @@ class LlmConfigActivity : BaseActivity() {
             val key = etApiKey.text.toString().trim()
             val url = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
             if (key.isEmpty() || url.isEmpty()) return
-            if (modelsLoading || KVUtils.getFetchedModelsForBaseUrl(url).isNotEmpty()) return
+            if (modelsLoading || KVUtils.getFetchedModelsForProvider(selectedProvider.name).isNotEmpty()) return
             val provider = selectedProvider
             modelsLoading = true
             renderModels()
             executor.submit {
                 val (ids, _) = io.agents.pokeclaw.agent.llm.CloudModelsFetcher.fetch(url, key, provider.name)
-                if (ids.isNotEmpty()) KVUtils.setFetchedModelsForBaseUrl(url, ids)
+                if (ids.isNotEmpty()) KVUtils.setFetchedModelsForProvider(provider.name, ids)
                 runOnUiThread {
                     modelsLoading = false
                     renderModels()
@@ -738,7 +746,7 @@ class LlmConfigActivity : BaseActivity() {
 
             executor.submit {
                 val (ids, error) = io.agents.pokeclaw.agent.llm.CloudModelsFetcher.fetch(baseUrl, apiKey, provider.name)
-                if (error == null && ids.isNotEmpty()) KVUtils.setFetchedModelsForBaseUrl(baseUrl, ids)
+                if (error == null && ids.isNotEmpty()) KVUtils.setFetchedModelsForProvider(provider.name, ids)
                 runOnUiThread {
                     btnFetchModels.isEnabled = true
                     btnFetchModels.text = defaultLabel

@@ -20,6 +20,7 @@ Last updated: 2026-11-12 (fork branding/UI round on HONOR device: committed + ve
 | P3 Voice input | **CODE COMPLETE 2026-11-10** on branch `phase-3-voice` (3 commits, build + 101 unit tests green). Device QA pending. |
 | P4 Agent safety/security/stability | **CODE COMPLETE 2026-11-10** on branch phase-4-safety (build + 127 unit tests green). Device QA pending. |
 | P5 Final build/tests/release docs | **DONE (code/release docs) 2026-11-10** on branch phase-5-release: 127 tests green, v1.0.0 APK built, Arabic README + USER_GUIDE, tag 1.0.0 local. Push/GitHub release blocked (no fork, gh missing); device QA not run. |
+| **Fork UI/provider round 2026-11-12** | **DONE + DEVICE-VERIFIED** on `main`: branding, i18n + language-switch fix, cloud providers with live model lists + search + per-provider persistence, configured-model chat switcher, models-page dark contrast + cloud-only layout, monitor UI removed, foldable row fix. 127 tests green. Published: repo `Altamimi79/Sanad-Claw`, release **v1.0.1** with APK. |
 
 ## What's Done (Phase 1)
 
@@ -120,8 +121,7 @@ Commits: `4cce784` feat(branding) · `fd00d28` fix(i18n) · `3829652` feat(llm-c
 
 ## Known Issues / Risks (carried into later phases)
 
-1. Push target unresolved: `origin` = upstream `agents-io/PokeClaw`; push attempts return `remote: Permission to agents-io/PokeClaw.git denied to Altamimi79.` (403). GitHub account has no fork yet. When the fork exists (create at https://github.com/agents-io/PokeClaw → Fork), run:
-   `git remote rename origin upstream` then `git remote add origin https://github.com/Altamimi79/<fork-name>.git` then `git push -u origin phase-1-setup` and `git push -u origin phase-2-arabic-chat`, and open PRs into `main`.
+1. ~~Push target unresolved~~ **RESOLVED 2026-11-12**: repo `Altamimi79/Sanad-Claw` created (public); `origin` = fork, `upstream` = agents-io/PokeClaw; pushed `main`, `v1.0.0`, `v1.0.1`.
 2. Upstream signing key lost historically → upgrade gap requires one-time uninstall/reinstall (BACKLOG P1). Affects P5 release story.
 3. Security debt for P4: plaintext API keys in MMKV, unauthenticated loopback ConfigServer HTTP, cleartext permitted globally, exported RUN_TASK components without sender verification, prompt-injection surface from screen/notification content (guards exist: DirectDeviceDataGuard etc.).
 4. God classes: `ChatScreen.kt` 2385L, `AutoReplyManager.java` 1060L, `DefaultAgentService.kt` 778L, `SettingsActivity` 773L.
@@ -134,17 +134,33 @@ Commits: `4cce784` feat(branding) · `fd00d28` fix(i18n) · `3829652` feat(llm-c
 11. Offline Whisper not implemented (deliberate; rationale in `docs/skills/voice-input.md`). Revisit only with a device farm + a measured Arabic WER/latency budget.
 12. Phase 4 device QA (QA_CHECKLIST §SA) not executed: no adb device. Confirmation dialogs, blocklist enforcement, emergency stop, timeout, notification action and the ConfigServer token were not exercised on hardware.
 13. Residual security risks tracked in `docs/SECURITY.md`: global cleartext (S3), external-automation sender verification/rate limiting (S4), AppLogStore content redaction (S7), security-crypto deprecation (S1 residual).
-14. v1.0.0 is **not published**: tag exists locally only; `origin` is upstream (403) and `gh` is not installed. Create the fork, push `main` + `v1.0.0`, then `gh release create`.
-15. v1.0.0 is **device-unverified**: no adb device; QA_CHECKLIST FA/VA/SA and the release smoke gate were not executed.
+14. ~~v1.0.0 not published~~ **RESOLVED**: public repo `Altamimi79/Sanad-Claw` with releases v1.0.0 (notes) and v1.0.1 (APK `SanadClaw-v1.0.1.apk`, 157 MB debug build). `gh` 2.103.3 installed + authenticated (scopes repo, workflow).
+15. Device QA is **partial**: fork UI/providers/models flows verified on HONOR MBH-N49 (see QA_CHECKLIST round section). QA_CHECKLIST §FA2+/§SA and VA still pending; VA exempt on HONOR (no speech service). No signed release build yet (debug APK only).
 
-## Next Ideas / Roadmap
+## Next Ideas / Roadmap (priority order, 2026-11-12)
 
-1. **Device QA first**: run FA/VA/SA on a real phone (Pixel/Samsung + a low-RAM device), record results, then gate the tag on green.
-2. **Session/Action log UX**: group action-log entries per task, add filters, export share-sheet (still local-only, redacted).
-3. **Prompt-injection hardening**: extend `DirectDeviceDataGuard` to treat screen/notification text as untrusted for risky tool arguments; require re-confirmation when arguments change after screen content.
-4. **External automation security**: signature permission or pairing allowlist + rate limit, then relax the default-off requirement.
-5. **Security follow-ups**: narrow cleartext with an explicit per-provider “allow http” toggle; redact AppLogStore; replace deprecated security-crypto (Tink direct / Keystore file).
-6. **Voice**: streaming partial UX polish, per-device offline pack detection, optional Whisper via a pluggable STT interface once a device farm exists.
-7. **Models**: download resume/corruption checks; per-device RAM guidance; DeepSeek reasoner streaming nuances.
-8. **Chat**: de-god `ChatScreen.kt` into a ViewModel; message search; image attachments (currently unsupported).
-9. **Release**: produce a signed release with a fork keystore; decide whether to keep package id `io.agents.pokeclaw` for channel compatibility.
+Readiness snapshot: **~72% overall** / **~90% for daily cloud-chat use** (UI 90, cloud models 90, agent tasks 70, safety-verification 60, voice 35, tests/docs/release 75, local models 40).
+
+**P0 — identity & trust**
+1. **Voice wake word ("هلا سند" / "Hi Sanad")**: hotword engine (Porcupine/openWakeWord) + bundled STT (Vosk/whisper.cpp) because OEM speech services are absent on HONOR; foreground service + battery exemption + privacy toggle. Biggest missing feature.
+2. **Finish device QA**: QA_CHECKLIST §FA2+ and §SA (confirmations, blocklist, emergency stop, timeout, notification action, ConfigServer token) + an ADB E2E script for critical paths. VA exempt on HONOR.
+3. **Signed release APK**: `assembleRelease` with a fork keystore (RELEASING.md), attach to GitHub Releases; keep `io.agents.pokeclaw` package id.
+
+**P1 — product value**
+4. **Task recipes**: save a successful task as a reusable parameterized routine; run without an LLM (fast, cheap, deterministic).
+5. **Model routing/fallback**: auto-switch provider on 429/failure; per-task and per-chat model selection; cost/token caps per task (budget UI exists).
+6. **Context/memory**: app→activity map, contact resolution, compact screen-state summaries to cut tokens, saved user preferences.
+
+**P2 — platform**
+7. **Channels**: complete Discord/Telegram/LAN; optional WhatsApp inbound commands with a strict allowlist (instead of the removed open auto-reply).
+8. **Arabic voice output**: short TTS replies; finish ja/zh strings; RTL audit.
+9. **Security**: biometric app lock, log redaction in debug reports, per-app permission matrix, replace deprecated security-crypto.
+10. **Local models (optional)**: re-expose Gemma management (currently hidden), RAM-aware guidance, idle unload.
+11. **CI**: GitHub Actions build + unit tests + changelog; automated release upload.
+
+**Code-quality follow-ups from the fork round**
+- Dead code left behind after UI removals: `MonitorDialog` composable, `onStartMonitor` param, static-catalogue rendering branch in `LlmConfigActivity` (catalogues are now empty). Remove in a dedicated cleanup commit.
+- `ChatScreen.kt` remains a god class (~2.6k lines) — split into ViewModel + sections.
+- Cloud cost display now shows $0 for models without static pricing; wire pricing from `/models` metadata if providers expose it.
+- Fetched model cache is keyed **per provider** (`KEY_CLOUD_MODELS_<PROVIDER>`); a legacy URL-keyed cache is migrated on read. Refreshing a provider list is manual when a cache exists.
+- `README.md` is English (repo-facing) with the Arabic overview in `docs/README.ar.md`.

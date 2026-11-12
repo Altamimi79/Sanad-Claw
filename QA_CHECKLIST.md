@@ -1729,3 +1729,33 @@ Run on the actual GitHub release APK `PokeClaw_v0.7.0_20260526_101139.apk` after
 | A11Y-r1 | Accessibility-dependent tools can false-fail during transient service rebinds | Fixed 2026-04-10: tools now wait for an enabled service to reconnect before returning `Accessibility service is not running` | Fixed |
 | Q7-local | ~~Stopping a Local task could crash with native `SIGSEGV` / `session already exists` race~~ | Fixed 2026-04-10: local cancel no longer interrupts LiteRT mid-send, and UI cleanup waits until the task-side client has closed cleanly | Fixed |
 | Bgt-1 | Existing installs could stay pinned to the legacy task budget even after code defaults increased | Fixed 2026-04-10: `TaskBudget` now one-time migrates untouched 100K / $0.50 legacy defaults to 250K / $1.00, while preserving explicit user overrides and exposing `250K` in Settings | Fixed |
+
+---
+
+## Round 2026-11-12 — Sanad Claw fork UI / providers / models (device: HONOR MBH-N49, Android 17, foldable; AWRT025805000710)
+
+Executed via adb + screenshots on the physical device. `PASS` entries were visually confirmed.
+
+| ID | Case | Steps | Evidence / Result |
+|---|---|---|---|
+| F-ICON-1 | Launcher icon has no white edges (light mode) | Home screen, light mode | PASS — black adaptive tile, gold mark (screenshot) |
+| F-ICON-2 | Launcher icon in dark mode | `cmd uimode night yes` → home | PASS (screenshot); night mode reverted to auto |
+| F-LANG-1 | ar → en language switch persists | Settings → Appearance → Language | PASS |
+| F-LANG-2 | en → ar language switch persists (race fix) | Same, after `AppLocale.setLanguage` commit() fix | PASS twice; pref `pokeclaw_locale.xml` shows `ar`/`en` as selected |
+| F-CHAT-1 | Toolbar: single-line title, model chip ellipsized, no Local/Cloud toggle | Chat screen | PASS (screenshot) |
+| F-MODELS-1 | Models page dark-mode contrast; labels/fields readable | Settings → Models (Abyss dark) | PASS before/after (screenshots) |
+| F-MODELS-2 | Duplicated sections removed (active/default/downloads) | Models page | PASS — only Active Model + Cloud LLM |
+| F-PROVIDERS-1 | Provider tabs render tidily, selected chip visible | Models → Cloud LLM | PASS — OpenAI/Anthropic/DeepSeek/Google/OpenRouter/OpenCode/Custom (scrollable) |
+| F-PROVIDERS-2 | Fetch-models button visible for every provider | Any provider tab | PASS |
+| F-FETCH-1 | Real fetch against configured endpoint | Custom (`ai.plexgrab.uk/v1`) | PASS — HTTP 200, rows rendered, “N models found” toast |
+| F-FETCH-2 | Live list for OpenRouter with search | OpenRouter tab | PASS — hundreds of rows, search “claude” filtered live |
+| F-FETCH-3 | After fetch, screen returns to list start (search visible) | Tap Fetch | PASS after auto-scroll fix |
+| F-FETCH-4 | Cache survives app restart; per-provider keying + legacy migration | Kill/relaunch | PASS — OpenRouter list restored |
+| F-SWITCH-1 | Chat switcher lists only configured models | Chat → model chip | PASS — `openrouter/free` (OPENROUTER) + `qwen3.8-flash-next-iq3_s` (CUSTOM) |
+| F-SWITCH-2 | Picking a model activates that provider's saved config | Tap entry | PASS — KV `KEY_DEFAULT_CLOUD_PROVIDER/MODEL` updated; chat logs “Switched to …” |
+| F-MONITOR-1 | Monitor & Auto-Reply UI removed | Chat + Workflows | PASS — no background card, no monitor dialog |
+| F-FOLD-1 | Folded (cover) screen: settings rows single-line ellipsized | Fold, Settings | PASS (screenshot); chat on cover screen OK |
+| F-BUILD-1 | Unit tests | `gradlew testDebugUnitTest` | PASS — 127 tests / 0 failures |
+| F-REL-1 | Publish | GitHub | PASS — repo + releases v1.0.0 / v1.0.1 (APK) |
+
+Remaining: §FA2+ and §SA suites not re-run in this round; VA exempt (HONOR has no speech-recognition service). Signed release build still pending.

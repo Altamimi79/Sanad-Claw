@@ -313,6 +313,14 @@ object KVUtils {
     fun setModelNameForProvider(provider: String, value: String) =
         putString("KEY_LLM_MODEL_${provider.uppercase()}", value)
 
+    /** Cached model ids fetched from a provider endpoint (keyed by provider, not URL). */
+    fun getFetchedModelsForProvider(provider: String): List<String> =
+        getString("KEY_CLOUD_MODELS_${provider.uppercase()}", "")
+            .split('\n').map { it.trim() }.filter { it.isNotEmpty() }
+
+    fun setFetchedModelsForProvider(provider: String, ids: List<String>) =
+        putString("KEY_CLOUD_MODELS_${provider.uppercase()}", ids.joinToString("\n"))
+
     /** Cached model ids fetched from an OpenAI-compatible endpoint, keyed by base URL. */
     fun getFetchedModelsForBaseUrl(baseUrl: String): List<String> =
         if (baseUrl.isBlank()) emptyList()
