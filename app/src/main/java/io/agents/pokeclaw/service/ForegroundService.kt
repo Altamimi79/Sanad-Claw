@@ -31,10 +31,10 @@ class ForegroundService : Service() {
         const val NOTIFICATION_ID = 1001
         private const val EXTRA_TITLE = "extra_title"
         private const val EXTRA_TEXT = "extra_text"
-        private const val DEFAULT_TASK_TITLE = "PokeClaw · Task in progress"
+        private const val DEFAULT_TASK_TITLE = "Sanad Claw · Task in progress"
         private const val DEFAULT_TASK_TEXT = "Running task..."
-        private const val DEFAULT_MONITOR_TITLE = "PokeClaw · Monitoring"
-        private const val DEGRADED_MONITOR_TITLE = "PokeClaw · Monitoring paused"
+        private const val DEFAULT_MONITOR_TITLE = "Sanad Claw · Monitoring"
+        private const val DEGRADED_MONITOR_TITLE = "Sanad Claw · Monitoring paused"
 
         private enum class ForegroundMode {
             IDLE,

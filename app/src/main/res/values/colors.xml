@@ -84,4 +84,5 @@
     <color name="colorInfoOnPrimary">#FFFFFFFF</color>
     <color name="colorInfoContainer">#FFEEF9FF</color>
     <color name="colorInfoOnContainer">#FF007BBE</color>
+    <color name="launcher_background">#FF000000</color>
 </resources>

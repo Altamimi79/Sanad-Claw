@@ -65,7 +65,7 @@ object DebugReportManager {
             nowMs = System.currentTimeMillis(),
         )
         return buildString {
-            appendLine("PokeClaw Debug Report")
+            appendLine("Sanad Claw Debug Report")
             appendLine("Generated: ${Date()}")
             appendLine()
             appendLine("App")
@@ -140,7 +140,7 @@ object DebugReportManager {
 
     private fun buildBugReportTemplate(context: Context): String {
         return buildString {
-            appendLine("PokeClaw Bug Report Template")
+            appendLine("Sanad Claw Bug Report Template")
             appendLine()
             appendLine("Attach this ZIP and fill in the blanks below:")
             appendLine()
