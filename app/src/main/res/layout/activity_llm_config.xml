@@ -105,6 +105,7 @@
             </androidx.cardview.widget.CardView>
 
             <TextView
+                android:id="@+id/tvSectionDefaultModels"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
@@ -116,6 +117,7 @@
                 android:textStyle="bold" />
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardDefaultModels"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="@color/colorContainerBrighten"
@@ -331,6 +333,21 @@
                             android:padding="3dp" />
 
                     </HorizontalScrollView>
+
+                    <!-- Model search (shown when a live list is available) -->
+                    <EditText
+                        android:id="@+id/etModelSearch"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_edit_text"
+                        android:hint="@string/provider_model_search_hint"
+                        android:inputType="text"
+                        android:paddingHorizontal="12dp"
+                        android:textColor="@color/colorTextPrimary"
+                        android:textColorHint="@color/colorTextTertiary"
+                        android:textSize="13dp"
+                        android:visibility="gone" />
 
                     <!-- Model List (programmatic) -->
                     <LinearLayout

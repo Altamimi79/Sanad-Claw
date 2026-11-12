@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.runtime.collectAsState
 import io.agents.pokeclaw.TaskEvent
 import io.agents.pokeclaw.agent.llm.ModelConfigRepository
@@ -151,17 +152,32 @@ class ComposeChatActivity : ComponentActivity() {
 
             // Sanad fork: theme the Material color scheme too, otherwise M3 popups
             // (DropdownMenu, dialogs) render with the default light surface over a dark UI.
-            val m3Colors = androidx.compose.material3.darkColorScheme(
-                primary = composeColors.accent,
-                onPrimary = androidx.compose.ui.graphics.Color.White,
-                secondary = composeColors.accent,
-                background = composeColors.surface,
-                onBackground = composeColors.textPrimary,
-                surface = composeColors.surface,
-                onSurface = composeColors.textPrimary,
-                surfaceVariant = composeColors.aiBubble,
-                onSurfaceVariant = composeColors.textSecondary,
-            )
+            val isDarkTheme = composeColors.background.luminance() < 0.5f
+            val m3Colors = if (isDarkTheme) {
+                androidx.compose.material3.darkColorScheme(
+                    primary = composeColors.accent,
+                    onPrimary = androidx.compose.ui.graphics.Color.White,
+                    secondary = composeColors.accent,
+                    background = composeColors.surface,
+                    onBackground = composeColors.textPrimary,
+                    surface = composeColors.surface,
+                    onSurface = composeColors.textPrimary,
+                    surfaceVariant = composeColors.aiBubble,
+                    onSurfaceVariant = composeColors.textSecondary,
+                )
+            } else {
+                androidx.compose.material3.lightColorScheme(
+                    primary = composeColors.accent,
+                    onPrimary = androidx.compose.ui.graphics.Color.White,
+                    secondary = composeColors.accent,
+                    background = composeColors.surface,
+                    onBackground = composeColors.textPrimary,
+                    surface = composeColors.surface,
+                    onSurface = composeColors.textPrimary,
+                    surfaceVariant = composeColors.aiBubble,
+                    onSurfaceVariant = composeColors.textSecondary,
+                )
+            }
             androidx.compose.material3.MaterialTheme(colorScheme = m3Colors, typography = PokeclawTypography) {
             ChatScreen(
                 messages = _messages.toList(),

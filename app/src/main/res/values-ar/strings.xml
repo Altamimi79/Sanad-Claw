@@ -75,6 +75,10 @@
     <string name="provider_fetch_models_failed">تعذّر جلب الموديلات: %1$s</string>
     <string name="provider_fetch_models_empty">لم يُرجع هذا الرابط أي موديلات</string>
     <string name="provider_fetch_models_hint">ألصق مفتاح API — ستظهر قائمة الموديلات تلقائيًا</string>
+    <string name="provider_fetch_models_found">تم العثور على %1$d موديل</string>
+    <string name="provider_model_search_hint">ابحث عن موديل…</string>
+    <string name="provider_models_no_match">لا توجد نتائج مطابقة</string>
+    <string name="chat_all_models_settings">عرض كل الموديلات (الإعدادات)</string>
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">القائمة</string>
     <string name="cd_settings">الإعدادات</string>
@@ -322,6 +326,9 @@
     <string name="tools_dialog_title">الأدوات المتاحة</string>
     <string name="attach_not_supported">إرفاق الصور غير مدعوم بعد</string>
     <string name="settings_enabled">ممكّن</string>
+    <string name="settings_unlimited">غير محدود</string>
+    <string name="settings_connected">متصل</string>
+    <string name="settings_not_connected">غير متصل</string>
     <string name="settings_disabled">معطّل</string>
 
     <!-- Safety (Phase 4) -->

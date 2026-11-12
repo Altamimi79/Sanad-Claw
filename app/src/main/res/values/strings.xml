@@ -74,6 +74,10 @@
     <string name="provider_fetch_models_failed">Failed to fetch models: %1$s</string>
     <string name="provider_fetch_models_empty">No models returned by this endpoint</string>
     <string name="provider_fetch_models_hint">Paste your API key — the model list appears automatically</string>
+    <string name="provider_fetch_models_found">%1$d models found</string>
+    <string name="provider_model_search_hint">Search models…</string>
+    <string name="provider_models_no_match">No matching models</string>
+    <string name="chat_all_models_settings">Show all models (Settings)</string>
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">Menu</string>
     <string name="cd_settings">Settings</string>
@@ -321,6 +325,9 @@
     <string name="tools_dialog_title">Available tools</string>
     <string name="attach_not_supported">Image attachments are not supported yet</string>
     <string name="settings_enabled">Enabled</string>
+    <string name="settings_unlimited">Unlimited</string>
+    <string name="settings_connected">Connected</string>
+    <string name="settings_not_connected">Not connected</string>
     <string name="settings_disabled">Disabled</string>
 
     <!-- Safety (Phase 4) -->

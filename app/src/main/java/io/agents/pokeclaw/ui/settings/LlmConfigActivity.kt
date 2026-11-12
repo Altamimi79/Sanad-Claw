@@ -177,6 +177,10 @@ class LlmConfigActivity : BaseActivity() {
         findViewById<View>(R.id.layoutDefaultLocal)?.visibility = View.GONE
         findViewById<View>(R.id.divDefaultLocal)?.visibility = View.GONE
         findViewById<TextView>(R.id.tvSectionAvailableModels)?.visibility = View.GONE
+        // Cloud-only: the "default models" card duplicated the active-model card (same id shown
+        // twice more). Hide the whole section; the active card + cloud editor remain.
+        findViewById<TextView>(R.id.tvSectionDefaultModels)?.visibility = View.GONE
+        findViewById<View>(R.id.cardDefaultModels)?.visibility = View.GONE
         modelList.visibility = View.GONE
 
         // Build model list (skipped while the local section is hidden)
@@ -396,6 +400,7 @@ class LlmConfigActivity : BaseActivity() {
         val etApiKey = findViewById<EditText>(R.id.etApiKey)
         val etBaseUrl = findViewById<EditText>(R.id.etBaseUrl)
         val etModelName = findViewById<EditText>(R.id.etModelName)
+        val etModelSearch = findViewById<EditText>(R.id.etModelSearch)
         val tvStatus = findViewById<TextView>(R.id.tvConnectionStatus)
         val btnTest = findViewById<TextView>(R.id.btnTestConnection)
         val btnSave = findViewById<KButton>(R.id.btnSaveCloud)
@@ -473,6 +478,24 @@ class LlmConfigActivity : BaseActivity() {
 
         var modelsLoading = false
 
+        // Persist the picked model immediately so the choice survives leaving this screen and
+        // the chat switcher (which reads the saved config) sees the fetched list right away.
+        fun persistSelection(modelId: String) {
+            val key = etApiKey.text.toString().trim()
+            val url = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
+            if (key.isEmpty() || url.isEmpty() || modelId.isEmpty()) return
+            ModelConfigRepository.saveCloudDefault(
+                providerName = selectedProvider.name,
+                modelId = modelId,
+                baseUrl = url,
+                apiKey = key,
+                activateNow = !ModelConfigRepository.isLocalActive()
+            )
+            ClawApplication.appViewModelInstance.updateAgentConfig()
+            ClawApplication.appViewModelInstance.initAgent()
+            XLog.i(TAG, "persistSelection: saved ${selectedProvider.name} / $modelId")
+        }
+
         fun buildFetchedRow(modelId: String, tc: ThemeManager.ChatColors, onPick: () -> Unit): View {
             val isSelected = modelId == selectedModelId
             return CardView(this).apply {
@@ -510,11 +533,17 @@ class LlmConfigActivity : BaseActivity() {
             modelListLayout.removeAllViews()
             val isCustom = selectedProvider == CloudProvider.CUSTOM
             layoutBaseUrl.visibility = View.VISIBLE
-            layoutModelName.visibility = if (isCustom) View.VISIBLE else View.GONE
-            tvCustomHint?.visibility = if (isCustom) View.VISIBLE else View.GONE
+            // Update the field FIRST — the cache is keyed by the base URL, and reading it before
+            // this write used the previous provider's URL (stale list under the new tab).
             etBaseUrl.setText(savedBaseUrlFor(selectedProvider))
+            val baseUrlNow = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
+            val fetched = KVUtils.getFetchedModelsForBaseUrl(baseUrlNow)
+            // The free-text model field is only a fallback when no live list is available.
+            layoutModelName.visibility = if (isCustom && fetched.isEmpty() && !modelsLoading) View.VISIBLE else View.GONE
+            tvCustomHint?.visibility = if (isCustom) View.VISIBLE else View.GONE
 
             if (modelsLoading) {
+                etModelSearch.visibility = View.GONE
                 modelListLayout.addView(TextView(this).apply {
                     text = getString(R.string.provider_fetch_models_loading)
                     textSize = 12f
@@ -524,19 +553,31 @@ class LlmConfigActivity : BaseActivity() {
                 return
             }
 
-            // Live endpoint list (any provider): pickable rows, id as label.
-            val baseUrlNow = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
-            val fetched = KVUtils.getFetchedModelsForBaseUrl(baseUrlNow)
             if (fetched.isNotEmpty()) {
-                fetched.forEach { id ->
-                    modelListLayout.addView(buildFetchedRow(id, tc) {
-                        selectedModelId = id
-                        etModelName.setText(id)
-                        renderModels()
+                etModelSearch.visibility = View.VISIBLE
+                val query = etModelSearch.text.toString().trim()
+                val shown = if (query.isEmpty()) fetched
+                    else fetched.filter { it.contains(query, ignoreCase = true) }
+                if (shown.isEmpty()) {
+                    modelListLayout.addView(TextView(this).apply {
+                        text = getString(R.string.provider_models_no_match)
+                        textSize = 12f
+                        setTextColor(metaGray)
+                        setPadding(dp(4), dp(8), dp(4), dp(8))
                     })
+                } else {
+                    shown.forEach { id ->
+                        modelListLayout.addView(buildFetchedRow(id, tc) {
+                            selectedModelId = id
+                            etModelName.setText(id)
+                            persistSelection(id)
+                            renderModels()
+                        })
+                    }
                 }
                 return
             }
+            etModelSearch.visibility = View.GONE
 
             if (isCustom) {
                 etModelName.setText(selectedModelId)
@@ -569,6 +610,7 @@ class LlmConfigActivity : BaseActivity() {
                     }
                     setOnClickListener {
                         selectedModelId = model.id
+                        persistSelection(model.id)
                         renderModels()
                     }
                 }
@@ -648,6 +690,7 @@ class LlmConfigActivity : BaseActivity() {
         // Provider tab switch — load per-provider saved API key
         fun switchProvider(provider: CloudProvider, colors: ThemeManager.ChatColors) {
             selectedProvider = provider
+            etModelSearch.setText("")
             selectedModelId = when {
                 provider == CloudProvider.CUSTOM -> cloudSeed.modelName
                 provider == cloudSeed.provider && provider.models.any { it.id == cloudSeed.modelName } -> cloudSeed.modelName
@@ -666,6 +709,13 @@ class LlmConfigActivity : BaseActivity() {
         }
         // Populate the list for the initially selected provider if a key is already saved.
         loadProviderModels()
+
+        // Live filter for the fetched model list (OpenRouter etc. return hundreds of rows).
+        etModelSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) { renderModels() }
+        })
 
         // Fetch model list from the configured endpoint (Custom / OpenAI-compatible: GET {baseUrl}/models)
         val btnFetchModels = findViewById<TextView>(R.id.btnFetchModels)
@@ -695,22 +745,31 @@ class LlmConfigActivity : BaseActivity() {
                             this, getString(R.string.provider_fetch_models_empty), Toast.LENGTH_SHORT
                         ).show()
                         else -> {
+                            // The rows below are the picker — no duplicate dialog.
+                            modelsLoading = false
                             renderModels()
-                            android.app.AlertDialog.Builder(this)
-                                .setTitle(defaultLabel)
-                                .setItems(ids.toTypedArray()) { _, which ->
-                                    val picked = ids[which]
-                                    selectedModelId = picked
-                                    etModelName.setText(picked)
-                                    renderModels()
-                                }
-                                .setNegativeButton(android.R.string.cancel, null)
-                                .show()
+                            Toast.makeText(
+                                this, getString(R.string.provider_fetch_models_found, ids.size), Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
             }
         }
+
+        // Auto-fetch when a key is pasted/typed (debounced) — one less tap for every provider.
+        var pendingFetch: Runnable? = null
+        val debounceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        etApiKey.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                pendingFetch?.let(debounceHandler::removeCallbacks)
+                val runnable = Runnable { loadProviderModels() }
+                pendingFetch = runnable
+                debounceHandler.postDelayed(runnable, 900)
+            }
+        })
 
         // Test Connection — real probe against the configured endpoint/model
         btnTest.setOnClickListener {

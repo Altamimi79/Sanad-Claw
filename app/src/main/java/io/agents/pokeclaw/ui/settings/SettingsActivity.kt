@@ -119,11 +119,21 @@ class SettingsActivity : BaseActivity() {
         handler.removeCallbacks(permPoller)
     }
 
+    /** Map the English capability labels produced by AppCapabilityCoordinator/TaskBudget to the app locale. */
+    private fun localizedCapabilityLabel(raw: String): String = when (raw) {
+        "Enabled" -> getString(R.string.settings_enabled)
+        "Disabled" -> getString(R.string.settings_disabled)
+        "Unrestricted" -> getString(R.string.status_unrestricted)
+        "Restricted" -> getString(R.string.status_restricted)
+        "Unlimited" -> getString(R.string.settings_unlimited)
+        else -> raw
+    }
+
     private fun refreshPermissions() {
         val capabilities = AppCapabilityCoordinator.snapshot(this)
-        permAccessibility?.setTrailingText(capabilities.accessibilityStatusLabel)
-        permNotification?.setTrailingText(capabilities.notificationPermissionStatusLabel)
-        permNotifAccess?.setTrailingText(capabilities.notificationAccessStatusLabel)
+            permAccessibility?.setTrailingText(localizedCapabilityLabel(capabilities.accessibilityStatusLabel))
+            permNotification?.setTrailingText(localizedCapabilityLabel(capabilities.notificationPermissionStatusLabel))
+            permNotifAccess?.setTrailingText(localizedCapabilityLabel(capabilities.notificationAccessStatusLabel))
         permOverlay?.setTrailingText(if (capabilities.overlayGranted) getString(R.string.settings_enabled) else getString(R.string.settings_disabled))
         permBattery?.setTrailingText(if (capabilities.batteryOptimizationIgnored) getString(R.string.status_unrestricted) else getString(R.string.status_restricted))
         permStorage?.setTrailingText(if (capabilities.storageAccessGranted) getString(R.string.settings_enabled) else getString(R.string.settings_disabled))
@@ -266,7 +276,7 @@ class SettingsActivity : BaseActivity() {
             showDivider = true
         ).apply {
             setTrailingText(
-                if (AppCapabilityCoordinator.isNotificationPermissionGranted(this@SettingsActivity)) "Enabled" else "Disabled"
+                if (AppCapabilityCoordinator.isNotificationPermissionGranted(this@SettingsActivity)) localizedCapabilityLabel("Enabled") else localizedCapabilityLabel("Disabled")
             )
         }
 
@@ -367,7 +377,7 @@ class SettingsActivity : BaseActivity() {
             onClick = { showBudgetDialog() },
             showDivider = true
         ).apply {
-            setTrailingText(io.agents.pokeclaw.agent.TaskBudget.describeCurrentBudget())
+            setTrailingText(localizedCapabilityLabel(io.agents.pokeclaw.agent.TaskBudget.describeCurrentBudget()))
         }
 
         // Global Prompt (#45) — user-defined persistent instructions
@@ -612,7 +622,7 @@ class SettingsActivity : BaseActivity() {
             showDivider = true
         ).apply {
             val token = KVUtils.getTelegramBotToken()
-            setTrailingText(if (token.isNotEmpty()) "Connected" else "Not connected")
+            setTrailingText(if (token.isNotEmpty()) getString(R.string.settings_connected) else getString(R.string.settings_not_connected))
         }
 
         externalAutomationItem = remoteGroup.addMenuItem(

@@ -185,7 +185,6 @@ fun ChatScreen(
     var selectedTab by remember { mutableStateOf(if (isLocalModel) "local" else "cloud") }
     val isLocalUI = selectedTab == "local"
     // Skill dialog and activation states
-    var showMonitorSheet by remember { mutableStateOf(false) }
     var showSendSheet by remember { mutableStateOf(false) }
     var activatingSkill by remember { mutableStateOf<String?>(null) }
 
@@ -308,8 +307,6 @@ fun ChatScreen(
                                 prefillIsTask = true
                                 if (isLocalUI) isTaskMode = true
                             },
-                            onMonitorClick = { showMonitorSheet = true },
-                            monitorActive = activeTasks.isNotEmpty(),
                             colors = colors,
                         )
 
@@ -371,18 +368,7 @@ fun ChatScreen(
         }
     }
 
-    // Monitor skill dialog
-    if (showMonitorSheet) {
-        MonitorDialog(
-            onDismiss = { showMonitorSheet = false },
-            onStart = { target ->
-                showMonitorSheet = false
-                activatingSkill = "monitor"
-                onStartMonitor(target)
-            },
-            colors = colors,
-        )
-    }
+    // Monitor skill dialog — removed in this fork (background monitoring not shipped).
 
     // Send Message skill dialog
     if (showSendSheet) {
@@ -565,7 +551,9 @@ private fun ChatTopBar(
                         }
                         val listWithCurrent = if (currentModel.isNotEmpty() && list.none { it.first == currentModel })
                             listOf(currentModel to currentModel) + list else list
-                        listWithCurrent.forEach { (modelId, displayName) ->
+                        // Long provider lists (OpenRouter: hundreds) — show a usable window only.
+                        val visibleModels = listWithCurrent.take(30)
+                        visibleModels.forEach { (modelId, displayName) ->
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -584,6 +572,12 @@ private fun ChatTopBar(
                                     showModelMenu = false
                                     onModelSwitch(modelId, displayName)
                                 },
+                            )
+                        }
+                        if (listWithCurrent.size > 30) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.chat_all_models_settings), fontSize = 13.sp, color = colors.accent) },
+                                onClick = { showModelMenu = false; onSettings() },
                             )
                         }
                     } else {
@@ -1628,8 +1622,6 @@ private fun EmptyStateWithPrompts(
 private fun QuickTasksPanel(
     isLocalModel: Boolean,
     onFillTask: (String) -> Unit,
-    onMonitorClick: () -> Unit,
-    monitorActive: Boolean,
     colors: PokeclawColors,
 ) {
     var expanded by remember { mutableStateOf(true) }
@@ -1748,66 +1740,8 @@ private fun QuickTasksPanel(
                 }
             }
 
-            // Background section — always visible, NOT inside scroll
-            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                Text(
-                    stringResource(R.string.background_badge),
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = colors.textTertiary,
-                    letterSpacing = 0.5.sp,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-                )
-
-                // Monitor card
-                val monitorBorderColor = if (monitorActive) colors.accent else colors.inputBorder
-                Surface(
-                    onClick = {
-                        if (!monitorActive) onMonitorClick()
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    color = colors.background,
-                    border = androidx.compose.foundation.BorderStroke(
-                        if (monitorActive) 1.dp else 0.5.dp,
-                        monitorBorderColor,
-                    ),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .background(
-                                    colors.accent.copy(alpha = 0.12f),
-                                    RoundedCornerShape(9.dp),
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("👁️", fontSize = 15.sp)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (monitorActive) stringResource(R.string.monitor_active_badge) else stringResource(R.string.monitor_auto_reply_title),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = colors.textPrimary,
-                            )
-                            Text(
-                                if (monitorActive) stringResource(R.string.monitor_active_hint) else stringResource(R.string.monitor_auto_reply_subtitle),
-                                fontSize = 9.sp,
-                                color = colors.textTertiary,
-                            )
-                        }
-                        if (!monitorActive) {
-                            Text("›", color = colors.textTertiary, fontSize = 14.sp)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(6.dp))
-            } // end Background Column
+            // Sanad fork: the Monitor & Auto-Reply background section was removed from the UI
+            // (not needed for this deployment). The monitoring engine remains in the app.
         }
     }
 }
@@ -2078,11 +2012,9 @@ private fun SidebarContent(
 private fun TaskSkillsPanel(
     isLocalModel: Boolean,
     taskMessages: List<ChatMessage>,
-    onMonitorClick: () -> Unit,
     onSendClick: () -> Unit,
     onSkillTap: (String) -> Unit,
     activatingSkill: String?,
-    monitorActive: Boolean,
     colors: PokeclawColors,
     modifier: Modifier = Modifier,
 ) {
@@ -2127,18 +2059,7 @@ private fun TaskSkillsPanel(
             }
         }
 
-        // Monitor Messages — always shown (background workflow, both modes need it)
-        item {
-            SkillCard(
-                icon = Icons.Outlined.Visibility,
-                title = stringResource(R.string.skill_monitor_messages),
-                description = stringResource(R.string.skill_monitor_desc),
-                onClick = onMonitorClick,
-                isActivating = activatingSkill == "monitor",
-                isActive = monitorActive,
-                colors = colors,
-            )
-        }
+        // Sanad fork: the "Monitor Messages" workflow card was removed (not shipped).
 
         // Send Message — available on both (workflow card shortcut)
         item {
