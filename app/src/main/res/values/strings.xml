@@ -73,6 +73,7 @@
     <string name="provider_fetch_models_loading">Loading…</string>
     <string name="provider_fetch_models_failed">Failed to fetch models: %1$s</string>
     <string name="provider_fetch_models_empty">No models returned by this endpoint</string>
+    <string name="provider_fetch_models_hint">Paste your API key — the model list appears automatically</string>
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">Menu</string>
     <string name="cd_settings">Settings</string>

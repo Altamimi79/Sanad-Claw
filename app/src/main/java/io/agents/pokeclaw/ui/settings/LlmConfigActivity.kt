@@ -426,8 +426,8 @@ class LlmConfigActivity : BaseActivity() {
         CloudProvider.entries.forEach { provider ->
             val tab = TextView(this).apply {
                 text = provider.displayName
-                textSize = 13f
-                setPadding(dp(14), dp(6), dp(14), dp(6))
+                textSize = 12f
+                setPadding(dp(12), dp(6), dp(12), dp(6))
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -443,14 +443,23 @@ class LlmConfigActivity : BaseActivity() {
             tabViews.forEach { (provider, tab) ->
                 if (provider == selectedProvider) {
                     tab.setTextColor(Color.WHITE)
+                    tab.setTypeface(tab.typeface, android.graphics.Typeface.BOLD)
                     tab.background = GradientDrawable().apply {
-                        cornerRadius = dp(16).toFloat()
+                        cornerRadius = dp(14).toFloat()
                         setColor(getColor(R.color.colorBrandPrimary))
                     }
                 } else {
                     tab.setTextColor(metaGray)
+                    tab.setTypeface(tab.typeface, android.graphics.Typeface.NORMAL)
                     tab.background = null
                 }
+            }
+            // Keep the selected chip visible in the scrollable provider strip.
+            val hsv = tabLayout.parent as? android.widget.HorizontalScrollView
+            hsv?.post {
+                val tab = tabViews[selectedProvider] ?: return@post
+                val target = tab.left - (hsv.width - tab.width) / 2
+                hsv.smoothScrollTo(target.coerceAtLeast(0), 0)
             }
         }
         updateTabStyles()
@@ -462,6 +471,41 @@ class LlmConfigActivity : BaseActivity() {
             return perProvider.ifBlank { seed.ifBlank { provider.defaultBaseUrl } }
         }
 
+        var modelsLoading = false
+
+        fun buildFetchedRow(modelId: String, tc: ThemeManager.ChatColors, onPick: () -> Unit): View {
+            val isSelected = modelId == selectedModelId
+            return CardView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = dp(6) }
+                radius = dp(10).toFloat()
+                cardElevation = dp(1).toFloat()
+                setCardBackgroundColor(if (isSelected) tc.aiBubble else tc.toolbarBg)
+                setOnClickListener { onPick() }
+                addView(LinearLayout(this@LlmConfigActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    addView(TextView(this@LlmConfigActivity).apply {
+                        text = if (isSelected) "◉" else "○"
+                        textSize = 16f
+                        setTextColor(if (isSelected) getColor(R.color.colorBrandPrimary) else metaGray)
+                        setPadding(0, 0, dp(10), 0)
+                    })
+                    addView(TextView(this@LlmConfigActivity).apply {
+                        text = modelId
+                        textSize = 13f
+                        setTextColor(tc.aiText)
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                        if (isSelected) setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    })
+                })
+            }
+        }
+
         fun renderModels() {
             modelListLayout.removeAllViews()
             val isCustom = selectedProvider == CloudProvider.CUSTOM
@@ -470,8 +514,42 @@ class LlmConfigActivity : BaseActivity() {
             tvCustomHint?.visibility = if (isCustom) View.VISIBLE else View.GONE
             etBaseUrl.setText(savedBaseUrlFor(selectedProvider))
 
+            if (modelsLoading) {
+                modelListLayout.addView(TextView(this).apply {
+                    text = getString(R.string.provider_fetch_models_loading)
+                    textSize = 12f
+                    setTextColor(metaGray)
+                    setPadding(dp(4), dp(8), dp(4), dp(8))
+                })
+                return
+            }
+
+            // Live endpoint list (any provider): pickable rows, id as label.
+            val baseUrlNow = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
+            val fetched = KVUtils.getFetchedModelsForBaseUrl(baseUrlNow)
+            if (fetched.isNotEmpty()) {
+                fetched.forEach { id ->
+                    modelListLayout.addView(buildFetchedRow(id, tc) {
+                        selectedModelId = id
+                        etModelName.setText(id)
+                        renderModels()
+                    })
+                }
+                return
+            }
+
             if (isCustom) {
                 etModelName.setText(selectedModelId)
+                return
+            }
+
+            if (selectedProvider.models.isEmpty()) {
+                modelListLayout.addView(TextView(this).apply {
+                    text = getString(R.string.provider_fetch_models_hint)
+                    textSize = 12f
+                    setTextColor(metaGray)
+                    setPadding(dp(4), dp(8), dp(4), dp(8))
+                })
                 return
             }
 
@@ -546,6 +624,25 @@ class LlmConfigActivity : BaseActivity() {
                 modelListLayout.addView(card)
             }
         }
+
+        // Auto-fetch the endpoint's model list once a key exists — for every provider.
+        fun loadProviderModels() {
+            val key = etApiKey.text.toString().trim()
+            val url = etBaseUrl.text.toString().trim().ifBlank { selectedProvider.defaultBaseUrl }
+            if (key.isEmpty() || url.isEmpty()) return
+            if (modelsLoading || KVUtils.getFetchedModelsForBaseUrl(url).isNotEmpty()) return
+            val provider = selectedProvider
+            modelsLoading = true
+            renderModels()
+            executor.submit {
+                val (ids, _) = io.agents.pokeclaw.agent.llm.CloudModelsFetcher.fetch(url, key, provider.name)
+                if (ids.isNotEmpty()) KVUtils.setFetchedModelsForBaseUrl(url, ids)
+                runOnUiThread {
+                    modelsLoading = false
+                    renderModels()
+                }
+            }
+        }
         renderModels()
 
         // Provider tab switch — load per-provider saved API key
@@ -561,11 +658,14 @@ class LlmConfigActivity : BaseActivity() {
             tvStatus.visibility = View.GONE
             val savedKey = KVUtils.getApiKeyForProvider(provider.name)
             etApiKey.setText(savedKey)
+            loadProviderModels()
         }
         // Re-assign click listeners with the inner function
         tabViews.forEach { (provider, tab) ->
             tab.setOnClickListener { switchProvider(provider, tc) }
         }
+        // Populate the list for the initially selected provider if a key is already saved.
+        loadProviderModels()
 
         // Fetch model list from the configured endpoint (Custom / OpenAI-compatible: GET {baseUrl}/models)
         val btnFetchModels = findViewById<TextView>(R.id.btnFetchModels)
@@ -577,11 +677,13 @@ class LlmConfigActivity : BaseActivity() {
             }
             val apiKey = etApiKey.text.toString().trim()
             val defaultLabel = getString(R.string.provider_fetch_models)
+            val provider = selectedProvider
             btnFetchModels.isEnabled = false
             btnFetchModels.text = getString(R.string.provider_fetch_models_loading)
 
             executor.submit {
-                val (ids, error) = fetchModelIds(baseUrl, apiKey)
+                val (ids, error) = io.agents.pokeclaw.agent.llm.CloudModelsFetcher.fetch(baseUrl, apiKey, provider.name)
+                if (error == null && ids.isNotEmpty()) KVUtils.setFetchedModelsForBaseUrl(baseUrl, ids)
                 runOnUiThread {
                     btnFetchModels.isEnabled = true
                     btnFetchModels.text = defaultLabel
@@ -592,15 +694,19 @@ class LlmConfigActivity : BaseActivity() {
                         ids.isEmpty() -> Toast.makeText(
                             this, getString(R.string.provider_fetch_models_empty), Toast.LENGTH_SHORT
                         ).show()
-                        else -> android.app.AlertDialog.Builder(this)
-                            .setTitle(defaultLabel)
-                            .setItems(ids.toTypedArray()) { _, which ->
-                                val picked = ids[which]
-                                selectedModelId = picked
-                                etModelName.setText(picked)
-                            }
-                            .setNegativeButton(android.R.string.cancel, null)
-                            .show()
+                        else -> {
+                            renderModels()
+                            android.app.AlertDialog.Builder(this)
+                                .setTitle(defaultLabel)
+                                .setItems(ids.toTypedArray()) { _, which ->
+                                    val picked = ids[which]
+                                    selectedModelId = picked
+                                    etModelName.setText(picked)
+                                    renderModels()
+                                }
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show()
+                        }
                     }
                 }
             }
@@ -755,41 +861,6 @@ class LlmConfigActivity : BaseActivity() {
                 val targetScroll = scrollView.scrollY + (rect.bottom - visibleBottom) + margin
                 scrollView.smoothScrollTo(0, targetScroll.coerceAtLeast(0))
             }
-        }
-    }
-
-    /**
-     * GET {baseUrl}/models (OpenAI-compatible). Returns (modelIds, errorOrNull).
-     * Never logs the API key. Runs on the executor thread only.
-     */
-    private fun fetchModelIds(baseUrl: String, apiKey: String): Pair<List<String>, String?> {
-        return try {
-            val url = java.net.URL(baseUrl.trimEnd('/') + "/models")
-            val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
-                connectTimeout = 15_000
-                readTimeout = 15_000
-                requestMethod = "GET"
-                setRequestProperty("Accept", "application/json")
-                if (apiKey.isNotEmpty()) setRequestProperty("Authorization", "Bearer $apiKey")
-            }
-            val code = conn.responseCode
-            XLog.i(TAG, "fetchModels: GET ${url.host}${url.path} -> HTTP $code")
-            if (code !in 200..299) {
-                conn.disconnect()
-                return emptyList<String>() to "HTTP $code"
-            }
-            val body = conn.inputStream.bufferedReader().use { it.readText() }
-            conn.disconnect()
-            val data = org.json.JSONObject(body).optJSONArray("data")
-                ?: return emptyList<String>() to null
-            val ids = (0 until data.length())
-                .map { data.getJSONObject(it).optString("id") }
-                .filter { it.isNotBlank() }
-                .sorted()
-            ids to null
-        } catch (e: Exception) {
-            XLog.e(TAG, "fetchModels failed: ${e.javaClass.simpleName}")
-            emptyList<String>() to (e.message ?: e.javaClass.simpleName)
         }
     }
 

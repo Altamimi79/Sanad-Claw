@@ -149,7 +149,20 @@ class ComposeChatActivity : ComponentActivity() {
         setContent {
             val activeTasks by activeTaskShellController.activeTasks.collectAsState()
 
-            androidx.compose.material3.MaterialTheme(typography = PokeclawTypography) {
+            // Sanad fork: theme the Material color scheme too, otherwise M3 popups
+            // (DropdownMenu, dialogs) render with the default light surface over a dark UI.
+            val m3Colors = androidx.compose.material3.darkColorScheme(
+                primary = composeColors.accent,
+                onPrimary = androidx.compose.ui.graphics.Color.White,
+                secondary = composeColors.accent,
+                background = composeColors.surface,
+                onBackground = composeColors.textPrimary,
+                surface = composeColors.surface,
+                onSurface = composeColors.textPrimary,
+                surfaceVariant = composeColors.aiBubble,
+                onSurfaceVariant = composeColors.textSecondary,
+            )
+            androidx.compose.material3.MaterialTheme(colorScheme = m3Colors, typography = PokeclawTypography) {
             ChatScreen(
                 messages = _messages.toList(),
                 modelStatus = _modelStatus.value,

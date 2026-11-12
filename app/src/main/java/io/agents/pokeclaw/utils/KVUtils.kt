@@ -306,6 +306,15 @@ object KVUtils {
     fun setLlmModelName(value: String) = putString(KEY_LLM_MODEL_NAME, value)
     fun getLlmProvider(): String = getString(KEY_LLM_PROVIDER, "OPENAI")
     fun setLlmProvider(value: String) = putString(KEY_LLM_PROVIDER, value)
+
+    /** Cached model ids fetched from an OpenAI-compatible endpoint, keyed by base URL. */
+    fun getFetchedModelsForBaseUrl(baseUrl: String): List<String> =
+        if (baseUrl.isBlank()) emptyList()
+        else getString("KEY_CLOUD_MODELS_CACHE_${baseUrl.hashCode()}", "")
+            .split('\n').map { it.trim() }.filter { it.isNotEmpty() }
+
+    fun setFetchedModelsForBaseUrl(baseUrl: String, ids: List<String>) =
+        putString("KEY_CLOUD_MODELS_CACHE_${baseUrl.hashCode()}", ids.joinToString("\n"))
     fun getLocalModelPath(): String = getString(KEY_LOCAL_MODEL_PATH, "")
     fun setLocalModelPath(value: String) = putString(KEY_LOCAL_MODEL_PATH, value)
     fun getLocalBackendPreference(): String = getString(KEY_LOCAL_BACKEND_PREFERENCE, "")

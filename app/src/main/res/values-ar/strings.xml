@@ -74,6 +74,7 @@
     <string name="provider_fetch_models_loading">جارٍ التحميل…</string>
     <string name="provider_fetch_models_failed">تعذّر جلب الموديلات: %1$s</string>
     <string name="provider_fetch_models_empty">لم يُرجع هذا الرابط أي موديلات</string>
+    <string name="provider_fetch_models_hint">ألصق مفتاح API — ستظهر قائمة الموديلات تلقائيًا</string>
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">القائمة</string>
     <string name="cd_settings">الإعدادات</string>

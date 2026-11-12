@@ -2,12 +2,13 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-10 (Phase 5 complete: v1.0.0 tagged locally; device QA still pending)
+Last updated: 2026-11-12 (fork branding/UI round on HONOR device: committed + verified; GitHub push still pending)
 
 ## Project Identity
 
 - Fork of **agents-io/PokeClaw** (Apache-2.0), cloned from upstream `main` @ commit `936eca3` ("Add encrypted .env secrets (SOPS + age)"), app version v0.7.1 / versionCode 29.
-- Working copy: `E:\Sanad-Agent`. Upstream remote `origin` = https://github.com/agents-io/PokeClaw.git (no personal fork repo existed on GitHub at clone time — see Known Issues).
+- Working copy: `E:\Sanad-Claw`. Upstream remote `origin` = https://github.com/agents-io/PokeClaw.git (no personal fork repo existed on GitHub at clone time — see Known Issues).
+- **App display name: Sanad Claw / سند كلو.** Planned GitHub repo name: **Sanad-Claw** (account Altamimi79). Package id intentionally stays `io.agents.pokeclaw` (data/settings continuity).
 - Must keep: `LICENSE` (Apache-2.0 full text), `NOTICE` (agents.io attribution), per-file Apache headers, CLA machinery. README Trademark section applies to naming decisions.
 
 ## Current Status
@@ -73,6 +74,19 @@ Commits: `(core)` feat(safety-core) · `(agent)` feat(safety-agent) · `(ui)` fe
 - **Docs**: `docs/SECURITY.md` (findings S1–S12 with status + residuals), `docs/skills/safety-guardrails.md`, QA §SA1–SA13.
 - **Tests**: 6 new classes — RiskClassifier, AppBlocklist, TaskTimeoutPolicy, RetryPolicy, ActionLogFormatter, SafetyCoordinator. Full suite **127 tests / 0 failures**.
 - **Build**: `assembleDebug` green → `PokeClaw_v0.7.1_20261110_163624.apk`.
+
+## What's Done (Fork branding + i18n + cloud-only UI round) — 2026-11-12, on `main`
+
+Commits: `4cce784` feat(branding) · `fd00d28` fix(i18n) · `3829652` feat(llm-config fetch) · `74ba251` fix(i18n commit()) · `a99314b` feat(chat topbar) · `89d27fb` fix(models-page dark/cloud-only) · `b46a2f2` fix(fetch label one-line).
+
+- **Branding**: app_name → "Sanad Claw" (en/ar; ja/zh → "Sanad"); new logo + full mipmap icon set (mdpi→xxxhdpi, untracked dirs now committed); adaptive-icon background = `launcher_background` black (no white edges in light mode — verified on launcher home screen, light + dark).
+- **AppLocale fix**: `attachBaseContext` must NOT use `applicationContext` (null then) — read prefs from the base context directly. Language switch row added in Settings → Appearance (ar↔en, restarts app). **Race fixed**: `setLanguage` now uses `commit()` — `apply()` + immediate `finishAffinity()` lost the write on HONOR and the switch silently reverted. Verified both directions on device (ar→en earlier round; en→ar twice this round, pref persisted). Current setting: **ar**.
+- **Chat top bar**: Local/Cloud toggle REMOVED per user (cloud-first fork; local management still in Settings → Model); title single-line ellipsized; model chip (`qwen3.8-flash-next-iq3_s · Cloud`) SemiBold + textSecondary + `weight(1f,fill=false)`+Ellipsis so long ids can't wrap the toolbar.
+- **Models page (LlmConfigActivity) dark-mode overhaul**: replaced hardcoded `#8b949e`/`#2A1F1A` with theme-derived colors (`metaGrayFor(tc)` = aiText@205); `retintStaticTexts()` walks the inflated tree and swaps static light-mode text colors (colorTextSecondary #AD000000 / Tertiary #61000000) + EditText text/hints for theme-derived ones — labels/fields now readable on Abyss dark; model names bold; active-card avatar = app logo (was 🦞 emoji); localized leftovers ("No model selected", "Download a model below", "● Ready/Missing file/Not configured", "· Cloud" suffix, "This phone reports NGB") via new keys in en+ar.
+- **Cloud-only layout**: default-local row + divider + "Available Models" header + download list hidden (GONE) in the models page; local engine untouched — flip visibilities to re-expose. User confirmed cloud-only usage (HONOR MBH-N49, ~15.6GB RAM).
+- **Fetch available models button** (Settings → Model → provider fields): GET {baseUrl}/models OpenAI-compatible, Bearer key when present, AlertDialog list fills model id; errors via Toast; key never logged. **Verified on device**: HTTP 200 against `ai.plexgrab.uk/v1/models`, dialog listed the model + localized إلغاء.
+- **Device QA executed this round** (HONOR MBH-N49, AWRT025805000710): icon light+dark, language ar↔en, fetch-models dialog, models-page contrast screenshots before/after. VA section exempt (HONOR has no speech recognition service). Unit tests re-run: **127 tests / 28 classes / 0 failures**.
+- **Tablet mode**: user reports no layout problems when the phone is in tablet mode (informational, not separately tested by us).
 
 ## What's Done (Phase 5: final release) — branch `phase-5-release`
 

@@ -424,6 +424,30 @@ private fun ChatTopBar(
     Column {
         var showModelMenu by remember { mutableStateOf(false) }
 
+        // Sanad fork: live list of models from the configured OpenAI-compatible endpoint.
+        // Cached per base URL; auto-fetched once when the switcher opens with a key set,
+        // and refreshable from the menu itself.
+        val kv = io.agents.pokeclaw.utils.KVUtils
+        val apiKeyForMenu = kv.getLlmApiKey()
+        val baseUrlForMenu = kv.getLlmBaseUrl()
+        var fetchedModels by remember(baseUrlForMenu) { mutableStateOf(kv.getFetchedModelsForBaseUrl(baseUrlForMenu)) }
+        var modelsFetching by remember { mutableStateOf(false) }
+        fun refreshCloudModels() {
+            if (modelsFetching || apiKeyForMenu.isEmpty() || baseUrlForMenu.isEmpty()) return
+            modelsFetching = true
+            Thread {
+                val (ids, _) = io.agents.pokeclaw.agent.llm.CloudModelsFetcher.fetch(
+                    baseUrlForMenu, apiKeyForMenu, kv.getLlmProvider()
+                )
+                if (ids.isNotEmpty()) kv.setFetchedModelsForBaseUrl(baseUrlForMenu, ids)
+                fetchedModels = ids
+                modelsFetching = false
+            }.start()
+        }
+        LaunchedEffect(showModelMenu) {
+            if (showModelMenu && fetchedModels.isEmpty()) refreshCloudModels()
+        }
+
         TopAppBar(
             title = {
                 Text(
@@ -519,23 +543,38 @@ private fun ChatTopBar(
                 val currentModel = kvUtils.getLlmModelName()
 
                 if (selectedTab == "cloud") {
-                    // Cloud models: from configured provider
+                    // Cloud models: live list from the endpoint when available, else static catalog
                     if (apiKey.isNotEmpty()) {
-                        val activeProvider = io.agents.pokeclaw.agent.CloudProvider.entries.find {
-                            it.defaultBaseUrl == baseUrl
+                        if (modelsFetching) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.provider_fetch_models_loading), fontSize = 13.sp, color = colors.textTertiary) },
+                                onClick = {},
+                            )
                         }
-                        val modelsToShow = activeProvider?.models
-                            ?: io.agents.pokeclaw.agent.CloudProvider.OPENAI.models
-                        modelsToShow.forEach { model ->
+                        val liveIds = fetchedModels
+                        val list: List<Pair<String, String>> = when {
+                            liveIds.isNotEmpty() -> liveIds.map { it to it }
+                            else -> {
+                                val activeProvider = io.agents.pokeclaw.agent.CloudProvider.entries.find {
+                                    it.defaultBaseUrl == baseUrl
+                                }
+                                (activeProvider?.models
+                                    ?: io.agents.pokeclaw.agent.CloudProvider.OPENAI.models)
+                                    .map { it.id to it.displayName }
+                            }
+                        }
+                        val listWithCurrent = if (currentModel.isNotEmpty() && list.none { it.first == currentModel })
+                            listOf(currentModel to currentModel) + list else list
+                        listWithCurrent.forEach { (modelId, displayName) ->
                             DropdownMenuItem(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            model.displayName,
+                                            displayName,
                                             fontSize = 13.sp,
-                                            fontWeight = if (model.id == currentModel && !isLocalModel) FontWeight.Bold else FontWeight.Normal,
+                                            fontWeight = if (modelId == currentModel && !isLocalModel) FontWeight.Bold else FontWeight.Normal,
                                         )
-                                        if (model.id == currentModel && !isLocalModel) {
+                                        if (modelId == currentModel && !isLocalModel) {
                                             Spacer(Modifier.width(6.dp))
                                             Text("✓", fontSize = 12.sp, color = colors.accent)
                                         }
@@ -543,7 +582,7 @@ private fun ChatTopBar(
                                 },
                                 onClick = {
                                     showModelMenu = false
-                                    onModelSwitch(model.id, model.displayName)
+                                    onModelSwitch(modelId, displayName)
                                 },
                             )
                         }
@@ -555,6 +594,10 @@ private fun ChatTopBar(
                         )
                     }
                     HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.provider_fetch_models), fontSize = 13.sp, color = colors.accent) },
+                        onClick = { refreshCloudModels() },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.chat_configure_api_key), fontSize = 13.sp, color = colors.accent) },
                         onClick = { showModelMenu = false; onSettings() },

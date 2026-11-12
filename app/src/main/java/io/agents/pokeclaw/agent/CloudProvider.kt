@@ -63,11 +63,24 @@ enum class CloudProvider(
     ),
     GOOGLE(
         displayName = "Google",
-        defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta",
+        // OpenAI-compatible compatibility layer; /models works with a Bearer key.
+        defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai",
         models = listOf(
             CloudModel("gemini-2.5-flash", "Gemini 2.5 Flash", 0.15, 0.60, ModelTier.FAST, 1_000_000, recommended = true),
             CloudModel("gemini-2.5-pro", "Gemini 2.5 Pro", 1.25, 10.00, ModelTier.PRO, 1_000_000),
         )
+    ),
+    OPENROUTER(
+        displayName = "OpenRouter",
+        defaultBaseUrl = "https://openrouter.ai/api/v1",
+        // Live list comes from GET /models once the user pastes a key.
+        models = emptyList()
+    ),
+    OPENCODE(
+        displayName = "OpenCode",
+        defaultBaseUrl = "https://opencode.ai/zen/v1",
+        // OpenCode Zen gateway; live list comes from GET /models once a key is set.
+        models = emptyList()
     ),
     CUSTOM(
         displayName = "Custom",
