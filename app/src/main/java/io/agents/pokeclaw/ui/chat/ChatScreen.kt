@@ -1754,8 +1754,6 @@ private fun EmptyStateWithPrompts(
         )
     }
 
-    val headerText = if (!isLocalModel) stringResource(R.string.header_cloud_ai) else stringResource(R.string.header_local_ai)
-
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1777,44 +1775,6 @@ private fun EmptyStateWithPrompts(
             maxLines = 1,
             softWrap = false,
         )
-        Spacer(Modifier.height(3.dp))
-        Text(
-            headerText,
-            fontSize = 12.sp,
-            color = colors.accent,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(6.dp))
-        // Hint text — Local has styled bold parts, Cloud is plain
-        if (isLocalModel) {
-            Text(
-                buildAnnotatedString {
-                    append("Chat in ")
-                    withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.Bold)) {
-                        append("💬 Chat")
-                    }
-                    append(" mode, or switch to ")
-                    withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.Bold)) {
-                        append("🤖 Task")
-                    }
-                    append(" to control your phone")
-                },
-                fontSize = 11.sp,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 16.sp,
-                modifier = Modifier.widthIn(max = 260.dp),
-            )
-        } else {
-            Text(
-                "Chat and tasks work together \u2014 just type anything",
-                fontSize = 11.sp,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 16.sp,
-                modifier = Modifier.widthIn(max = 260.dp),
-            )
-        }
         Spacer(Modifier.height(12.dp))
 
         // Suggested prompt chips — same style as Quick Tasks items

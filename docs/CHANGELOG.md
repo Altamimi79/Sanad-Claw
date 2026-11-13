@@ -2,6 +2,20 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3-dev-10] — 2026-11-13
+
+### Fixed
+- **Launcher icon white frame**: the "S AI" artwork had a baked-in white/light border that Honor's launcher rendered as a white edge on all four sides. The border was removed from every icon rendition (mdpi→xxxhdpi, round + square, legacy `mipmap/`, adaptive 512 foreground, in-app avatar/small logo).
+- **Empty chat screen text**: removed the "Cloud AI / Local AI" header and the hint line under "Sanad Claw" (the three lines the user asked to drop). The empty state now shows only the logo + "Sanad Claw" above the prompt chips.
+
+### Changed
+- **Icon palette matches the app**: the gold artwork was re-tinted to the app accent family (`#E8845A` / `#D45A30`) while keeping the original shading and highlights, so the icon and the UI look like one product.
+- Version bumped to 1.0.3-dev-10 (code 111).
+
+### Verified
+- Unit tests pass; release APK signed with the fork keystore (matches the installed build, so in-app update installs over it without data loss).
+- Device screenshot verification pending (USB disconnected during the release build).
+
 ## [1.0.3-dev-9] — 2026-11-13
 
 ### Fixed

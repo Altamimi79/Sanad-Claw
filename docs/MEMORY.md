@@ -504,3 +504,10 @@ Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; us
 - New launcher icon generated from Desktop/Sanad.png at mdpi..xxxhdpi (square + round) + 512px adaptive foreground.
 - 321 tests / 0 failures. Release dev-9 with all fixes.
 - Remaining for tomorrow: select-all/archive for conversations, Memory section, Skills polish, manual safety QA (IJ/SD/QV/QP3-8), GitHub Actions signing secrets.
+## Release 1.0.3-dev-10 (2026-11-13)
+
+- Icon: removed the baked white/light frame from every rendition (mipmap mdpi..xxxhdpi square+round, legacy mipmap/, drawable-nodpi 512 adaptive foreground, drawable pokeclaw_avatar + pokeclaw_icon_small). Honor's launcher was rendering it as a white edge on four sides. Method: flood the neutral bright border region to black; for images whose plate is inset in black, darken neutral pixels within R of the dark outside, capped to the outer 16% so gold highlights are untouched. Scripts lived in %TEMP%\kilo (not committed).
+- Icon palette: gold hue remapped into the app accent family (#E8845A / #D45A30): hue * 0.50, saturation * 0.85, value preserved (shading/highlights intact).
+- Empty chat state: removed the Cloud AI/Local AI header and the hint line under "Sanad Claw" in ChatScreen.EmptyStateWithPrompts; logo + "Sanad Claw" remain. header_cloud_ai/header_local_ai strings are now unused (kept).
+- Version 1.0.3-dev-10 (code 111). Signed release APK app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-10_20261113_202834.apk (157 MB), SHA-256 9E8779E08D9E06B00B8B9ACF1CB258727F230F74981A6B6215B6AC850CEE122B, aapt2-verified versionCode 111 / versionName 1.0.3-dev-10.
+- Unit tests pass. Device (HONOR MBH-N49) was disconnected after the build; on-device verification of the new empty state and launcher icon is pending.
