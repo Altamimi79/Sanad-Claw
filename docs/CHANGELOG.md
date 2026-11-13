@@ -2,6 +2,21 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3-dev-8] — 2026-11-13
+
+### Added
+- Comprehensive assessment doc: `docs/ASSESSMENT.md` (readiness %, competitors, tomorrow's plan).
+- Image/file attachments in the composer (system document picker, cache copy, removable chip; text files inlined, images referenced by path).
+- Enter / IME Send submits messages (replaces the send FAB; mic + attach remain).
+
+### Changed
+- Chat / Agent sections available for every model with a clear active state; Agent background is theme-aware in light mode.
+- Version bumped to 1.0.3-dev-8 (code 109).
+
+### Verified (device)
+- Enter sends in Chat mode; attach opens DocumentsUI; Chat/Agent colors readable in light mode.
+- 318 tests / 57 classes / 0 failures.
+
 ## [1.0.3-dev-7] — 2026-11-13
 
 ### Added
