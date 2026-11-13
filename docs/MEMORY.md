@@ -446,15 +446,21 @@ Device: HONOR MBH-N49, Android 17, installed SanadClaw 1.0.3-dev-5 (code 106).
 ### send_message end-to-end fix + verification (same session)
 Root cause chain found on HONOR + WhatsApp Business (com.whatsapp.w4b):
 1. OpenAppTool.resolveAppName did not map the label "WA Business" -> added.
-2. ContactListUiUtils.isContactLookupReady required clickable text rows; WhatsApp exposes row text on non-clickable TextViews -> relaxed to scrollableContainers > 0 && visibleTextRows >= 3 (fallback isibleTextRows >= 6 && clickableRows >= 1).
+2. ContactListUiUtils.isContactLookupReady required clickable text rows; WhatsApp exposes row text on non-clickable TextViews -> relaxed to `scrollableContainers > 0 && visibleTextRows >= 3` (fallback `visibleTextRows >= 6 && clickableRows >= 1`).
 3. prepareForContactLookup pressed Back before the list rendered -> added a settle re-check before Back.
-4. Search results include message previews ("From X") -> indBestVisibleContactNode now skips "From "/"?? " rows.
+4. Search results include message previews ("From X") -> findBestVisibleContactNode now skips "From "/"من " rows.
 5. isAlreadyInChatWith scanned 300px and matched chat-list rows -> narrowed to the 250px toolbar band.
-6. 	ypeInBottomEditText picked the search box -> now skips search fields and requires the composer in the bottom half of the screen.
+6. typeInBottomEditText picked the search box -> now skips search fields and requires the composer in the bottom half of the screen.
 7. Added a post-tap safety check: if the opened chat title does not match the contact, abort before typing (prevents sending to the wrong chat/group).
 
-Verified on device: send_message to "???? ??????? ???" via WhatsApp Business succeeded; message "????? ?????? ?? ??? � ???? ???????" delivered (double checkmarks). SafetyGate confirmation appeared and was approved by the user. No message was sent to the wrong chat.
+Verified on device: send_message to "أحمد التميمي خاص" via WhatsApp Business succeeded; message "رسالة اختبار من سند — يرجى تجاهلها" delivered (double checkmarks). SafetyGate confirmation appeared and was approved by the user. No message was sent to the wrong chat.
 
 Final signed release: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-5_20261113_171335.apk (102 MB), SHA-256 B189F9D718E7EB7AC0B04E7C5FE781017636BDFB04C7D258B0CD59F701EEC10A. Tests: 312 / 56 / 0 failures.
 
-Note: implicit m broadcast to DebugTaskReceiver is blocked on this device; use an explicit component (-n io.agents.pokeclaw/.debug.DebugTaskReceiver).
+Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; use an explicit component (`-n io.agents.pokeclaw/.debug.DebugTaskReceiver`).
+### Release 1.0.3-dev-6 (2026-11-13)
+- Fixed UpdateChecker.isNewer: strips -dev/-rc/-beta suffixes before parsing; stable beats prerelease of the same base; latest tag keeps its prerelease suffix. Added 6 unit tests (UpdateCheckerVersionTest).
+- Version bumped to 1.0.3-dev-6 (code 107).
+- Signed release: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB), SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD.
+- Tests: 318 / 57 classes / 0 failures.
+- Latest GitHub release before this: v1.0.2; the in-app check correctly reports "no update" for 1.0.3-dev-5 because 1.0.2 < 1.0.3.

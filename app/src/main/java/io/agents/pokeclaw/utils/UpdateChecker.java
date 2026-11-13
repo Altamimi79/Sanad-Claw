@@ -75,7 +75,7 @@ public class UpdateChecker {
                 reader.close();
 
                 JSONObject release = new JSONObject(sb.toString());
-                String latestTag = release.getString("tag_name").replaceFirst("^v", "").replaceFirst("-.*", "");
+                String latestTag = release.getString("tag_name").replaceFirst("^v", "");
                 String downloadUrl = release.getString("html_url");
                 String notes = release.optString("body", "").trim();
 
@@ -115,22 +115,43 @@ public class UpdateChecker {
     }
 
     /**
-     * Compare semantic versions. Returns true if remote > local.
+     * Compare versions. Returns true if remote > local.
+     *
+     * Pre-release suffixes ("-dev-5", "-rc1", "-beta2") are stripped before comparing
+     * the numeric parts, so "1.0.3" vs "1.0.3-dev-5" still compares correctly. When the
+     * numeric parts are equal, a stable remote release beats a pre-release local build.
      */
-    private static boolean isNewer(String remote, String local) {
+    static boolean isNewer(String remote, String local) {
+        String remoteBase = stripPrerelease(remote);
+        String localBase = stripPrerelease(local);
+        int cmp = compareNumeric(remoteBase, localBase);
+        if (cmp != 0) return cmp > 0;
+        return !isPrerelease(remote) && isPrerelease(local);
+    }
+
+    private static String stripPrerelease(String version) {
+        if (version == null) return "";
+        return version.replaceFirst("[-+].*$", "").trim();
+    }
+
+    private static boolean isPrerelease(String version) {
+        return version != null && version.matches(".*[-+].*");
+    }
+
+    private static int compareNumeric(String remote, String local) {
         try {
             String[] r = remote.split("\\.");
             String[] l = local.split("\\.");
             for (int i = 0; i < Math.max(r.length, l.length); i++) {
-                int rv = i < r.length ? Integer.parseInt(r[i]) : 0;
-                int lv = i < l.length ? Integer.parseInt(l[i]) : 0;
-                if (rv > lv) return true;
-                if (rv < lv) return false;
+                int rv = i < r.length && !r[i].isEmpty() ? Integer.parseInt(r[i]) : 0;
+                int lv = i < l.length && !l[i].isEmpty() ? Integer.parseInt(l[i]) : 0;
+                if (rv > lv) return 1;
+                if (rv < lv) return -1;
             }
         } catch (NumberFormatException e) {
             XLog.w(TAG, "Version parse error: remote=" + remote + " local=" + local);
         }
-        return false;
+        return 0;
     }
 
     private static void showUpdateDialog(Activity activity, String version, String url, String notes, boolean debugBuild) {

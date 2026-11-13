@@ -2,7 +2,18 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
-## [Unreleased] � 2026-11-13 (device QA, signed release, CI fix)
+## [1.0.3-dev-6] — 2026-11-13
+
+### Added
+- 6 unit tests for UpdateChecker.isNewer (pre-release-aware version comparison).
+
+### Fixed
+- UpdateChecker: version comparison now strips -dev/-rc/-beta suffixes before parsing, so a stable release correctly wins over a prerelease of the same base, and 1.0.3-dev-5 no longer breaks Integer.parseInt. The latest-tag read no longer strips the prerelease suffix (so the dialog shows the real tag).
+
+### Changed
+- Version bumped to 1.0.3-dev-6 (code 107).
+
+## [Unreleased] — 2026-11-13 (device QA, signed release, CI fix)
 
 ### Added
 - Fork release keystore workflow: keys/sanad-release.jks (gitignored) + keys/KEYSTORE_INFO.txt; assembleRelease now produces a signed APK (CN=Sanad Claw).
