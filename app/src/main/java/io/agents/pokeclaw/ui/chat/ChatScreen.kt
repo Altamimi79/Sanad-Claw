@@ -1668,7 +1668,7 @@ private fun QuickTasksPanel(
     onFillTask: (String) -> Unit,
     colors: PokeclawColors,
 ) {
-    var expanded by remember { mutableStateOf(true) }
+    var expanded by remember { mutableStateOf(false) }
 
     // Cloud-only tasks at the top (multi-step, Siri/GA can't do these)
     // Cloud-only tasks (multi-step, Siri can't do)
