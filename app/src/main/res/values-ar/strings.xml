@@ -153,6 +153,9 @@
     <string name="about_app_name">سند كلو</string>
     <string name="about_version_label">الإصدار</string>
     <string name="about_check_update">التحقق من التحديثات</string>
+    <string name="about_update_channel">قناة التحديث</string>
+    <string name="update_channel_stable">رسمي</string>
+    <string name="update_channel_beta">تجريبي</string>
     <string name="about_check_update_hint">يفحص GitHub الآن ويعرض الإصدار الجديد وما تغيّر. لا يتم التنزيل تلقائياً.</string>
     <string name="about_github">مستودع GitHub</string>
     <string name="about_github_hint">الكود المصدري والإصدارات والتوثيق</string>

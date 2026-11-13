@@ -466,6 +466,22 @@ object KVUtils {
     fun isPlanPreviewEnabled(): Boolean = getBoolean(KEY_PLAN_PREVIEW, false)
     fun setPlanPreviewEnabled(enabled: Boolean) = putBoolean(KEY_PLAN_PREVIEW, enabled)
 
+    // ==================== Update channel ====================
+    private const val KEY_UPDATE_CHANNEL = "KEY_UPDATE_CHANNEL"
+    const val UPDATE_CHANNEL_STABLE = "stable"
+    const val UPDATE_CHANNEL_BETA = "beta"
+
+    /**
+     * "stable" = only stable releases; "beta" = include pre-releases.
+     * Defaults to beta on dev/rc builds so they can see newer pre-releases.
+     */
+    fun getUpdateChannel(): String = getString(
+        KEY_UPDATE_CHANNEL,
+        if (io.agents.pokeclaw.BuildConfig.VERSION_NAME.contains("-")) UPDATE_CHANNEL_BETA else UPDATE_CHANNEL_STABLE
+    )
+
+    fun setUpdateChannel(channel: String) = putString(KEY_UPDATE_CHANNEL, channel)
+
     // ==================== Global Prompt (#45) ====================
     // User-defined persistent instructions prepended to every system prompt.
     // Empty string = disabled. No separate enable toggle by design (less to misconfigure).

@@ -59,6 +59,7 @@ class SettingsActivity : BaseActivity() {
     private var permBattery: io.agents.pokeclaw.widget.MenuItem? = null
     private var permStorage: io.agents.pokeclaw.widget.MenuItem? = null
     private var externalAutomationItem: io.agents.pokeclaw.widget.MenuItem? = null
+    private var updateChannelItem: io.agents.pokeclaw.widget.MenuItem? = null
     private var globalPromptItem: io.agents.pokeclaw.widget.MenuItem? = null
     private var customModelUrlItem: io.agents.pokeclaw.widget.MenuItem? = null
 
@@ -738,6 +739,15 @@ class SettingsActivity : BaseActivity() {
             setTrailingText("${getString(R.string.about_version_label)} ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}")
         }
 
+        updateChannelItem = aboutGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_manage,
+            title = getString(R.string.about_update_channel),
+            onClick = { toggleUpdateChannel() },
+            showDivider = true
+        ).apply {
+            setTrailingText(updateChannelLabel())
+        }
+
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_popup_sync,
             title = getString(R.string.about_check_update),
@@ -747,6 +757,24 @@ class SettingsActivity : BaseActivity() {
             setTrailingText(getString(R.string.about_check_update_hint))
         }
 
+    }
+
+    private fun updateChannelLabel(): String =
+        if (KVUtils.getUpdateChannel() == KVUtils.UPDATE_CHANNEL_BETA) {
+            getString(R.string.update_channel_beta)
+        } else {
+            getString(R.string.update_channel_stable)
+        }
+
+    private fun toggleUpdateChannel() {
+        val next = if (KVUtils.getUpdateChannel() == KVUtils.UPDATE_CHANNEL_BETA) {
+            KVUtils.UPDATE_CHANNEL_STABLE
+        } else {
+            KVUtils.UPDATE_CHANNEL_BETA
+        }
+        KVUtils.setUpdateChannel(next)
+        updateChannelItem?.setTrailingText(updateChannelLabel())
+        XLog.i("SettingsActivity", "Update channel set to $next")
     }
 
     private fun openUrl(url: String) {

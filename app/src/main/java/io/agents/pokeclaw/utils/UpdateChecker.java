@@ -9,6 +9,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.Intent;
 import android.net.Uri;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -25,7 +26,8 @@ import java.util.concurrent.Executors;
 public class UpdateChecker {
 
     private static final String TAG = "UpdateChecker";
-    private static final String GITHUB_API = "https://api.github.com/repos/Altamimi79/Sanad-Claw/releases/latest";
+    private static final String GITHUB_API_LATEST = "https://api.github.com/repos/Altamimi79/Sanad-Claw/releases/latest";
+    private static final String GITHUB_API_ALL = "https://api.github.com/repos/Altamimi79/Sanad-Claw/releases?per_page=20";
     private static final long CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once per day
 
     /** Automatic check: at most once per day. Shows a dialog only when a newer release exists. */
@@ -57,7 +59,13 @@ public class UpdateChecker {
                 String currentVersion = activity.getPackageManager()
                         .getPackageInfo(activity.getPackageName(), 0).versionName;
 
-                HttpURLConnection conn = (HttpURLConnection) new URL(GITHUB_API).openConnection();
+                // The user picks the channel in Settings. Stable only looks at stable
+                // releases; beta also looks at pre-releases (dev/rc).
+                boolean betaChannel = io.agents.pokeclaw.utils.KVUtils.INSTANCE.UPDATE_CHANNEL_BETA
+                        .equals(io.agents.pokeclaw.utils.KVUtils.INSTANCE.getUpdateChannel());
+                String apiUrl = betaChannel ? GITHUB_API_ALL : GITHUB_API_LATEST;
+
+                HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
@@ -74,8 +82,31 @@ public class UpdateChecker {
                 while ((line = reader.readLine()) != null) sb.append(line);
                 reader.close();
 
-                JSONObject release = new JSONObject(sb.toString());
-                String latestTag = release.getString("tag_name").replaceFirst("^v", "");
+                JSONObject release;
+                String latestTag;
+                if (betaChannel) {
+                    JSONArray releases = new JSONArray(sb.toString());
+                    JSONObject best = null;
+                    String bestTag = null;
+                    for (int i = 0; i < releases.length(); i++) {
+                        JSONObject candidate = releases.getJSONObject(i);
+                        if (candidate.optBoolean("draft", false)) continue;
+                        String tag = candidate.getString("tag_name").replaceFirst("^v", "");
+                        if (best == null || isNewer(tag, bestTag)) {
+                            best = candidate;
+                            bestTag = tag;
+                        }
+                    }
+                    if (best == null) {
+                        reportFailure(activity, automatic, "No releases found.");
+                        return;
+                    }
+                    release = best;
+                    latestTag = bestTag;
+                } else {
+                    release = new JSONObject(sb.toString());
+                    latestTag = release.getString("tag_name").replaceFirst("^v", "");
+                }
                 String downloadUrl = release.getString("html_url");
                 String notes = release.optString("body", "").trim();
 
