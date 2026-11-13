@@ -236,3 +236,12 @@ Readiness snapshot: **~72% overall** / **~90% for daily cloud-chat use** (UI 90,
 - APK: PokeClaw_v1.0.3-dev_20261113_073755.apk, versionCode 101, versionName 1.0.3-dev (aapt2-verified), SHA-256 413EB5AFF757927A3C67C1A73AA8D329271DD0C94F10AC9BD5E7F63291DB9DC7. Not signed for release, not committed, not pushed.
 - docs/CHANGELOG.md 1.0.3-dev entry; docs/DEVICE_QA_SESSION.md lists 32 NOT EXECUTED IDs; none missing.
 - Device QA NOT EXECUTED.
+
+## Phase 2k — preserve work locally (2026-11-13)
+
+- Branch sanad/dev-1.0.3, commit 92799e1 (1.0.3-dev code, 80 files). Not pushed.
+- Frozen corpora tracked; SHA-256 match audit (injection) and phase2d (injection_heldout).
+- APK preserved in dist-dev/ (gitignored) with .sha256; SHA-256 413EB5AF...DB9DC7 verified.
+- app/build.gradle.kts still modified (testOptions line from an earlier phase); not committed; decision pending.
+- No QV10 added: QV3 already covers the scenario. Device QA NOT EXECUTED.
+

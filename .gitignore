@@ -45,3 +45,6 @@ app/release/
 *.apk
 *.aab
 
+
+# Local preserved dev APK copies (not for git)
+dist-dev/

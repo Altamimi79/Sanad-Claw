@@ -140,3 +140,8 @@ Build: versionName 1.0.3-dev, versionCode 101 (set via POKECLAW_VERSION_NAME / P
 - HONOR speech service availability is unverified.
 - Debug builds enable FILE_LOGGING.
 - No device QA has been executed (see docs/DEVICE_QA_SESSION.md).
+
+### Preserved build record (1.0.3-dev)
+- Code commit (local branch `sanad/dev-1.0.3`): `92799e1087006edcada90740feb828515544be9e` — "1.0.3-dev: items 1, 2, 3, 4, 6 and FileLoggingInterceptor fix (unit-tested; device QA pending)". Not pushed.
+- APK: `PokeClaw_v1.0.3-dev_20261113_073755.apk`, SHA-256 `413EB5AFF757927A3C67C1A73AA8D329271DD0C94F10AC9BD5E7F63291DB9DC7`, 157147204 bytes. Preserved at `dist-dev/` (gitignored) with a `.sha256` file.
+- The APK was built from the working tree that this commit captured. Verified build-free: no file under `app/src` has a modification time after the APK (newest: `app/src/main/assets/.pcfp`, build fingerprint, gitignored). The source was unchanged between build and commit.
