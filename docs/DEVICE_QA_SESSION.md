@@ -64,3 +64,25 @@ Every row is copied verbatim from QA_CHECKLIST.md (original ID). Status before t
 
 ## MISSING
 None. All 32 IDs (IJ1-IJ6, SD1-SD5, FL3, QP1, QP1a, QP2-QP8, QL1-QL2, QV1-QV9) were found in QA_CHECKLIST.md.
+
+## Device QA round 2026-11-13 (HONOR MBH-N49, installed v1.0.3-dev-2 = code HEAD 9e0d182 except docs)
+
+| ID | Result | Evidence |
+|---|---|---|
+| QP1 | PASS | 7 Confirm rows present under Settings > Tools |
+| QP1a | NOT RUN | needs TalkBack enabled manually |
+| QP2 | PASS | toggle Enabled->Disabled, persists after force-stop + relaunch; restored to Enabled |
+| QP3-QP8 | NOT RUN | need hostile screens / SMS / bank app / prior build (QP7/QP8) |
+| QL1 | PASS | redacted export written; scan found 0 card (Luhn), 0 IBAN, 0 secret, 0 OTP |
+| QL2 | PARTIAL | legacy entries show 'Unknown (older entry)' in EN; AR check not completed |
+| FL3 | FAIL (before fix) / PASS (after) | pre-fix device logs held full OpenRouter key in Authorization header. Current build writes 'Authorization: ***'; 0 sk- keys in device logs after cleanup |
+| IJ1-IJ6, SD1-SD5, QV1-QV9 | NOT RUN | need manual device interaction (voice, SMS, hostile screens) |
+
+Defects found and fixed:
+- Quick Task Templates panel opened by default (ChatScreen.kt: expanded initial value true -> false), commit 44c3ec6.
+- APK filename prefix changed PokeClaw_ -> SanadClaw_ (app/build.gradle.kts), commit 44c3ec6.
+
+Open actions:
+- Rotate the OpenRouter key that appeared in pre-fix debug logs on the device.
+- Install SanadClaw build (signature differs from installed GitHub build, so this requires uninstall; clears app data).
+- Re-verify the Quick Task Templates default on that installed build.
