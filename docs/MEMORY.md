@@ -262,3 +262,15 @@ Readiness snapshot: **~72% overall** / **~90% for daily cloud-chat use** (UI 90,
 - FL3 fixed: pre-fix device logs held full OpenRouter key; current build writes Authorization: ***. Device logs cleared.
 - gh CLI installed (GitHub.cli) and authenticated as Altamimi79.
 - Open: rotate pre-fix OpenRouter key; QP1a TalkBack; QP3-QP8; IJ/SD/QV (need manual interaction); QP7/QP8 need prior build.
+
+## Roadmap status 2026-11-13 (session 3)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 3. Voice commands '???? ???' / '??? ???' | DONE (code + unit) | VoiceCommandParser / VoiceCommandPolicy / approvePendingIfMatches wired in ChatScreen.handleVoiceCommand; unit tests green. Device check QV1-QV9 still NOT RUN. |
+| 5. Plan preview before execution | PARTIAL | TaskPlanPreview pure model + 8 unit tests (safety/TaskPlanPreview.kt). NOT wired into DefaultAgentService.executeTask; no approval UI yet. |
+| 8. Scheduled routines | PARTIAL | ScheduledRoutine pure model (routine/ScheduledRoutine.kt) + 8 unit tests. No AlarmManager/WorkManager scheduling, no execution via safety gate, no UI yet. |
+
+Unit tests: 288 pass, 0 fail.
+
+Still open for item 5 and 8: wire preview gate into executeTask and approval screen (5); persist routines, schedule with AlarmManager, route execution through SafetyGate and confirmation, add UI (8). Both require device verification.
