@@ -471,3 +471,15 @@ Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; us
 - Release published manually via the GitHub API because the Actions secrets are not configured: tag v1.0.3-dev-6 (prerelease), asset SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB, SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD).
 - Signing material kept in keys/ (gitignored): sanad-release.jks, KEYSTORE_INFO.txt, GITHUB_SECRETS.txt (copy-paste values for the four Actions secrets).
 - Cleanup: gradlew clean, .gradle cache, build/ and temp capture files removed. Keystore and secrets file intentionally kept. Device-side exported action log: pending (device disconnected during cleanup).
+### Update channel + release 1.0.3-dev-7 (2026-11-13)
+- Added a user-selectable update channel in Settings -> About: Stable or Beta (KVUtils KEY_UPDATE_CHANNEL, defaults to Beta on dev/rc builds).
+- UpdateChecker: Stable reads /releases/latest; Beta reads /releases and picks the newest including pre-releases. This fixes "no update" on dev builds, which happened because /releases/latest excludes pre-releases.
+- Verified on device: Beta -> Latest 1.0.3-dev-6; Stable -> Latest 1.0.2; toggle persists.
+- Version bumped to 1.0.3-dev-7 (code 108).
+### UX round (2026-11-13, pre-dev-7)
+- Default UI language switched to English (AppLocale). Arabic is remembered until the next update; on versionCode change `applyUpdateLanguageReset` resets to English before the locale is applied.
+- Chat toolbar: replaced the settings icon with a sun/moon theme toggle and an EN/ع language toggle (Settings remains in the sidebar). Both restart the app to apply.
+- Voice dictation patience: complete 3.0s / possibly 2.0s / minimum 1.5s; hard cap 120s.
+- Light themes: text colors now derive from each palette (no hardcoded warm brown on blue/green/neutral).
+- Models page: selected provider tab and model radios use the active theme accent instead of the generic purple.
+- Verified on device: theme toggle dark<->light, language toggle EN<->AR (RTL), Models light mode readable with orange accent.

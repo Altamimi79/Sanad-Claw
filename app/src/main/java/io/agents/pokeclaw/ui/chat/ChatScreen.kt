@@ -140,6 +140,38 @@ private fun Modifier.dismissKeyboardOnBackgroundTap(onDismissKeyboard: () -> Uni
         }
     }
 
+// ======================== QUICK TOGGLES ========================
+
+private fun restartApp(context: android.content.Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    context.startActivity(launch)
+}
+
+private fun toggleThemeAndRestart(context: android.content.Context) {
+    val dark = ThemeManager.isDark()
+    KVUtils.putString("THEME_ID", if (dark) "ember_light" else "ember_dark")
+    try {
+        Runtime.getRuntime().exec(arrayOf("cmd", "uimode", "night", if (dark) "no" else "yes"))
+    } catch (_: Exception) {
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            if (dark) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+        )
+    }
+    restartApp(context)
+}
+
+private fun toggleLanguageAndRestart(context: android.content.Context) {
+    val current = io.agents.pokeclaw.utils.AppLocale.getLanguage(context)
+    val next = if (current == io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH)
+        io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ARABIC
+    else
+        io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH
+    io.agents.pokeclaw.utils.AppLocale.setLanguage(context, next)
+    restartApp(context)
+}
+
 // ======================== MAIN SCREEN ========================
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,6 +211,7 @@ fun ChatScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
     val dismissKeyboard = {
         keyboardController?.hide()
         focusManager.clearFocus()
@@ -291,6 +324,10 @@ fun ChatScreen(
                             }
                         },
                         onMenuClick = { scope.launch { drawerState.open() } },
+                        onToggleTheme = { toggleThemeAndRestart(context) },
+                        onToggleLanguage = { toggleLanguageAndRestart(context) },
+                        isDarkTheme = ThemeManager.isDark(),
+                        currentLanguage = io.agents.pokeclaw.utils.AppLocale.getLanguage(context),
                         onSettings = onOpenSettings,
                         onModelSwitch = onModelSwitch,
                         onSelectCloudModel = onSelectCloudModel,
@@ -408,6 +445,10 @@ private fun ChatTopBar(
     selectedTab: String,
     onTabChange: (String) -> Unit,
     onMenuClick: () -> Unit,
+    onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
+    isDarkTheme: Boolean,
+    currentLanguage: String,
     onSettings: () -> Unit,
     onModelSwitch: (modelId: String, displayName: String) -> Unit = { _, _ -> },
     onSelectCloudModel: (providerName: String, modelId: String) -> Unit = { _, _ -> },
@@ -447,11 +488,25 @@ private fun ChatTopBar(
                 }
             },
             actions = {
-                // Sanad fork: the Local/Cloud toggle was removed — the active model kind
-                // drives everything (selectedTab stays synced via LaunchedEffect), and
-                // local model management remains available in Settings > Model.
-                IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.cd_settings))
+                // Sanad fork: quick theme + language toggles in the chat toolbar.
+                // Settings/model management stays reachable from the sidebar.
+                IconButton(onClick = onToggleTheme) {
+                    Icon(
+                        if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                        contentDescription = stringResource(R.string.cd_toggle_theme)
+                    )
+                }
+                TextButton(
+                    onClick = onToggleLanguage,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                    modifier = Modifier.widthIn(min = 40.dp)
+                ) {
+                    Text(
+                        text = if (currentLanguage == "ar") "EN" else "ع",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textSecondary
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

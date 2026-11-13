@@ -54,8 +54,8 @@ android {
         applicationId = "io.agents.pokeclaw"
         minSdk = 28
         targetSdk = 36
-        versionCode = readLocalOrEnvInt("POKECLAW_VERSION_CODE", 107)
-        versionName = readLocalOrEnvString("POKECLAW_VERSION_NAME", "1.0.3-dev-6")
+        versionCode = readLocalOrEnvInt("POKECLAW_VERSION_CODE", 108)
+        versionName = readLocalOrEnvString("POKECLAW_VERSION_NAME", "1.0.3-dev-7")
         buildConfigField("String", "VERSION_INFO", getVersionGit())
         buildConfigField("String", "APP_ORIGIN", "\"PokeClaw by agents.io | github.com/agents-io/PokeClaw\"")
         buildConfigField("String", "BUILD_FINGERPRINT", "\"${getBuildFingerprint()}\"")

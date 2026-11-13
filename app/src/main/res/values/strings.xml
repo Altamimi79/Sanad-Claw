@@ -81,6 +81,7 @@
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">Menu</string>
     <string name="cd_settings">Settings</string>
+    <string name="cd_toggle_theme">Toggle light/dark theme</string>
     <string name="cd_switch_model">Switch model</string>
     <string name="cd_toggle">Toggle</string>
     <string name="action_rename">Rename</string>

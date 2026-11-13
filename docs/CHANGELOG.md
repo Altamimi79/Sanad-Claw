@@ -2,6 +2,25 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3-dev-7] — 2026-11-13
+
+### Added
+- User-selectable update channel in Settings → About: **Stable** or **Beta**. Persisted in `KVUtils`; defaults to Beta on dev/rc builds.
+- `UpdateChecker` now reads `/releases/latest` on Stable and `/releases` (newest, including pre-releases) on Beta.
+- Chat toolbar quick toggles: sun/moon **theme switch** and **EN/ع language switch** (replaces the settings icon; Settings stays in the sidebar).
+
+### Changed
+- **Default UI language is now English.** Choosing Arabic is remembered until the next app update; an update resets the language to English (`AppLocale.applyUpdateLanguageReset`).
+- Voice dictation is more patient: silence complete 3.0 s / possibly-complete 2.0 s / minimum 1.5 s, and the hard cap is 120 s (was 60 s).
+- Light themes derive text colors from each palette instead of forcing warm brown onto blue/green/neutral themes.
+- Models page uses the active theme accent (ember orange) instead of the generic purple for the selected provider tab and model radios.
+- Version bumped to 1.0.3-dev-7 (code 108).
+
+### Verified (device)
+- Beta → Latest `1.0.3-dev-6`; Stable → Latest `1.0.2`; the toggle persists across screens.
+- Theme toggle switches dark↔light and restarts; language toggle switches EN↔AR (RTL) and restarts.
+- Models page light mode: warm background, orange selected tab, readable text.
+
 ## [1.0.3-dev-6] — 2026-11-13
 
 ### Added

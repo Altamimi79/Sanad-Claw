@@ -18,7 +18,8 @@ import io.agents.pokeclaw.utils.XLog
  *
  * - Language is forced to ar-SA (Saudi Arabic) regardless of UI locale.
  * - Partials are surfaced for live feedback; the final hypothesis replaces them.
- * - Silences: complete 1.5s / possibly-complete 0.9s / minimum 0.8s.
+ * - Silences: complete 3.0s / possibly-complete 2.0s / minimum 1.5s (patient enough for
+ *   slow or paused speech; the user can always tap the mic to stop early).
  * - Hard cap [maxDurationMs]; on timeout the controller stops gracefully and, if the
  *   engine reports no final result, falls back to the last partial transcript so the
  *   user does not lose what they said.
@@ -51,7 +52,7 @@ class SpeechRecognizerController(
     companion object {
         private const val TAG = "VoiceInput"
         const val DEFAULT_LANGUAGE = "ar-SA"
-        const val DEFAULT_MAX_DURATION_MS = 60_000L
+        const val DEFAULT_MAX_DURATION_MS = 120_000L
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -106,9 +107,9 @@ class SpeechRecognizerController(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, languageTag)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 900L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 800L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
         }
 

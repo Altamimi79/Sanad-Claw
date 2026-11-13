@@ -260,7 +260,7 @@ class LlmConfigActivity : BaseActivity() {
                         val useBtn = TextView(this).apply {
                             text = getString(R.string.llm_use)
                             textSize = 13f
-                            setTextColor(getColor(R.color.colorBrandPrimary))
+                            setTextColor(tc.sendColor)
                             setPadding(dp(12), dp(6), dp(12), dp(6))
                             setOnClickListener {
                                 val path = resolvedLocalPath
@@ -453,7 +453,7 @@ class LlmConfigActivity : BaseActivity() {
                     tab.setTypeface(tab.typeface, android.graphics.Typeface.BOLD)
                     tab.background = GradientDrawable().apply {
                         cornerRadius = dp(14).toFloat()
-                        setColor(getColor(R.color.colorBrandPrimary))
+                        setColor(tc.sendColor)
                     }
                 } else {
                     tab.setTextColor(metaGray)
@@ -517,7 +517,7 @@ class LlmConfigActivity : BaseActivity() {
                     addView(TextView(this@LlmConfigActivity).apply {
                         text = if (isSelected) "◉" else "○"
                         textSize = 16f
-                        setTextColor(if (isSelected) getColor(R.color.colorBrandPrimary) else metaGray)
+                        setTextColor(if (isSelected) tc.sendColor else metaGray)
                         setPadding(0, 0, dp(10), 0)
                     })
                     addView(TextView(this@LlmConfigActivity).apply {
@@ -636,7 +636,7 @@ class LlmConfigActivity : BaseActivity() {
                 val dot = TextView(this).apply {
                     text = if (isSelected) "◉" else "○"
                     textSize = 16f
-                    setTextColor(if (isSelected) getColor(R.color.colorBrandPrimary) else metaGray)
+                    setTextColor(if (isSelected) tc.sendColor else metaGray)
                     setPadding(0, 0, dp(10), 0)
                 }
                 row.addView(dot)

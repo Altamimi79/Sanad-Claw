@@ -109,7 +109,6 @@ object ThemeManager {
     }
 
     fun ChatColors.toComposeColors(): PokeclawColors {
-        val dark = isDark()
         return PokeclawColors(
             background = androidx.compose.ui.graphics.Color(bg),
             surface = androidx.compose.ui.graphics.Color(toolbarBg),
@@ -120,13 +119,11 @@ object ThemeManager {
             aiText = androidx.compose.ui.graphics.Color(aiText),
             avatar = androidx.compose.ui.graphics.Color(avatarBg),
             accent = androidx.compose.ui.graphics.Color(sendColor),
-            // Warm grays to match ember palette (never cool blue-purple)
-            textPrimary = if (dark) androidx.compose.ui.graphics.Color(0xFFF0EAE4.toInt())
-                          else androidx.compose.ui.graphics.Color(0xFF2C2218.toInt()),
-            textSecondary = if (dark) androidx.compose.ui.graphics.Color(0xFFB0A89E.toInt())
-                            else androidx.compose.ui.graphics.Color(0xFF6B5D52.toInt()),
-            textTertiary = if (dark) androidx.compose.ui.graphics.Color(0xFF7A6E64.toInt())
-                           else androidx.compose.ui.graphics.Color(0xFFA09488.toInt()),
+            // Derive text colors from the theme's own text color so every palette keeps its
+            // hue instead of forcing warm brown onto blue/green/neutral themes.
+            textPrimary = androidx.compose.ui.graphics.Color(aiText),
+            textSecondary = androidx.compose.ui.graphics.Color(aiText).copy(alpha = 0.75f),
+            textTertiary = androidx.compose.ui.graphics.Color(aiText).copy(alpha = 0.60f),
             divider = androidx.compose.ui.graphics.Color(divider),
             inputBorder = androidx.compose.ui.graphics.Color(inputBorder),
         )

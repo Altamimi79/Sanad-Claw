@@ -82,6 +82,7 @@
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">القائمة</string>
     <string name="cd_settings">الإعدادات</string>
+    <string name="cd_toggle_theme">تبديل الوضع الليلي والنهاري</string>
     <string name="cd_switch_model">تبديل النموذج</string>
     <string name="cd_toggle">تبديل</string>
     <string name="action_rename">إعادة تسمية</string>
