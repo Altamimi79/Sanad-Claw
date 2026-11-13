@@ -180,8 +180,13 @@
     <string name="wechat_media_voice">voice</string>
     <string name="wechat_media_unknown">media</string>
     <string name="channel_config_saved">Configuration saved</string>
-    <string name="channel_config_lan_hint">💡 Enable \"LAN Config\" in Settings to configure via browser</string>
-    <string name="channel_config_lan_hint_running">💡 Open %s in your browser to configure</string>
+    <string name="pause_need_value_message">Paused: this step needs a value that was hidden for privacy. Reply with that value in the chat within 45 seconds. It is used once and not stored.</string>
+    <string name="pause_timeout_message">Cancelled: no value was received within 45 seconds, so the task was stopped. Please start it again.</string>
+    <string name="pause_value_received">Value received. Continuing the task.</string>
+    <string name="injection_confirm_message">The screen or a message contains text that looks like an instruction. Allow the action \"%s\" anyway?</string>
+    <string name="injection_blocked_message">Blocked: a sensitive action was requested from suspicious on-screen text and was not confirmed.</string>
+    <string name="channel_config_lan_hint">💡 Enable \"Config Server\" in Settings to configure from a browser on this phone</string>
+    <string name="channel_config_lan_hint_running">💡 Open %s in a browser on this phone to configure (not reachable from other devices)</string>
     <string name="channel_config_lan_copied">Address copied</string>
 
     <!-- LLM Config -->
@@ -303,6 +308,8 @@
     <string name="voice_input_prompt">Speak now…</string>
     <string name="voice_input_unavailable">Speech recognition not available on this device</string>
     <string name="voice_input_error">Voice input failed. Try again.</string>
+    <string name="voice_command_no_pending">No action is pending confirmation.</string>
+    <string name="voice_command_no_task">No task is running to stop.</string>
 
     <!-- Voice Input (Phase 3: in-app Arabic dictation) -->
     <string name="voice_recording_status">Listening…</string>
@@ -348,6 +355,9 @@
     <string name="safety_action_log_empty">No actions recorded yet.</string>
     <string name="safety_action_log_clear">Clear log</string>
     <string name="safety_action_log_cleared">Action log cleared</string>
+    <string name="safety_action_log_export">Export log (redacted)</string>
+    <string name="safety_action_log_exported">Action log exported</string>
+    <string name="safety_action_log_export_failed">Could not export the action log</string>
     <string name="safety_seconds_format">%d s</string>
     <string name="risk_send_message">sending a message</string>
     <string name="risk_send_file">sending a file</string>
@@ -357,6 +367,18 @@
     <string name="risk_install">installing an app</string>
     <string name="risk_publish">publishing content</string>
     <string name="risk_generic">a sensitive action</string>
+    <string name="safety_row_state_on">Enabled / مفعّل</string>
+    <string name="safety_row_state_off">Disabled / موقوف</string>
+    <string name="safety_row_desc_format">%1$s: %2$s</string>
+    <string name="safety_confirm_send_message">Confirm sending messages</string>
+    <string name="safety_confirm_send_file">Confirm sending files</string>
+    <string name="safety_confirm_call">Confirm phone calls</string>
+    <string name="safety_confirm_delete">Confirm deleting data</string>
+    <string name="safety_confirm_payment">Confirm payments and transfers</string>
+    <string name="safety_confirm_install">Confirm installing apps</string>
+    <string name="safety_confirm_publish">Confirm publishing content</string>
+    <string name="safety_migration_title">Confirmations re-enabled</string>
+    <string name="safety_migration_message">Confirmations were re-enabled for all sensitive action categories after this update. Each category can be changed in Settings &gt; Tools. Blocked apps are always blocked.</string>
     <string name="safety_retry_notice">Retrying a transient tool failure (%1$d/%2$d)</string>
     <string name="safety_blocklist_hint">bank, wallet, password…</string>
     <string name="safety_blocklist_count">%d apps</string>

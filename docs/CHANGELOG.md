@@ -119,3 +119,24 @@ First fork release (code-complete; device QA not executed).
 
 ### Known limitations
 - Image attachments unsupported; offline Whisper not bundled; local models need sufficient RAM; external automation off by default; global cleartext traffic remains for custom local endpoints.
+
+## [1.0.3-dev] — 2026-11-13 (development build, not for distribution)
+
+| item | change | status |
+|---|---|---|
+| Prompt-injection defense (source-based taint) | Taint tracking and sensitive-action gate for screen-sourced text | unit-tested, device pending; enforcement in DefaultAgentService wiring: verified by inspection only |
+| Sensitive data and OTP redaction | Card, IBAN, national-ID and OTP redaction before cloud send and logs | unit-tested, device pending |
+| FileLoggingInterceptor masking and body omission | Authorization masked, request/response bodies omitted in debug logs | unit-tested, device pending |
+| Per-category confirmation switches | Seven category switches replace the single confirm toggle; migration notice | unit-tested, device pending |
+| Arabic action log v2 and export | Reason and result labels, redacted export | unit-tested, device pending |
+| Voice STOP and CONFIRM (one-shot mic) | STOP while task active; CONFIRM only for a pending request captured at listen start | unit-tested, device pending; timeout-partial separation in SpeechRecognizerController: verified by inspection only |
+| Plan preview, wake word, scheduled routines | Items 5, 7, 8 | not implemented |
+
+Build: versionName 1.0.3-dev, versionCode 101 (set via POKECLAW_VERSION_NAME / POKECLAW_VERSION_CODE for this build only).
+
+### Known limits
+- The pattern detector catches only 5% of the held-out hostile samples; protection comes from source-based taint, not detection.
+- Redaction and URL masking are name/pattern based and can miss unlisted formats.
+- HONOR speech service availability is unverified.
+- Debug builds enable FILE_LOGGING.
+- No device QA has been executed (see docs/DEVICE_QA_SESSION.md).

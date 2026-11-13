@@ -24,6 +24,24 @@ class ActionLogFormatterTest {
     }
 
     @Test
+    fun actionLogNeverReceivesOtpOrIbanOrNationalIdValues() {
+        val detail = "Your verification code is 483921, IBAN GB82WEST12345698765432, id 1098765432"
+        val entry = ActionLogEntry(
+            timestampMs = 1L,
+            taskSnippet = "task",
+            toolName = "get_notifications",
+            risk = "none",
+            outcome = "ok",
+            detail = detail,
+        )
+        val line = ActionLogFormatter.format(entry)
+        assertFalse(line.contains("483921"))
+        assertFalse(line.contains("GB82WEST"))
+        assertFalse(line.contains("1098765432"))
+        assertTrue(line.contains("[REDACTED:otp]"))
+    }
+
+    @Test
     fun truncatesLongDetails() {
         val long = "x".repeat(400)
         val sanitized = ActionLogFormatter.sanitize(long, max = 20)

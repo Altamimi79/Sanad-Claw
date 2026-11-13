@@ -181,8 +181,13 @@
     <string name="wechat_media_voice">صوت</string>
     <string name="wechat_media_unknown">وسيط</string>
     <string name="channel_config_saved">تم حفظ الإعدادات</string>
-    <string name="channel_config_lan_hint">💡 فعّل «إعداد الشبكة المحلية» في الإعدادات للتحكم عبر المتصفح</string>
-    <string name="channel_config_lan_hint_running">💡 افتح %s في المتصفح للإعداد</string>
+    <string name="pause_need_value_message">متوقف مؤقتاً: هذه الخطوة تحتاج إلى قيمة أُخفيت لحماية الخصوصية. أرسل تلك القيمة في المحادثة خلال 45 ثانية. تُستخدم مرة واحدة ولا تُحفظ.</string>
+    <string name="pause_timeout_message">تم الإلغاء: لم تصل أي قيمة خلال 45 ثانية، فتوقفت المهمة. يرجى بدءها من جديد.</string>
+    <string name="pause_value_received">تم استلام القيمة. متابعة المهمة.</string>
+    <string name="injection_confirm_message">تحتوي الشاشة أو رسالة على نص يبدو كأمر. هل تسمح بالإجراء «%s» رغم ذلك؟</string>
+    <string name="injection_blocked_message">تم الحظر: طُلب إجراء حساس من نص مشبوه على الشاشة ولم يُؤكَّد.</string>
+    <string name="channel_config_lan_hint">💡 فعّل «خادم الإعداد» في الإعدادات للتحكم من متصفح على هذا الهاتف</string>
+    <string name="channel_config_lan_hint_running">💡 افتح %s في متصفح على هذا الهاتف للإعداد (غير متاح من أجهزة أخرى)</string>
     <string name="channel_config_lan_copied">تم نسخ العنوان</string>
 
     <!-- LLM Config -->
@@ -304,6 +309,8 @@
     <string name="voice_input_prompt">تحدث الآن…</string>
     <string name="voice_input_unavailable">التعرف على الكلام غير متوفر على هذا الجهاز</string>
     <string name="voice_input_error">فشل الإدخال الصوتي. حاول مجددًا.</string>
+    <string name="voice_command_no_pending">لا يوجد إجراء بانتظار التأكيد.</string>
+    <string name="voice_command_no_task">لا توجد مهمة قيد التشغيل لإيقافها.</string>
 
     <!-- Voice Input (Phase 3: in-app Arabic dictation) -->
     <string name="voice_recording_status">أستمع…</string>
@@ -349,6 +356,9 @@
     <string name="safety_action_log_empty">لا توجد إجراءات مسجلة بعد.</string>
     <string name="safety_action_log_clear">مسح السجل</string>
     <string name="safety_action_log_cleared">تم مسح السجل</string>
+    <string name="safety_action_log_export">تصدير السجل (مُخفى)</string>
+    <string name="safety_action_log_exported">تم تصدير سجل الإجراءات</string>
+    <string name="safety_action_log_export_failed">تعذّر تصدير سجل الإجراءات</string>
     <string name="safety_seconds_format">%d ثانية</string>
     <string name="risk_send_message">إرسال رسالة</string>
     <string name="risk_send_file">إرسال ملف</string>
@@ -358,6 +368,18 @@
     <string name="risk_install">تثبيت تطبيق</string>
     <string name="risk_publish">نشر محتوى</string>
     <string name="risk_generic">إجراء حسّاس</string>
+    <string name="safety_row_state_on">مفعّل / Enabled</string>
+    <string name="safety_row_state_off">موقوف / Disabled</string>
+    <string name="safety_row_desc_format">%1$s: %2$s</string>
+    <string name="safety_confirm_send_message">تأكيد إرسال الرسائل</string>
+    <string name="safety_confirm_send_file">تأكيد إرسال الملفات</string>
+    <string name="safety_confirm_call">تأكيد المكالمات الهاتفية</string>
+    <string name="safety_confirm_delete">تأكيد حذف البيانات</string>
+    <string name="safety_confirm_payment">تأكيد المدفوعات والتحويلات</string>
+    <string name="safety_confirm_install">تأكيد تثبيت التطبيقات</string>
+    <string name="safety_confirm_publish">تأكيد نشر المحتوى</string>
+    <string name="safety_migration_title">تمت إعادة تفعيل التأكيد</string>
+    <string name="safety_migration_message">تمت إعادة تفعيل التأكيد لجميع فئات الإجراءات الحساسة بعد هذا التحديث. يمكنك تغيير كل فئة من الإعدادات &gt; الأدوات. التطبيقات المحظورة تبقى محظورة دائماً.</string>
     <string name="safety_retry_notice">إعادة محاولة إجراء مؤقت (%1$d/%2$d)</string>
     <string name="safety_blocklist_hint">bank، wallet، password…</string>
     <string name="safety_blocklist_count">%d تطبيق</string>

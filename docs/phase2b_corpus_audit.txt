@@ -1,0 +1,11 @@
+# Phase 2b corpus audit (Step 0)
+Date: 2026-11-13T05:37:06.7650915+04:00
+## git status (short)
+?? app/src/test/resources/injection/
+## git diff (tracked, corpus path)
+
+## git log (corpus path)
+
+## SHA256 and counts (frozen reference)
+hostile.txt count=50 sha256=137DE4B5A902F75FA1136DCABCE45B180E20E5400DCE3FA0654D532936AF3BA2
+benign.txt count=50 sha256=75FD63FB32895B1F94576B1BEA7A4DD31ACC38FA97FB0DAEBFB52BFBC117D08D

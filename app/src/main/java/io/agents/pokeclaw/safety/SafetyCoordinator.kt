@@ -77,6 +77,25 @@ object SafetyCoordinator {
 
     fun denyPending() = resolve(false)
 
+    /** Id of the currently pending request, or null. Read-only; for the UI and voice path. */
+    fun currentPendingId(): Long? = _pending.value?.id
+
+    /**
+     * Approves only if the currently pending request has exactly [id]. Runs under the same
+     * lock as request creation and resolution, so a stale id can never resolve a newer
+     * request. Returns false (and changes nothing) when nothing is pending or the id differs.
+     */
+    fun approvePendingIfMatches(id: Long): Boolean {
+        synchronized(this) {
+            val current = _pending.value ?: return false
+            if (current.id != id) return false
+            approved = true
+            _pending.value = null
+            latch?.countDown()
+            return true
+        }
+    }
+
     private fun resolve(value: Boolean) {
         synchronized(this) {
             approved = value

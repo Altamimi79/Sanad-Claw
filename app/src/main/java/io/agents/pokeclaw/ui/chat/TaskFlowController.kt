@@ -62,6 +62,12 @@ class TaskFlowController(
     private val pipelineRouter = PipelineRouter(activity)
 
     fun sendTask(text: String) {
+        // Decision 2: while a task is paused for a redacted value, the next message is the value.
+        if (io.agents.pokeclaw.safety.PausedTaskState.shared.offerMessage(text)) {
+            XLog.i(TAG, "sendTask: user message accepted as paused-task value (content not logged)")
+            addSystem(activity.getString(io.agents.pokeclaw.R.string.pause_value_received))
+            return
+        }
         if (appViewModel.isTaskRunning()) {
             addSystem("Another task is still running. Stop it first.")
             onTaskTerminal?.invoke(TaskEvent.Failed("Another task is still running. Stop it first."))

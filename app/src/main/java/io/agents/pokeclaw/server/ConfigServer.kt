@@ -16,8 +16,8 @@ import io.agents.pokeclaw.utils.XLog
 import fi.iki.elonen.NanoHTTPD
 
 /**
- * LAN HTTP configuration server
- * Provides an H5 page for configuring channel keys in a desktop browser
+ * Loopback-only HTTP configuration server (bound to 127.0.0.1, reachable only on this device)
+ * Provides an H5 page for configuring channel keys in a browser on this phone
  */
 class ConfigServer(
     private val context: Context,

@@ -38,6 +38,12 @@ class SpeechRecognizerController(
         fun onProcessing()
         fun onPartialText(text: String)
         fun onFinalText(text: String)
+        /**
+         * Hard-cap fallback: the engine reported an error after the max-duration stop and
+         * the last partial is used. Never a recognized final result, so it must not be
+         * routed to command handling. Dictation may insert it as text.
+         */
+        fun onTimeoutPartial(text: String) {}
         fun onError(error: VoiceError)
         fun onRmsChanged(rmsDb: Float)
     }
@@ -196,7 +202,7 @@ class SpeechRecognizerController(
             if (timedOut && fallback.isNotEmpty()) {
                 finalDelivered = true
                 XLog.i(TAG, "timeout but partial transcript available (${fallback.length} chars) — using it")
-                listener.onFinalText(fallback)
+                listener.onTimeoutPartial(fallback)
                 release()
                 return
             }

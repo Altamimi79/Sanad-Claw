@@ -82,6 +82,16 @@ public class GetNotificationsTool extends BaseTool {
                 String displayText = !bigText.isEmpty() ? bigText : text;
                 if (title.isEmpty() && displayText.isEmpty()) continue;
 
+                // OTP / verification codes are never shown to the agent (or the cloud model)
+                if (io.agents.pokeclaw.safety.OtpGuard.INSTANCE.isOtpBearing(title + " " + displayText)) {
+                    count++;
+                    sb.append(count).append(". ").append(getAppLabel(sbn.getPackageName()))
+                            .append(": ").append(io.agents.pokeclaw.safety.OtpGuard.HIDDEN_PLACEHOLDER)
+                            .append(" (").append(formatTimeAgo(notif.when)).append(")\n");
+                    XLog.i(TAG, "OTP-bearing notification hidden from agent");
+                    continue;
+                }
+
                 count++;
                 long when = notif.when;
                 String timeAgo = formatTimeAgo(when);

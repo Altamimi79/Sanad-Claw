@@ -93,6 +93,10 @@ class SettingsActivity : BaseActivity() {
 
         setContentView(R.layout.activity_settings)
 
+        // One-time migration of the Phase 4 single switch (idempotent; notice shown once).
+        val migrationOwed = io.agents.pokeclaw.safety.SafetySettings.migrateLegacyConfirmation()
+        XLog.i("SettingsActivity", "safety migration checked, notice_owed=$migrationOwed")
+
         // Override XML backgrounds with ThemeManager colors
         val contentFrame = findViewById<android.view.ViewGroup>(android.R.id.content)
         contentFrame?.setBackgroundColor(themeColors.bg)
@@ -103,6 +107,7 @@ class SettingsActivity : BaseActivity() {
         initMenuGroups()
         applyThemeToGroups(themeColors)
         observeViewModel()
+        showSafetyMigrationNoticeIfPending()
     }
 
     override fun onResume() {
@@ -536,27 +541,22 @@ class SettingsActivity : BaseActivity() {
             )
         }
 
-        // Phase 4 safety controls
-        var confirmRiskyItem: MenuItem? = null
-        confirmRiskyItem = toolsGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_lock_lock,
-            title = getString(R.string.safety_confirm_risky_setting),
-            onClick = {
-                val next = !KVUtils.isSafetyConfirmRiskyEnabled()
-                KVUtils.setSafetyConfirmRiskyEnabled(next)
-                confirmRiskyItem?.setTrailingText(
-                    getString(if (next) R.string.settings_enabled else R.string.settings_disabled)
-                )
-            },
-            showDivider = true
-        ).apply {
-            setTrailingText(
-                getString(
-                    if (KVUtils.isSafetyConfirmRiskyEnabled()) R.string.settings_enabled
-                    else R.string.settings_disabled
-                )
-            )
-        }
+        // Phase 4/2g safety controls: one confirmation switch per risk category.
+        // UNKNOWN has no switch by design: it always requires confirmation.
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.SEND_MESSAGE,
+            R.string.safety_confirm_send_message, android.R.drawable.ic_menu_send)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.SEND_FILE,
+            R.string.safety_confirm_send_file, android.R.drawable.ic_menu_upload)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.CALL,
+            R.string.safety_confirm_call, android.R.drawable.ic_menu_call)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.DELETE,
+            R.string.safety_confirm_delete, android.R.drawable.ic_menu_delete)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.PAYMENT,
+            R.string.safety_confirm_payment, android.R.drawable.ic_menu_view)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.INSTALL,
+            R.string.safety_confirm_install, android.R.drawable.ic_menu_add)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.PUBLISH,
+            R.string.safety_confirm_publish, android.R.drawable.ic_menu_share)
 
         var timeoutItem: MenuItem? = null
         timeoutItem = toolsGroup.addMenuItem(
@@ -925,6 +925,59 @@ class SettingsActivity : BaseActivity() {
     /**
      * Show unbind confirmation dialog
      */
+    /**
+     * One Settings row per risk category. Toggles only its own key; the row shows
+     * Enabled/Disabled like the other rows in this group.
+     */
+    private fun addSafetyCategoryRow(
+        group: MenuGroup,
+        kind: io.agents.pokeclaw.safety.RiskKind,
+        titleRes: Int,
+        iconRes: Int,
+    ) {
+        val store = io.agents.pokeclaw.safety.SafetySettings
+        val title = getString(titleRes)
+        var item: MenuItem? = null
+        // Applies the row state as text and as the accessibility description.
+        fun render(row: MenuItem, on: Boolean) {
+            val state = getString(
+                if (on) R.string.safety_row_state_on else R.string.safety_row_state_off
+            )
+            row.setTrailingText(state)
+            row.contentDescription = getString(R.string.safety_row_desc_format, title, state)
+        }
+        item = group.addMenuItem(
+            leadingIcon = iconRes,
+            title = title,
+            onClick = {
+                val next = !store.confirmationFor(kind)
+                store.setCategorySwitch(kind, next)
+                item?.let { render(it, next) }
+                XLog.i("SettingsActivity", "safety category=${kind.name} confirmation=$next")
+            },
+            showDivider = true
+        ).apply {
+            render(this, store.confirmationFor(kind))
+        }
+    }
+
+    /** Shows the one-time migration notice (bilingual) when the owed flag is set. */
+    private fun showSafetyMigrationNoticeIfPending() {
+        val presenter = object : io.agents.pokeclaw.safety.MigrationNoticePresenter {
+            override fun present(): Boolean {
+                // AlertDialog.show calls dialog.show() synchronously; a throw means it did not display.
+                AlertDialog.show(
+                    context = this@SettingsActivity,
+                    title = getString(R.string.safety_migration_title),
+                    message = getString(R.string.safety_migration_message),
+                )
+                return true
+            }
+        }
+        val presented = io.agents.pokeclaw.safety.SafetySettings.presentMigrationNoticeIfPending(presenter)
+        XLog.i("SettingsActivity", "safety migration notice presented=$presented")
+    }
+
     private fun showUnbindDialog(channelName: String, onUnbind: () -> Unit) {
         AlertDialog.showWarm(
             context = this,

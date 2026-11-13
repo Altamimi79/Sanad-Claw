@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-12 (fork branding/UI round on HONOR device: committed + verified; GitHub push still pending)
+Last updated: 2026-11-13 (Phase 2g item 4 per-category confirmation permissions: unit-complete, device QA pending)
 
 ## Project Identity
 
@@ -104,6 +104,44 @@ Commits: `4cce784` feat(branding) · `fd00d28` fix(i18n) · `3829652` feat(llm-c
 - **Release**: tag `v1.0.0` created locally on `main`. Push to origin fails (403, no fork); `gh` CLI is not installed → no GitHub Release created. APK path given to the user.
 - **Device QA**: still not executed (no adb device) — v1.0.0 is code-complete but device-unverified.
 
+## Phase 2 (items 1-2: injection defense + sensitive-data protection) — 2026-11-13, NOT device-tested
+
+- **Item 1**: `safety/PromptInjectionGuard` (pure detector, EN+AR patterns, diacritics stripped); `safety/ScreenContentGuard` wraps screen/tool text in `<untrusted_content>` (angle brackets escaped), sets a sticky per-task taint on flagged text, and decides sensitive actions (`REQUIRE_CONFIRMATION` when tainted). Hooked in `DefaultAgentService` at the pre-warm screen, before each tool call (confirmation via `SafetyCoordinator`), and on tool results. System rule added to the prompt.
+- **Item 2**: `safety/SensitiveDataRedactor` (Luhn cards, mod-97 IBAN, 10-digit national IDs starting 1/2, OTP digits near keywords), `safety/OtpGuard` (`[OTP hidden]` in `GetNotificationsTool`). Redaction runs on tool results before cloud send and inside `ActionLogFormatter.sanitize`.
+- **ConfigServer wording**: comments fixed to loopback-only; `ChannelConfigActivity` hint now shows the `127.0.0.1` URL (not the Wi-Fi IP) and states it is not reachable from other devices. Binding unchanged.
+- **Corpus** (`app/src/test/resources/injection/`): hostile 25 EN + 25 AR, benign 50. Measured: hostile flagged 47/50 (94.0%), benign flagged 0/50 (0.0%), sensitive-action violations 0/329 checks.
+- **Known gaps (open)**:
+  - 3 hostile samples are missed by the detector; they do not taint the task and are not gated. Residual risk, not mitigated by a hard block.
+  - Decision 2 "pause and ask when a task needs a redacted value" is NOT implemented. Redaction currently replaces the value silently for the cloud path.
+  - `ConfigServerManager.getAddress` still returns the Wi-Fi IP (informational); only the copy-URL uses the loopback address.
+- Tests: 177 total, 0 failures.
+
+## Phase 2d (items 1-2 unit-complete, device QA pending) — 2026-11-13
+
+- **Decision 2 (pause and ask)** implemented as `safety/PausedTaskState` (pure JVM). Trigger: a tool call whose params contain a `[REDACTED:*]` token only. Next chat message within 45 s is the value, substituted only into placeholder tokens of that call; cleared after the call, at task end, and on cancel. Hooks: `DefaultAgentService` (pause before execution, timeout cancels) and `TaskFlowController.sendTask` / `ChatSessionController.sendChat` (message routing while paused).
+- **Card redaction bug fixed**: the greedy separator-tolerant regex let a Luhn-valid card next to a digit (e.g. `card2 4111...`) escape. Replaced with an explicit scan. Found by the transport test.
+- **Cloud transport check** (`CloudTransportPayloadTest`): real `OpenAiLlmClient` + production `OkHttpClientAdapter`; only the socket is replaced by an interceptor. No mock library added.
+- **Held-out benign set has 39 entries, not 40.** Deviation from the spec, frozen by design (committed `96a736f`). Not corrected.
+- **Held-out detector result**: hostile 2/40 flagged (5.0%), benign 0/39 (0.0%), sensitive actions blocked by taint 40/40. Detector is weak on this set; enforcement carries the guarantee.
+- **Open**: taint cost (every screen-reading task requires confirmation before a sensitive action) is an OPEN DECISION, see plan file.
+- Device QA (IJ1–IJ6, SD1–SD5) NOT EXECUTED.
+- **Row 14 (value never logged) CLOSED at unit level** (Phase 2e): `XLog` now has a test-only Sink (15 log methods; `setDEBUG` untouched); `PausedTaskLogCaptureTest` (4 tests) asserts zero canary occurrences across pause, resume, substitution, clear and timeout, plus an active-capture assertion. Device logcat not checked.
+- **P1 defect registered (not fixed)**: `FILE_LOGGING_ENABLED` (debug builds, `ClawApplication.kt:50`) writes full request/response bodies and **all un-masked request headers including `Authorization`** to `cacheDir/http_logs/` (`FileLoggingInterceptor.java:130-149`). See plan file "Known defects outside items 1-2" and QA FL1/FL2 (NOT EXECUTED).
+- **FILE_LOGGING P0 fixed at unit level (2026-11-13)**: headers masked, bodies omitted, curl and URL query params redacted, exception text class-name only; `testOptions.unitTests.isReturnDefaultValues` added to `app/build.gradle.kts`; suite 218 tests / 41 classes / 0 failures. Device QA FL3 pending.
+
+## Phase 2g item 4 (per-category confirmation permissions) — 2026-11-13, UNIT-COMPLETE, device QA PENDING
+
+- Replaced the single `KEY_SAFETY_CONFIRM_RISKY` switch with seven keys `KEY_SAFETY_CONFIRM_<KIND>` (SEND_MESSAGE, SEND_FILE, CALL, DELETE, PAYMENT, INSTALL, PUBLISH), default true. UNKNOWN has no switch and always confirms.
+- `SafetySettings.confirmationFor(kind)` and pure `requiresConfirmation(kind, switchOn)`; `SafetyGate` decision order: blocklist (always) → UNKNOWN/null (always) → per-kind switch. PAYMENT placeholder removed from the blocked-app path (now `kind = null`).
+- **Migration** (`SafetySettings.migrateLegacyConfirmation`, run in `SettingsActivity.onCreate`): does NOT copy the old value; removes the legacy key; if the old value was false, shows a one-time bilingual notice (flag `KEY_SAFETY_PERMISSIONS_MIGRATION_NOTICE_SHOWN`). Idempotent.
+- **Settings**: seven tap-to-toggle rows under Tools (not real Switch widgets; `MenuItem` has no switch and is outside the allowed files).
+- Tests: `SafetyPermissionsPolicyTest` (7), `SafetyPermissionsMigrationTest` (4). Suite: **229 tests / 43 classes / 0 failures** (baseline 218/41/0; no baseline test changed state). `assembleDebug` green.
+- Device QA QP1–QP8 (QA_CHECKLIST §QP) NOT EXECUTED.
+- **OPEN DECISION (taint placement):** rule 2 (tainted task + sensitive kind → confirm, regardless of switch) is enforced in `DefaultAgentService` (lines 768-769) through `ScreenContentGuard.decide`, not inside `SafetyGate`, because taint is per-task state that `SafetyGate` cannot see. Unchanged from Phase 2b and tested by `taintedTaskRequiresConfirmationRegardlessOfSwitch`. Decide whether to accept this location or to pass taint into `SafetyGate` (requires editing DefaultAgentService).
+- **Plan-file conflict**: `.kilo/plans/...-plan.md` Item 4 specifies copying the legacy value and a new `CategoryPermissionPolicy.kt`; both were superseded by the brief (no copy; file not allowed). Plan not edited.
+- Report: `docs/phase2g_report.md`; per-test: `docs/phase2g_before.txt`, `docs/phase2g_after.txt`.
+- **Phase 2g-fix (same day):** (1) migration notice flag now cleared only after the dialog presents (`SafetySettings.presentMigrationNoticeIfPending`, tested by `noticeSurvivesDialogFailure`); (2) null-kind grep done, no production change needed (table in report); (3) taint test calls production `ScreenContentGuard.decide` directly; DefaultAgentService 768-769 is verified by inspection, NOT tested; (4) each row shows state text (`safety_row_state_on/off`) and a content description. Suite **231 tests / 43 classes / 0 failures**. Device QA still NOT EXECUTED.
+
 ## Build Environment (Windows machine — how it was made to work)
 
 - `local.properties` (gitignored): `sdk.dir=C:\Users\Altamimi\AppData\Local\Android\Sdk`.
@@ -164,3 +202,37 @@ Readiness snapshot: **~72% overall** / **~90% for daily cloud-chat use** (UI 90,
 - Cloud cost display now shows $0 for models without static pricing; wire pricing from `/models` metadata if providers expose it.
 - Fetched model cache is keyed **per provider** (`KEY_CLOUD_MODELS_<PROVIDER>`); a legacy URL-keyed cache is migrated on read. Refreshing a provider list is manual when a cache exists.
 - `README.md` is English (repo-facing) with the Arabic overview in `docs/README.ar.md`.
+
+## Phase 2h Item 6 (Arabic action log: reason, result, v2 format, redacted export) — 2026-11-13, UNIT-COMPLETE, DEVICE QA PENDING
+- v2 line 2 | ts | task | tool | risk | reason_key | result_key | detail; v1 lines read as reason UNKNOWN_LEGACY, result null when unknown. Reason and result are fixed enums (ActionReason, ActionResult); no free text.
+- Export: ActionLogFormatter.buildExport, redacted per field; wired in ActionLogActivity via ACTION_CREATE_DOCUMENT text/plain. Labels: ActionLogLabels (pure map, EN/AR).
+- Call sites argument-only: DefaultAgentService 571/754/784/809/843, EmergencyStop 38, SafetyGate.recordAction forwards reason/result.
+- Tests: 242 / 45 / 0 (baseline 231 / 43 / 0). Per-test: docs/phase2h_before.txt vs docs/phase2h_after.txt. Report: docs/phase2h_report.md. QA rows QL1, QL2: NOT EXECUTED.
+- Known: formatAndParseRoundTrip unchanged and passing (v1 format restored byte-identical to HEAD).
+
+## Phase 2i Item 3 (Arabic/English voice STOP and CONFIRM) — 2026-11-13, UNIT-COMPLETE, DEVICE QA PENDING
+
+- Added pure safety/VoiceCommandParser (STOP / CONFIRM / NONE, exact match after normalization) and safety/VoiceCommandPolicy (EXECUTE_STOP / EXECUTE_CONFIRM / REJECT_NO_PENDING / IGNORE_NO_TASK / IGNORE).
+- ChatScreen command path: STOP only while isTaskRunning, CONFIRM only while SafetyCoordinator.pending is set. Otherwise toast, no action.
+- SpeechRecognizerController: the hard-cap timeout fallback now calls the new Listener.onTimeoutPartial instead of onFinalText. Only the dictation listener (ChatScreen) implements it, inserts text into the field, and never runs the command path or auto-send.
+- ChatScreen listener closures read isTaskRunning/inputEnabled/isAwaitingReply through ememberUpdatedState.
+- Tests: VoiceCommandParserTest (9), VoiceCommandPolicyTest (7), TimeoutPartialRoutingTest (3, fake listener; real controller is not JVM-testable). Suite: 261 / 48 / 0, twice; baseline 242 all still PASS.
+- Spec note: "نعم سند" is a CONFIRM phrase, so the canary asserts it never reaches the command path, not that it parses as NONE.
+- Device QA QV1-QV6: NOT EXECUTED. Report: docs/phase2i_report.md.
+
+## Phase 2i item 3 — review closed (2026-11-13)
+
+- SafetyCoordinator: request id already existed (ConfirmationRequest.id, AtomicLong). Added currentPendingId() (read-only) and pprovePendingIfMatches(id) under the same lock as creation and resolution. approvePending/denyPending, timeout and latch unchanged.
+- ChatScreen voice command path: oiceCapturedConfirmId captured in startVoiceInput (mic); cleared in esetVoiceUi. CONFIRM approves only via pprovePendingIfMatches(captured). VoiceCommandPolicy.confirmationPendingFor (pure) gates the policy input.
+- docs/PLAN.md reverted to HEAD (appended section removed).
+- Tests: SafetyCoordinatorRequestIdTest (5), VoiceConfirmCaptureTest (3). Suite 271 / 51 / 0 twice.
+- QA QV8, QV9 added (NOT EXECUTED); QV1-QV7 NOT EXECUTED.
+- Device QA pending.
+
+## Phase 2j — dev build 1.0.3-dev (2026-11-13) — DEV BUILD READY, DEVICE QA PENDING, NOT FOR DISTRIBUTION
+
+- Part A: ordering bug found and fixed. handleVoiceFinal cleared oiceCapturedConfirmId (via resetVoiceUi) before handleVoiceCommand read it. Captured id is now read into a local at the top of handleVoiceFinal and passed as a parameter (ChatScreen.kt:958, :966, :922).
+- Suite 271 / 51 / 0 both runs; per-test unchanged.
+- APK: PokeClaw_v1.0.3-dev_20261113_073755.apk, versionCode 101, versionName 1.0.3-dev (aapt2-verified), SHA-256 413EB5AFF757927A3C67C1A73AA8D329271DD0C94F10AC9BD5E7F63291DB9DC7. Not signed for release, not committed, not pushed.
+- docs/CHANGELOG.md 1.0.3-dev entry; docs/DEVICE_QA_SESSION.md lists 32 NOT EXECUTED IDs; none missing.
+- Device QA NOT EXECUTED.

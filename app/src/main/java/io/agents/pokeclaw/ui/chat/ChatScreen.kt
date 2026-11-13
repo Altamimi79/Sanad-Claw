@@ -35,6 +35,7 @@ import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -52,6 +53,9 @@ import androidx.compose.ui.res.stringResource
 import io.agents.pokeclaw.utils.KVUtils
 import io.agents.pokeclaw.utils.XLog
 import io.agents.pokeclaw.safety.SafetyCoordinator
+import io.agents.pokeclaw.safety.EmergencyStop
+import io.agents.pokeclaw.safety.VoiceCommandParser
+import io.agents.pokeclaw.safety.VoiceCommandPolicy
 import io.agents.pokeclaw.ui.voice.VoiceRecordingBar
 import io.agents.pokeclaw.voice.SpeechRecognizerController
 import io.agents.pokeclaw.voice.VoiceDictationPolicy
@@ -867,6 +871,11 @@ private fun ChatInputBar(
     val context = LocalContext.current
     val textFieldFocus = remember { FocusRequester() }
 
+    // Latest values for closures created once in remember {} (recognizer listener, send).
+    val currentTaskRunning by rememberUpdatedState(isTaskRunning)
+    val currentInputEnabled by rememberUpdatedState(inputEnabled)
+    val currentIsAwaitingReply by rememberUpdatedState(isAwaitingReply)
+
     // ---- Voice input (phase 3): in-app Arabic dictation via SpeechRecognizer (ar-SA) ----
     var voiceActive by remember { mutableStateOf(false) }
     var voiceProcessing by remember { mutableStateOf(false) }
@@ -874,8 +883,12 @@ private fun ChatInputBar(
     var voiceRms by remember { mutableFloatStateOf(0f) }
     var voicePartial by remember { mutableStateOf("") }
     var voiceStartedAt by remember { mutableLongStateOf(0L) }
+    // Confirmation id that was pending when this utterance started (null = none). A
+    // confirmation that appears later is not approvable by this utterance.
+    var voiceCapturedConfirmId by remember { mutableStateOf<Long?>(null) }
 
     fun resetVoiceUi() {
+        voiceCapturedConfirmId = null
         voiceStartedAt = 0L
         voiceActive = false
         voiceProcessing = false
@@ -885,7 +898,7 @@ private fun ChatInputBar(
     }
 
     fun sendCurrentMessage() {
-        if (!inputEnabled || isAwaitingReply || isTaskRunning || text.isBlank()) return
+        if (!currentInputEnabled || currentIsAwaitingReply || currentTaskRunning || text.isBlank()) return
         val message = text.trim()
         if (isLocalModel && !isTaskMode) onSendChat(message) else onSendTask(message)
         text = ""
@@ -902,7 +915,47 @@ private fun ChatInputBar(
         text = prefix + transcript
     }
 
+    /**
+     * Command path: only recognized final results reach here. Timeout partials never do
+     * (see onTimeoutPartial). Unrecognized speech is never forwarded to the agent.
+     */
+    fun handleVoiceCommand(transcript: String, captured: Long?): Boolean {
+        val command = VoiceCommandParser.parse(transcript)
+        if (command == VoiceCommandParser.Command.NONE) return false
+        val confirmationPending = VoiceCommandPolicy.confirmationPendingFor(
+            capturedId = captured,
+            currentPendingId = SafetyCoordinator.currentPendingId(),
+        )
+        when (VoiceCommandPolicy.decide(command, currentTaskRunning, confirmationPending)) {
+            VoiceCommandPolicy.Decision.EXECUTE_STOP -> {
+                XLog.w("VoiceCommand", "STOP voice command executed while task active")
+                EmergencyStop.trigger(context, "voice command")
+            }
+            VoiceCommandPolicy.Decision.EXECUTE_CONFIRM -> {
+                val approved = captured != null && SafetyCoordinator.approvePendingIfMatches(captured)
+                if (approved) {
+                    XLog.i("VoiceCommand", "CONFIRM voice command approved pending confirmation id=$captured")
+                } else {
+                    XLog.i("VoiceCommand", "CONFIRM voice command: pending request changed, nothing approved")
+                    Toast.makeText(context, R.string.voice_command_no_pending, Toast.LENGTH_SHORT).show()
+                }
+            }
+            VoiceCommandPolicy.Decision.REJECT_NO_PENDING -> {
+                XLog.i("VoiceCommand", "CONFIRM voice command ignored: no pending confirmation")
+                Toast.makeText(context, R.string.voice_command_no_pending, Toast.LENGTH_SHORT).show()
+            }
+            VoiceCommandPolicy.Decision.IGNORE_NO_TASK -> {
+                XLog.i("VoiceCommand", "STOP voice command ignored: no active task")
+                Toast.makeText(context, R.string.voice_command_no_task, Toast.LENGTH_SHORT).show()
+            }
+            VoiceCommandPolicy.Decision.IGNORE -> Unit
+        }
+        return true
+    }
+
     fun handleVoiceFinal(rawTranscript: String) {
+        // Read the captured confirmation id BEFORE resetVoiceUi() clears it.
+        val capturedConfirmId = voiceCapturedConfirmId
         val transcript = VoiceTextNormalizer.normalize(rawTranscript)
         XLog.i("VoiceInput", "final transcript received: ${transcript.length} chars")
         resetVoiceUi()
@@ -910,14 +963,15 @@ private fun ChatInputBar(
             Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
             return
         }
+        if (handleVoiceCommand(transcript, capturedConfirmId)) return
         appendTranscript(transcript)
         val autoSend = KVUtils.isVoiceAutoSendEnabled()
         if (VoiceDictationPolicy.shouldAutoSend(
                 autoSendEnabled = autoSend,
                 transcript = text,
-                inputEnabled = inputEnabled,
-                isAwaitingReply = isAwaitingReply,
-                isTaskRunning = isTaskRunning,
+                inputEnabled = currentInputEnabled,
+                isAwaitingReply = currentIsAwaitingReply,
+                isTaskRunning = currentTaskRunning,
             )
         ) {
             XLog.i("VoiceInput", "auto-send enabled — sending transcript")
@@ -925,6 +979,22 @@ private fun ChatInputBar(
         } else {
             textFieldFocus.requestFocus()
         }
+    }
+
+    /**
+     * Dictation path for the hard-cap fallback. Inserts the partial text into the input
+     * field exactly like dictation, but never runs the command path and never auto-sends.
+     */
+    fun handleVoiceTimeoutPartial(rawTranscript: String) {
+        val transcript = VoiceTextNormalizer.normalize(rawTranscript)
+        XLog.i("VoiceInput", "timeout partial received: ${transcript.length} chars (dictation only)")
+        resetVoiceUi()
+        if (transcript.isEmpty()) {
+            Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
+            return
+        }
+        appendTranscript(transcript)
+        textFieldFocus.requestFocus()
     }
 
     fun handleVoiceError(error: VoiceError) {
@@ -954,6 +1024,10 @@ private fun ChatInputBar(
                     handleVoiceFinal(text)
                 }
 
+                override fun onTimeoutPartial(text: String) {
+                    handleVoiceTimeoutPartial(text)
+                }
+
                 override fun onError(error: VoiceError) {
                     handleVoiceError(error)
                 }
@@ -973,7 +1047,9 @@ private fun ChatInputBar(
         }
         voicePartial = ""
         voiceElapsed = 0
+        voiceCapturedConfirmId = SafetyCoordinator.currentPendingId()
         if (!speechController.start()) {
+            voiceCapturedConfirmId = null
             XLog.w("VoiceInput", "controller.start() returned false")
             resetVoiceUi()
             Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()

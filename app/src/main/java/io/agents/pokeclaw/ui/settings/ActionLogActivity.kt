@@ -13,8 +13,13 @@ import android.widget.TextView
 import android.widget.Toast
 import io.agents.pokeclaw.R
 import io.agents.pokeclaw.base.BaseActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import io.agents.pokeclaw.safety.ActionLog
+import io.agents.pokeclaw.safety.ActionLogFormatter
+import io.agents.pokeclaw.safety.ActionLogLabels
+import io.agents.pokeclaw.utils.XLog
 import io.agents.pokeclaw.ui.chat.ThemeManager
+import io.agents.pokeclaw.utils.AppLocale
 import io.agents.pokeclaw.widget.CommonToolbar
 import io.agents.pokeclaw.widget.KButton
 import java.text.SimpleDateFormat
@@ -27,8 +32,28 @@ import java.util.Locale
  */
 class ActionLogActivity : BaseActivity() {
 
+    private companion object {
+        const val TAG = "ActionLogActivity"
+    }
+
     private lateinit var listContainer: LinearLayout
     private lateinit var emptyView: TextView
+
+    /** Creates a text/plain file chosen by the user and writes the redacted export into it. */
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        try {
+            val text = ActionLogFormatter.buildExport(ActionLog.readEntries())
+            contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+                ?: throw IllegalStateException("no output stream")
+            Toast.makeText(this, R.string.safety_action_log_exported, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            XLog.w(TAG, "action log export failed: ${e.message}")
+            Toast.makeText(this, R.string.safety_action_log_export_failed, Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +98,15 @@ class ActionLogActivity : BaseActivity() {
             setPadding(0, dp(24), 0, dp(24))
         }
 
+        val exportBtn = KButton(this).apply {
+            text = getString(R.string.safety_action_log_export)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
+            ).apply { setMargins(dp(14), dp(6), dp(14), 0) }
+            setOnClickListener { exportLauncher.launch("pokeclaw-action-log.txt") }
+        }
+        root.addView(exportBtn)
+
         val clearBtn = KButton(this).apply {
             text = getString(R.string.safety_action_log_clear)
             layoutParams = LinearLayout.LayoutParams(
@@ -99,6 +133,7 @@ class ActionLogActivity : BaseActivity() {
             return
         }
         val timeFormat = SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault())
+        val lang = AppLocale.getLanguage(this)
         entries.forEach { entry ->
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -113,12 +148,14 @@ class ActionLogActivity : BaseActivity() {
                 ).apply { bottomMargin = dp(6) }
             }
             card.addView(TextView(this).apply {
-                text = "${timeFormat.format(Date(entry.timestampMs))} · ${entry.toolName} · ${entry.outcome}"
+                text = "${timeFormat.format(Date(entry.timestampMs))} · ${entry.toolName} · " +
+                    ActionLogLabels.resultLabel(entry.result, lang)
                 setTextColor(tc.aiText)
                 textSize = 13f
             })
             card.addView(TextView(this).apply {
-                text = getString(R.string.risk_generic) + ": " + entry.risk
+                text = getString(R.string.risk_generic) + ": " + entry.risk +
+                    " · " + ActionLogLabels.reasonLabel(entry.reason, lang)
                 setTextColor(Color.parseColor("#8b949e"))
                 textSize = 11f
             })
