@@ -458,14 +458,16 @@ Verified on device: send_message to "أحمد التميمي خاص" via WhatsAp
 Final signed release: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-5_20261113_171335.apk (102 MB), SHA-256 B189F9D718E7EB7AC0B04E7C5FE781017636BDFB04C7D258B0CD59F701EEC10A. Tests: 312 / 56 / 0 failures.
 
 Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; use an explicit component (`-n io.agents.pokeclaw/.debug.DebugTaskReceiver`).
+
 ### Release 1.0.3-dev-6 (2026-11-13)
 - Fixed UpdateChecker.isNewer: strips -dev/-rc/-beta suffixes before parsing; stable beats prerelease of the same base; latest tag keeps its prerelease suffix. Added 6 unit tests (UpdateCheckerVersionTest).
 - Version bumped to 1.0.3-dev-6 (code 107).
 - Signed release: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB), SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD.
 - Tests: 318 / 57 classes / 0 failures.
 - Latest GitHub release before this: v1.0.2; the in-app check correctly reports "no update" for 1.0.3-dev-5 because 1.0.2 < 1.0.3.
+
 ### Final cleanup + publish (2026-11-13)
-- CI root cause fixed: ndroid-actions/setup-android@v3 -> @v4 + pinned packages platform-tools platforms;android-36 build-tools;36.0.0. SDK setup now passes; the only remaining CI blocker is the four signing secrets (ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD).
-- Release published manually via the GitHub API because the Actions secrets are not configured: tag 1.0.3-dev-6 (prerelease), asset SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB, SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD).
+- CI root cause fixed: android-actions/setup-android@v3 -> @v4 + pinned packages platform-tools platforms;android-36 build-tools;36.0.0. SDK setup now passes; the only remaining CI blocker is the four signing secrets (ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD).
+- Release published manually via the GitHub API because the Actions secrets are not configured: tag v1.0.3-dev-6 (prerelease), asset SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB, SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD).
 - Signing material kept in keys/ (gitignored): sanad-release.jks, KEYSTORE_INFO.txt, GITHUB_SECRETS.txt (copy-paste values for the four Actions secrets).
-- Cleanup: gradlew clean, temp capture files, and the device-side exported action log removed. Keystore and secrets file intentionally kept.
+- Cleanup: gradlew clean, .gradle cache, build/ and temp capture files removed. Keystore and secrets file intentionally kept. Device-side exported action log: pending (device disconnected during cleanup).
