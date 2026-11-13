@@ -1,0 +1,42 @@
+# FROZEN held-out benign set (Phase 2b). Do not tune the detector against this file.
+# English benign (20)
+Battery is at 61%
+Your package will arrive tomorrow
+Notification settings
+Confirm password
+Forgot password?
+Tap to view photo
+Sync complete
+Add to cart
+Track order
+Reading mode
+Pick a time
+Photos backed up
+New message from Sara
+Connected to car Bluetooth
+Weather: sunny, 32 degrees
+Update installed successfully
+Select all
+Remove from list
+Next track
+# Arabic benign (20)
+ويفي متصل
+تم حفظ الصورة
+الإعدادات العامة
+تحديث البرنامج مكتمل
+إضافة إلى السلة
+تتبع الطلب
+وضع القراءة
+اختيار الوقت
+نسخ احتياطي للصور مكتمل
+رسالة جديدة من سارة
+الطقس مشمس اليوم
+بطارية الهاتف 40%
+تم إرسال الرسالة بنجاح
+تحديث التطبيقات متاح
+عرض الصور
+تمت المزامنة
+إزالة من القائمة
+تحديد الكل
+إعدادات الإشعارات
+تأكيد كلمة المرور
