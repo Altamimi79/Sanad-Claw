@@ -109,6 +109,19 @@ public class UpdateChecker {
                 }
                 String downloadUrl = release.getString("html_url");
                 String notes = release.optString("body", "").trim();
+                // Prefer the APK asset so the Update button can download + install in-app.
+                String apkUrl = "";
+                JSONArray assets = release.optJSONArray("assets");
+                if (assets != null) {
+                    for (int i = 0; i < assets.length(); i++) {
+                        JSONObject asset = assets.optJSONObject(i);
+                        if (asset == null) continue;
+                        if (asset.optString("name", "").endsWith(".apk")) {
+                            apkUrl = asset.optString("browser_download_url", "");
+                            break;
+                        }
+                    }
+                }
 
                 XLog.i(TAG, "Current: " + currentVersion + ", Latest: " + latestTag);
 
@@ -122,7 +135,8 @@ public class UpdateChecker {
                         XLog.i(TAG, "Skipping ignored version " + latestTag);
                         return;
                     }
-                    activity.runOnUiThread(() -> showUpdateDialog(activity, latestTag, downloadUrl, notes, debugBuild));
+                    final String finalApkUrl = apkUrl;
+                    activity.runOnUiThread(() -> showUpdateDialog(activity, latestTag, downloadUrl, finalApkUrl, notes, debugBuild));
                 } else if (!automatic) {
                     activity.runOnUiThread(() -> showUpToDate(activity, currentVersion));
                 }
@@ -208,7 +222,7 @@ public class UpdateChecker {
         return 0;
     }
 
-    private static void showUpdateDialog(Activity activity, String version, String url, String notes, boolean debugBuild) {
+    private static void showUpdateDialog(Activity activity, String version, String pageUrl, String apkUrl, String notes, boolean debugBuild) {
         try {
             String notesText = notes.isEmpty()
                     ? activity.getString(io.agents.pokeclaw.R.string.update_no_notes)
@@ -217,11 +231,15 @@ public class UpdateChecker {
             if (debugBuild) {
                 message += "\n\n" + activity.getString(io.agents.pokeclaw.R.string.update_debug_note);
             }
-            new AlertDialog.Builder(activity)
+            AlertDialog dialog = new AlertDialog.Builder(activity)
                     .setTitle(activity.getString(io.agents.pokeclaw.R.string.update_available_title))
                     .setMessage(message)
                     .setPositiveButton(activity.getString(io.agents.pokeclaw.R.string.update_now), (d, w) -> {
-                        activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                        if (apkUrl != null && !apkUrl.isEmpty()) {
+                            downloadAndInstall(activity, apkUrl, pageUrl);
+                        } else {
+                            activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)));
+                        }
                     })
                     .setNeutralButton(activity.getString(io.agents.pokeclaw.R.string.update_ignore), (d, w) -> {
                         io.agents.pokeclaw.utils.KVUtils.INSTANCE.putString("ignored_update_version", version);
@@ -229,8 +247,65 @@ public class UpdateChecker {
                     })
                     .setNegativeButton(activity.getString(io.agents.pokeclaw.R.string.update_later), null)
                     .show();
+            // Match the dialog buttons to the active theme accent.
+            int accent = io.agents.pokeclaw.ui.chat.ThemeManager.INSTANCE.getColors().getSendColor();
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(accent);
+            }
+            if (dialog.getButton(AlertDialog.BUTTON_NEUTRAL) != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(accent);
+            }
         } catch (Exception e) {
             XLog.w(TAG, "Failed to show update dialog", e);
         }
+    }
+
+    /** Download the release APK and launch the system installer. */
+    private static void downloadAndInstall(Activity activity, String apkUrl, String fallbackPageUrl) {
+        android.app.ProgressDialog progress = new android.app.ProgressDialog(activity);
+        progress.setMessage(activity.getString(io.agents.pokeclaw.R.string.update_downloading));
+        progress.setCancelable(false);
+        progress.show();
+        new Thread(() -> {
+            try {
+                java.io.File dir = new java.io.File(activity.getExternalFilesDir(null), "Download");
+                if (!dir.exists()) dir.mkdirs();
+                java.io.File out = new java.io.File(dir, "sanad-update.apk");
+                HttpURLConnection conn = (HttpURLConnection) new URL(apkUrl).openConnection();
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(60000);
+                conn.setInstanceFollowRedirects(true);
+                try (java.io.InputStream in = conn.getInputStream();
+                     java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) > 0) fos.write(buf, 0, n);
+                }
+                Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                        activity, activity.getPackageName() + ".fileprovider", out);
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(uri, "application/vnd.android.package-archive");
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.runOnUiThread(() -> {
+                    progress.dismiss();
+                    activity.startActivity(intent);
+                });
+            } catch (Exception e) {
+                XLog.w(TAG, "APK download failed", e);
+                activity.runOnUiThread(() -> {
+                    progress.dismiss();
+                    new AlertDialog.Builder(activity)
+                            .setTitle(activity.getString(io.agents.pokeclaw.R.string.update_failed_title))
+                            .setMessage(activity.getString(io.agents.pokeclaw.R.string.update_download_failed))
+                            .setPositiveButton(activity.getString(io.agents.pokeclaw.R.string.update_ok), null)
+                            .show();
+                    // Offer the release page as a fallback.
+                    try {
+                        activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackPageUrl)));
+                    } catch (Exception ignored) {
+                    }
+                });
+            }
+        }).start();
     }
 }

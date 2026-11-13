@@ -50,6 +50,40 @@ object ChatHistoryManager {
         return dir
     }
 
+    private fun getArchivedDir(context: Context): File {
+        val dir = File(getChatDir(context), "archived")
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    /** Move a conversation out of the active list into the archived folder. */
+    fun archive(context: Context, file: File): Boolean {
+        return try {
+            val dest = File(getArchivedDir(context), file.name)
+            if (dest.exists()) dest.delete()
+            file.renameTo(dest)
+        } catch (e: Exception) {
+            io.agents.pokeclaw.utils.XLog.e("ChatHistoryManager", "Failed to archive conversation", e)
+            false
+        }
+    }
+
+    /** Move an archived conversation back into the active list. */
+    fun unarchive(context: Context, file: File): Boolean {
+        return try {
+            val dest = File(getChatDir(context), file.name)
+            if (dest.exists()) dest.delete()
+            file.renameTo(dest)
+        } catch (e: Exception) {
+            io.agents.pokeclaw.utils.XLog.e("ChatHistoryManager", "Failed to unarchive conversation", e)
+            false
+        }
+    }
+
+    /** List archived conversations, newest first. */
+    fun listArchived(context: Context): List<ConversationSummary> =
+        listFromDir(getArchivedDir(context))
+
     /**
      * Save a conversation to markdown file.
      */
@@ -242,8 +276,10 @@ object ChatHistoryManager {
     /**
      * List all saved conversations, newest first.
      */
-    fun listConversations(context: Context): List<ConversationSummary> {
-        val dir = getChatDir(context)
+    fun listConversations(context: Context): List<ConversationSummary> =
+        listFromDir(getChatDir(context))
+
+    private fun listFromDir(dir: File): List<ConversationSummary> {
         if (!dir.exists()) return emptyList()
 
         return dir.listFiles()

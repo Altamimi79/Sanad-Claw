@@ -460,34 +460,10 @@ class SettingsActivity : BaseActivity() {
         refreshCustomModelUrlStatus()
 
         // Appearance
+        // Theme and language moved to the chat toolbar (sun/moon + EN/ع), so only
+        // Text size remains in Settings.
         val appearanceGroup = findViewById<MenuGroup>(R.id.appearanceGroup)
         appearanceGroup.setTitle(getString(R.string.appearance_title))
-
-        appearanceGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_slideshow,
-            title = getString(R.string.theme_title),
-            onClick = {
-                startActivity(Intent(this, ThemeActivity::class.java))
-            },
-            showDivider = false
-        ).apply {
-            val themeId = KVUtils.getString("THEME_ID", "abyss_dark")
-            val label = themeId.replace("_", " ").replaceFirstChar { it.uppercase() }
-            setTrailingText(label)
-        }
-
-        // App language (Sanad fork): Arabic default, switchable to English.
-        val currentLang = io.agents.pokeclaw.utils.AppLocale.getLanguage(this)
-        appearanceGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_view,
-            title = getString(R.string.settings_language),
-            trailingText = if (currentLang == io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH)
-                getString(R.string.language_name_english)
-            else
-                getString(R.string.language_name_arabic),
-            onClick = { switchAppLanguage() },
-            showDivider = false,
-        )
 
         // Tools
         val toolsGroup = findViewById<MenuGroup>(R.id.toolsGroup)

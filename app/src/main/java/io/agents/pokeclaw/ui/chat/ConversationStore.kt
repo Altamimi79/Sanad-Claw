@@ -92,6 +92,18 @@ class ConversationStore(
         return ChatHistoryManager.delete(target.file)
     }
 
+    fun archiveConversation(target: ChatHistoryManager.ConversationSummary): Boolean {
+        return ChatHistoryManager.archive(context, target.file)
+    }
+
+    fun unarchiveConversation(target: ChatHistoryManager.ConversationSummary): Boolean {
+        return ChatHistoryManager.unarchive(context, target.file)
+    }
+
+    fun refreshArchived(): List<ChatHistoryManager.ConversationSummary> {
+        return ChatHistoryManager.listArchived(context)
+    }
+
     private fun persistCurrentConversationId() {
         KVUtils.putString(CURRENT_CONVERSATION_ID_KEY, currentConversationId)
     }

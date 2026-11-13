@@ -1447,11 +1447,8 @@ private fun ChatInputBar(
                 onValueChange = { text = it },
                 placeholder = {
                     Text(
-                        when {
-                            isTaskMode -> stringResource(R.string.chat_placeholder_task)
-                            else -> stringResource(R.string.chat_placeholder_chat)
-                        },
-                        color = if (isTaskMode) colors.accent.copy(alpha = 0.5f) else colors.textTertiary,
+                        stringResource(R.string.chat_placeholder_unified),
+                        color = colors.textTertiary,
                         fontSize = 14.sp,
                     )
                 },

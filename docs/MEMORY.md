@@ -489,3 +489,18 @@ Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; us
 - Attach button opens the system document picker (OpenDocument, "*/*"), copies the file to cache/attachments, and shows a removable chip. Text files are inlined (up to 4000 chars); images are referenced by path.
 - Verified on device: Enter sends in Chat mode ("what is 2 plys 2" -> "2 plus 2 is 4."), attach opens DocumentsUI, Chat/Agent colors are clear in light mode.
 - Note: GetContent("*/*") could resolve to WhatsApp once; switched to OpenDocument.
+### Update check + light status bar + composer polish (2026-11-13)
+- Fixed `UpdateChecker.isNewer`: pre-release numbers are compared when bases are equal (dev-9 > dev-8 > dev-7). This was why a dev-7 build saw "no update" while dev-8 was published.
+- Update dialog localized (en/ar) with Update / Ignore this version / Later; ignored versions are suppressed on automatic checks.
+- Light-mode status bar icons: `ThemeManager.applySystemBarIcons` sets `isAppearanceLightStatusBars` from THEME_ID (not system night mode); called from BaseActivity and ComposeChatActivity. Verified: time/battery/signal are dark on the light bar.
+- Composer placeholder removed so switching Chat/Agent does not resize the box.
+- Settings -> Appearance now only has Text size; Theme and Language live in the chat toolbar.
+- Gradle metaspace raised to 1024m (release builds were dying with "out of JVM Metaspace").
+- Version 1.0.3-dev-9 (code 110); 321 tests / 0 failures.
+### Final pass (2026-11-13, dev-9)
+- In-app updater: the Update button downloads the release APK to externalFilesDir/Download and launches the system installer via FileProvider; falls back to the release page. Dialog buttons use the theme accent.
+- Composer shows a fixed "Ask Sanad" / "اسأل سند" hint (no mode-dependent placeholder).
+- Settings -> Appearance only has Text size.
+- New launcher icon generated from Desktop/Sanad.png at mdpi..xxxhdpi (square + round) + 512px adaptive foreground.
+- 321 tests / 0 failures. Release dev-9 with all fixes.
+- Remaining for tomorrow: select-all/archive for conversations, Memory section, Skills polish, manual safety QA (IJ/SD/QV/QP3-8), GitHub Actions signing secrets.

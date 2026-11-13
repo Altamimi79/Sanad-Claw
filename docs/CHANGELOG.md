@@ -7,6 +7,11 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 ### Fixed
 - **Update check could not see newer dev builds**: `isNewer` now compares the trailing pre-release number when the base versions are equal, so `1.0.3-dev-9 > 1.0.3-dev-8 > 1.0.3-dev-7`.
 - Update dialog is localized (en/ar) and now offers **Update / Ignore this version / Later**. Ignored versions are stored and suppressed for automatic checks.
+- **In-app update install**: the Update button now downloads the release APK and launches the system installer (falls back to the release page). Dialog buttons use the theme accent.
+- **Light-mode status bar**: system icons now follow the app theme (`ThemeManager.applySystemBarIcons`), so time/battery/signal are dark and readable on light themes.
+- Composer has no changing placeholder: a fixed **"Ask Sanad"** / **"اسأل سند"** hint is shown in both Chat and Agent modes, so the box never resizes.
+- Settings → Appearance now contains only Text size (Theme and Language live in the chat toolbar).
+- New launcher icon (gold "S AI" mark) at all densities + adaptive foreground.
 
 ### Changed
 - Version bumped to 1.0.3-dev-9 (code 110).

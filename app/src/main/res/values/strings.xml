@@ -83,6 +83,7 @@
     <string name="cd_settings">Settings</string>
     <string name="cd_toggle_theme">Toggle light/dark theme</string>
     <string name="cd_attach">Attach image or file</string>
+    <string name="chat_placeholder_unified">Ask Sanad</string>
     <string name="cd_switch_model">Switch model</string>
     <string name="cd_toggle">Toggle</string>
     <string name="action_rename">Rename</string>
@@ -167,6 +168,8 @@
     <string name="update_failed_title">Update check failed</string>
     <string name="update_ok">OK</string>
     <string name="update_no_notes">No release notes were provided.</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_download_failed">Could not download the update. Try again from the release page.</string>
     <string name="update_debug_note">This build is debuggable. If Android blocks the install, uninstall the old debug build first, then install the new APK.</string>
     <string name="about_check_update_hint">Checks GitHub now. Shows the new version and what changed. Nothing is downloaded automatically.</string>
     <string name="about_github">GitHub repository</string>
