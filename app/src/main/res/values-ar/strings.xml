@@ -353,6 +353,8 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">تأكيد إجراء حسّاس</string>
     <string name="safety_confirm_allow">السماح</string>
+    <string name="plan_preview_prompt">راجع هذه الخطة. هل تنفّذها؟</string>
+    <string name="plan_preview_denied">لم تتم الموافقة على الخطة. لم تبدأ المهمة.</string>
     <string name="safety_confirm_deny">رفض</string>
     <string name="safety_confirm_message">يريد الوكيل تنفيذ إجراء حسّاس (%1$s) عبر %2$s. هل تسمح؟</string>
     <string name="safety_action_denied">تم رفض الإجراء. أُوقفت المهمة.</string>

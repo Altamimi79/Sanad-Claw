@@ -152,6 +152,64 @@ class DefaultAgentService : AgentService {
             return
         }
 
+        // Plan preview (roadmap item 5). Off by default: the task runs exactly as before.
+        if (io.agents.pokeclaw.safety.TaskPlanPreview.requiresPreview(
+                io.agents.pokeclaw.utils.KVUtils.isPlanPreviewEnabled(),
+            )
+        ) {
+            if (!awaitPlanApproval(userPrompt)) {
+                XLog.i(TAG, "Plan preview: not approved, task not started")
+                callback.onError(0, RuntimeException(ClawApplication.instance.getString(R.string.plan_preview_denied)), 0)
+                return
+            }
+        }
+
+        startRun(userPrompt, callback)
+    }
+
+    /**
+     * Asks the model for a step plan, then blocks until the user approves it. Returns false
+     * (task must not run) when the plan is empty, the model call fails, the user denies, the
+     * request times out, or no confirmation UI is available.
+     */
+    private fun awaitPlanApproval(userPrompt: String): Boolean {
+        val steps = try {
+            val messages = listOf(
+                SystemMessage.from(io.agents.pokeclaw.safety.TaskPlanner.PLANNING_INSTRUCTION),
+                UserMessage.from(io.agents.pokeclaw.safety.TaskPlanner.buildUserMessage(userPrompt)),
+            )
+            val reply = llmClient.chat(messages, emptyList()).text
+            io.agents.pokeclaw.safety.TaskPlanner.parseSteps(reply)
+        } catch (e: Exception) {
+            XLog.e(TAG, "Plan preview: planner call failed", e)
+            return false
+        }
+
+        val plan = io.agents.pokeclaw.safety.TaskPlanPreview.buildPlan(steps) { text ->
+            io.agents.pokeclaw.safety.RiskClassifier.assessText("plan_step", text).requiresConfirmation
+        }
+        if (plan.isEmpty) {
+            XLog.w(TAG, "Plan preview: planner returned no steps")
+            return false
+        }
+
+        val body = plan.steps.joinToString("\n") { "${it.index}. ${it.text}" }
+        val message = ClawApplication.instance.getString(R.string.plan_preview_prompt) + "\n\n" + body
+        val approved = io.agents.pokeclaw.safety.SafetyCoordinator.requestConfirmation(
+            message = message,
+            risk = "plan",
+        )
+        val outcome = io.agents.pokeclaw.safety.TaskPlanPreview.gate(
+            plan,
+            if (approved) io.agents.pokeclaw.safety.TaskPlanPreview.Decision.APPROVE
+            else io.agents.pokeclaw.safety.TaskPlanPreview.Decision.DENY,
+        )
+        XLog.i(TAG, "Plan preview outcome=$outcome steps=${plan.steps.size}")
+        return outcome == io.agents.pokeclaw.safety.TaskPlanPreview.Outcome.RUN
+    }
+
+    /** Starts the agent loop. Unchanged from before the plan-preview gate. */
+    private fun startRun(userPrompt: String, callback: AgentCallback) {
         running.set(true)
         cancelled.set(false)
         var terminalCallback: (() -> Unit)? = null

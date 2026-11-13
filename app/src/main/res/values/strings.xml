@@ -352,6 +352,8 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">Confirm sensitive action</string>
     <string name="safety_confirm_allow">Allow</string>
+    <string name="plan_preview_prompt">Review this plan. Run it?</string>
+    <string name="plan_preview_denied">Plan not approved. The task was not started.</string>
     <string name="safety_confirm_deny">Deny</string>
     <string name="safety_confirm_message">The agent wants to perform a sensitive action (%1$s) via %2$s. Do you allow it?</string>
     <string name="safety_action_denied">Action denied by the user. The task was stopped.</string>
