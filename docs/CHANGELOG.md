@@ -2,6 +2,18 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3-dev-9] — 2026-11-13
+
+### Fixed
+- **Update check could not see newer dev builds**: `isNewer` now compares the trailing pre-release number when the base versions are equal, so `1.0.3-dev-9 > 1.0.3-dev-8 > 1.0.3-dev-7`.
+- Update dialog is localized (en/ar) and now offers **Update / Ignore this version / Later**. Ignored versions are stored and suppressed for automatic checks.
+
+### Changed
+- Version bumped to 1.0.3-dev-9 (code 110).
+
+### Verified
+- 321 tests / 0 failures (3 new pre-release comparison tests).
+
 ## [1.0.3-dev-8] — 2026-11-13
 
 ### Added

@@ -54,8 +54,9 @@ open class BaseActivity : AppCompatActivity() {
      * Dark theme → light text (dark mode)
      */
     private fun applyStatusBarMode() {
-        val isNightMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        BarUtils.setStatusBarLightMode(this, !isNightMode)
+        // Use the app's own theme (not the system night mode) so a light app theme with a
+        // dark system setting still gets dark status-bar icons.
+        io.agents.pokeclaw.ui.chat.ThemeManager.applySystemBarIcons(this)
     }
 
     /**

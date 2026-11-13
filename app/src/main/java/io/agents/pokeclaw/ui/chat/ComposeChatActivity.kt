@@ -143,6 +143,7 @@ class ComposeChatActivity : ComponentActivity() {
         // Status bar color
         val themeColors = ThemeManager.getColors()
         window.statusBarColor = themeColors.toolbarBg
+        ThemeManager.applySystemBarIcons(this)
 
         // Build Compose colors from ThemeManager
         val composeColors = with(ThemeManager) { themeColors.toComposeColors() }

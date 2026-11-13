@@ -133,4 +133,19 @@ object ThemeManager {
         val id = KVUtils.getString("THEME_ID", "ember_dark")
         return id.endsWith("_dark")
     }
+
+    /**
+     * Match the system status/navigation bar icons to the app's theme (not the system
+     * night mode). Without this, a light app theme shows white system icons on a light
+     * status bar, which is invisible.
+     */
+    fun applySystemBarIcons(activity: android.app.Activity) {
+        val dark = isDark()
+        val controller = androidx.core.view.WindowCompat.getInsetsController(
+            activity.window,
+            activity.window.decorView
+        )
+        controller.isAppearanceLightStatusBars = !dark
+        controller.isAppearanceLightNavigationBars = !dark
+    }
 }

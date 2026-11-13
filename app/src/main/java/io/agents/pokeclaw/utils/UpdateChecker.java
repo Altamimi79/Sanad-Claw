@@ -116,6 +116,12 @@ public class UpdateChecker {
                 io.agents.pokeclaw.utils.KVUtils.INSTANCE.putLong("last_update_check", now);
 
                 if (isNewer(latestTag, currentVersion)) {
+                    String ignored = io.agents.pokeclaw.utils.KVUtils.INSTANCE
+                            .getString("ignored_update_version", "");
+                    if (automatic && latestTag.equals(ignored)) {
+                        XLog.i(TAG, "Skipping ignored version " + latestTag);
+                        return;
+                    }
                     activity.runOnUiThread(() -> showUpdateDialog(activity, latestTag, downloadUrl, notes, debugBuild));
                 } else if (!automatic) {
                     activity.runOnUiThread(() -> showUpToDate(activity, currentVersion));
@@ -131,17 +137,17 @@ public class UpdateChecker {
     private static void reportFailure(Activity activity, boolean automatic, String reason) {
         if (automatic) return; // automatic checks stay silent; the user asked for nothing
         activity.runOnUiThread(() -> new AlertDialog.Builder(activity)
-                .setTitle("Update check failed")
+                .setTitle(activity.getString(io.agents.pokeclaw.R.string.update_failed_title))
                 .setMessage(reason)
-                .setPositiveButton("OK", null)
+                .setPositiveButton(activity.getString(io.agents.pokeclaw.R.string.update_ok), null)
                 .show());
     }
 
     private static void showUpToDate(Activity activity, String currentVersion) {
         new AlertDialog.Builder(activity)
-                .setTitle("No update available")
-                .setMessage("You are running the latest version (v" + currentVersion + ").")
-                .setPositiveButton("OK", null)
+                .setTitle(activity.getString(io.agents.pokeclaw.R.string.update_up_to_date_title))
+                .setMessage(activity.getString(io.agents.pokeclaw.R.string.update_up_to_date_message, currentVersion))
+                .setPositiveButton(activity.getString(io.agents.pokeclaw.R.string.update_ok), null)
                 .show();
     }
 
@@ -149,15 +155,32 @@ public class UpdateChecker {
      * Compare versions. Returns true if remote > local.
      *
      * Pre-release suffixes ("-dev-5", "-rc1", "-beta2") are stripped before comparing
-     * the numeric parts, so "1.0.3" vs "1.0.3-dev-5" still compares correctly. When the
-     * numeric parts are equal, a stable remote release beats a pre-release local build.
+     * the numeric parts. When the base versions are equal:
+     *  - stable remote beats a pre-release local,
+     *  - two pre-releases are compared by their trailing number (dev-8 > dev-7).
      */
     static boolean isNewer(String remote, String local) {
         String remoteBase = stripPrerelease(remote);
         String localBase = stripPrerelease(local);
         int cmp = compareNumeric(remoteBase, localBase);
         if (cmp != 0) return cmp > 0;
-        return !isPrerelease(remote) && isPrerelease(local);
+
+        boolean remotePre = isPrerelease(remote);
+        boolean localPre = isPrerelease(local);
+        if (!remotePre && localPre) return true;
+        if (remotePre && !localPre) return false;
+        if (remotePre && localPre) {
+            return prereleaseNumber(remote) > prereleaseNumber(local);
+        }
+        return false;
+    }
+
+    /** Trailing build number of a pre-release suffix: "1.0.3-dev-8" -> 8, "-rc2" -> 2. */
+    private static int prereleaseNumber(String version) {
+        if (version == null) return 0;
+        String suffix = version.replaceFirst("^[^-+]*[-+]", "");
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)\\s*$").matcher(suffix);
+        return m.find() ? Integer.parseInt(m.group(1)) : 0;
     }
 
     private static String stripPrerelease(String version) {
@@ -187,22 +210,24 @@ public class UpdateChecker {
 
     private static void showUpdateDialog(Activity activity, String version, String url, String notes, boolean debugBuild) {
         try {
-            StringBuilder message = new StringBuilder()
-                    .append("New version: v")
-                    .append(version)
-                    .append("\n\nWhat's changed:\n")
-                    .append(notes.isEmpty() ? "No release notes were provided." : notes)
-                    .append("\n\nDo you want to update now?");
+            String notesText = notes.isEmpty()
+                    ? activity.getString(io.agents.pokeclaw.R.string.update_no_notes)
+                    : notes;
+            String message = activity.getString(io.agents.pokeclaw.R.string.update_available_message, version, notesText);
             if (debugBuild) {
-                message.append("\n\nThis build is debuggable. If Android blocks the install, uninstall the old debug build first, then install the new APK.");
+                message += "\n\n" + activity.getString(io.agents.pokeclaw.R.string.update_debug_note);
             }
             new AlertDialog.Builder(activity)
-                    .setTitle("Update available")
-                    .setMessage(message.toString())
-                    .setPositiveButton("Update", (d, w) -> {
+                    .setTitle(activity.getString(io.agents.pokeclaw.R.string.update_available_title))
+                    .setMessage(message)
+                    .setPositiveButton(activity.getString(io.agents.pokeclaw.R.string.update_now), (d, w) -> {
                         activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                     })
-                    .setNegativeButton("Later", null)
+                    .setNeutralButton(activity.getString(io.agents.pokeclaw.R.string.update_ignore), (d, w) -> {
+                        io.agents.pokeclaw.utils.KVUtils.INSTANCE.putString("ignored_update_version", version);
+                        XLog.i(TAG, "User ignored update version " + version);
+                    })
+                    .setNegativeButton(activity.getString(io.agents.pokeclaw.R.string.update_later), null)
                     .show();
         } catch (Exception e) {
             XLog.w(TAG, "Failed to show update dialog", e);

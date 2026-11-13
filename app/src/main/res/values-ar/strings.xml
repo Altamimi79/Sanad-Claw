@@ -158,6 +158,17 @@
     <string name="about_update_channel">قناة التحديث</string>
     <string name="update_channel_stable">رسمي</string>
     <string name="update_channel_beta">تجريبي</string>
+    <string name="update_available_title">تحديث متاح</string>
+    <string name="update_available_message">إصدار جديد: v%1$s\n\nما الجديد:\n%2$s\n\nهل تريد التحديث الآن؟</string>
+    <string name="update_now">تحديث</string>
+    <string name="update_later">لاحقًا</string>
+    <string name="update_ignore">تجاهل هذا الإصدار</string>
+    <string name="update_up_to_date_title">لا يوجد تحديث</string>
+    <string name="update_up_to_date_message">أنت على أحدث إصدار (v%1$s).</string>
+    <string name="update_failed_title">فشل فحص التحديث</string>
+    <string name="update_ok">حسنًا</string>
+    <string name="update_no_notes">لا توجد ملاحظات إصدار.</string>
+    <string name="update_debug_note">هذه نسخة تجريبية. إذا منع أندرويد التثبيت، أزل النسخة القديمة ثم ثبّت الـ APK الجديد.</string>
     <string name="about_check_update_hint">يفحص GitHub الآن ويعرض الإصدار الجديد وما تغيّر. لا يتم التنزيل تلقائياً.</string>
     <string name="about_github">مستودع GitHub</string>
     <string name="about_github_hint">الكود المصدري والإصدارات والتوثيق</string>

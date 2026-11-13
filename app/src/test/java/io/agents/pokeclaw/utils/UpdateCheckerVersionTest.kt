@@ -38,4 +38,19 @@ class UpdateCheckerVersionTest {
     fun `equal versions are not an update`() {
         assertFalse(UpdateChecker.isNewer("1.0.3", "1.0.3"))
     }
+
+    @Test
+    fun `newer prerelease build is an update`() {
+        assertTrue(UpdateChecker.isNewer("1.0.3-dev-8", "1.0.3-dev-7"))
+    }
+
+    @Test
+    fun `older prerelease build is not an update`() {
+        assertFalse(UpdateChecker.isNewer("1.0.3-dev-7", "1.0.3-dev-8"))
+    }
+
+    @Test
+    fun `newer rc build is an update`() {
+        assertTrue(UpdateChecker.isNewer("1.0.3-rc2", "1.0.3-rc1"))
+    }
 }

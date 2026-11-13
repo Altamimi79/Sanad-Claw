@@ -157,6 +157,17 @@
     <string name="about_update_channel">Update channel</string>
     <string name="update_channel_stable">Stable</string>
     <string name="update_channel_beta">Beta</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_message">New version: v%1$s\n\nWhat\'s changed:\n%2$s\n\nDo you want to update now?</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Later</string>
+    <string name="update_ignore">Ignore this version</string>
+    <string name="update_up_to_date_title">No update available</string>
+    <string name="update_up_to_date_message">You are running the latest version (v%1$s).</string>
+    <string name="update_failed_title">Update check failed</string>
+    <string name="update_ok">OK</string>
+    <string name="update_no_notes">No release notes were provided.</string>
+    <string name="update_debug_note">This build is debuggable. If Android blocks the install, uninstall the old debug build first, then install the new APK.</string>
     <string name="about_check_update_hint">Checks GitHub now. Shows the new version and what changed. Nothing is downloaded automatically.</string>
     <string name="about_github">GitHub repository</string>
     <string name="about_github_hint">Source code, releases and documentation</string>
