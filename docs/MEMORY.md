@@ -253,3 +253,12 @@ Readiness snapshot: **~72% overall** / **~90% for daily cloud-chat use** (UI 90,
 - Device QA: NOT EXECUTED (no device at build time).
 - Resume instructions: docs/RESUME.md.
 
+
+## Session 2026-11-13 (second machine handoff, device QA round 2)
+
+- Branch sanad/dev-1.0.3 now includes: 44c3ec6 (templates collapsed by default, SanadClaw APK name), 2fc50df (QA doc), and the Arabic export label fix (??????, replacing ?????).
+- Device: HONOR MBH-N49, installed SanadClaw build versionCode 103 (1.0.3-qa). Old GitHub 1.0.3-dev-2 build was replaced; app data reset (API key re-entered by user).
+- Verified on device: Quick Task Templates collapsed on launch; Arabic action-log screen renders (??? ????????? (???? ???)); Settings > Tools rows; unit tests 271/0.
+- FL3 fixed: pre-fix device logs held full OpenRouter key; current build writes Authorization: ***. Device logs cleared.
+- gh CLI installed (GitHub.cli) and authenticated as Altamimi79.
+- Open: rotate pre-fix OpenRouter key; QP1a TalkBack; QP3-QP8; IJ/SD/QV (need manual interaction); QP7/QP8 need prior build.

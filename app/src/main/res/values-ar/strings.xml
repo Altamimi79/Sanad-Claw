@@ -368,7 +368,7 @@
     <string name="safety_action_log_empty">لا توجد إجراءات مسجلة بعد.</string>
     <string name="safety_action_log_clear">مسح السجل</string>
     <string name="safety_action_log_cleared">تم مسح السجل</string>
-    <string name="safety_action_log_export">تصدير السجل (مُخفى)</string>
+    <string name="safety_action_log_export">تصدير السجل (مُنقّح)</string>
     <string name="safety_action_log_exported">تم تصدير سجل الإجراءات</string>
     <string name="safety_action_log_export_failed">تعذّر تصدير سجل الإجراءات</string>
     <string name="safety_seconds_format">%d ثانية</string>
