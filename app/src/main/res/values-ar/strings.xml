@@ -353,6 +353,9 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">تأكيد إجراء حسّاس</string>
     <string name="safety_confirm_allow">السماح</string>
+    <string name="plan_preview_title">مراجعة الخطة قبل التنفيذ</string>
+    <string name="plan_preview_enabled_toast">ستعرض المهام خطة للموافقة أولاً</string>
+    <string name="plan_preview_disabled_toast">ستُنفَّذ المهام دون مراجعة الخطة</string>
     <string name="plan_preview_prompt">راجع هذه الخطة. هل تنفّذها؟</string>
     <string name="plan_preview_denied">لم تتم الموافقة على الخطة. لم تبدأ المهمة.</string>
     <string name="safety_confirm_deny">رفض</string>

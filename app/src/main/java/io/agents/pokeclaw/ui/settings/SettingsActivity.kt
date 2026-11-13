@@ -537,11 +537,40 @@ class SettingsActivity : BaseActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             },
-            showDivider = false
         ).apply {
             setTrailingText(
                 getString(
                     if (KVUtils.isVoiceAutoSendEnabled()) R.string.settings_enabled
+                    else R.string.settings_disabled
+                )
+            )
+        }
+
+        // Plan preview (roadmap item 5) — off by default; a task then waits for plan approval.
+        var planPreviewItem: MenuItem? = null
+        planPreviewItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_agenda,
+            title = getString(R.string.plan_preview_title),
+            onClick = {
+                val next = !KVUtils.isPlanPreviewEnabled()
+                KVUtils.setPlanPreviewEnabled(next)
+                planPreviewItem?.setTrailingText(
+                    getString(if (next) R.string.settings_enabled else R.string.settings_disabled)
+                )
+                Toast.makeText(
+                    this,
+                    getString(
+                        if (next) R.string.plan_preview_enabled_toast
+                        else R.string.plan_preview_disabled_toast
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            showDivider = false
+        ).apply {
+            setTrailingText(
+                getString(
+                    if (KVUtils.isPlanPreviewEnabled()) R.string.settings_enabled
                     else R.string.settings_disabled
                 )
             )

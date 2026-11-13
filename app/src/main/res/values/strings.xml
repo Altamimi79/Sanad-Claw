@@ -352,6 +352,9 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">Confirm sensitive action</string>
     <string name="safety_confirm_allow">Allow</string>
+    <string name="plan_preview_title">Review plan before running</string>
+    <string name="plan_preview_enabled_toast">Tasks will show a plan for approval first</string>
+    <string name="plan_preview_disabled_toast">Tasks will run without a plan preview</string>
     <string name="plan_preview_prompt">Review this plan. Run it?</string>
     <string name="plan_preview_denied">Plan not approved. The task was not started.</string>
     <string name="safety_confirm_deny">Deny</string>
