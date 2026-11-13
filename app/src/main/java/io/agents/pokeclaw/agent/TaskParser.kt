@@ -36,6 +36,7 @@ object TaskParser {
         val lower = task.lowercase().trim()
 
         return matchCall(lower, task)
+            ?: matchSendMedia(lower, task)
             ?: matchSendMessage(lower, task)
             ?: matchSms(lower, task)
             ?: matchAlarm(lower, task)
@@ -71,6 +72,36 @@ object TaskParser {
             // so agent loop will get screen context.
             null
         }
+    }
+
+    /**
+     * "send media file <path> to <contact> [on <app>]" or "send <path with extension> to <contact>".
+     * Requires a path with a file extension, so ordinary text messages never match here.
+     */
+    private val SEND_MEDIA_PATTERN = Regex(
+        """(?:send|share|attach)\s+(?:(?:media|file|photo|image|picture)\s+){0,2}(\S+\.[A-Za-z0-9]{1,8})\s+to\s+(.+?)(?:\s+on\s+([\p{L}\p{N} ._-]+))?$""",
+        RegexOption.IGNORE_CASE
+    )
+
+    private fun matchSendMedia(lower: String, original: String): ParseResult? {
+        val match = SEND_MEDIA_PATTERN.find(original.trim()) ?: return null
+        val filePath = match.groupValues[1].trim().trim('"', '\'')
+        val contact = match.groupValues[2].trim().trim('"', '\'')
+        val app = canonicalMessagingApp(match.groupValues.getOrNull(3))
+
+        if (filePath.isBlank() || contact.isBlank() || contact.contains("@")) return null
+
+        return ParseResult(
+            action = "send_media",
+            intent = null,
+            toolName = "send_media",
+            toolParams = mapOf(
+                "contact" to contact,
+                "file_path" to filePath,
+                "app" to app,
+            ),
+            description = "Sending '$filePath' to $contact via $app"
+        )
     }
 
     private val SEND_MESSAGE_PATTERN = Regex(

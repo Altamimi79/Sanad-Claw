@@ -302,3 +302,101 @@ Known open items:
 - One earlier plan-preview run (Tokyo) reached RUN without an observed tap; unexplained from logs.
 - Rotate the OpenRouter key that appeared in pre-fix debug logs.
 - Release is debug-signed; no fork signing key.
+
+## Session 2026-11-13 (late): chat copy/delete, plan gate, Tokyo investigation
+
+Changes (uncommitted, debug build):
+- Chat bubbles wrapped in SelectionContainer (user + assistant text selectable).
+- Long-press on a message opens a menu: Copy text / Delete message / Cancel (EN+AR strings). Delete removes the message from _messages and saves the chat (ComposeChatActivity.onDeleteMessage).
+- SafetyCoordinator.requestConfirmation waits up to 15s for chat UI to return (polls every 250ms) instead of denying immediately when the chat activity is paused. Previously the plan gate denied at once when the chat went to Settings for the accessibility redirect.
+
+Device verification (HONOR MBH-N49):
+- Copy: long-press user bubble, Copy text, paste into input: PASS.
+- Delete: long-press assistant bubble, Delete message: PASS; deletion persisted across force-stop and relaunch.
+- Tokyo plan gate: send -> planner call (200) -> "Review this plan" dialog -> Allow tapped -> log "Plan preview outcome=RUN steps=5" -> answer shown. PASS for the Allow path.
+- Earlier denial "Plan not approved" came from the dialog closing before a decision (SafetyCoordinator 45s timeout); not confirmed by log line.
+
+Tokyo root cause status:
+- No VoiceCommand line in any captured run; approval in the verified run was a tap.
+- The earlier RUN without an observed tap is still NOT reproduced. Candidate remains approvePendingIfMatches via voice (ChatScreen handleVoiceCommand), not confirmed.
+
+Automation notes:
+- Send button is a FloatingActionButton with clickable=false in the accessibility tree; its position moves when the keyboard opens (y 2176 closed, ~1305 open). Enter inserts a newline (multi-line field), it does not send.
+- accessibility setting is cleared by reinstall with -r; re-enable with settings put secure enabled_accessibility_services.
+- Java for Gradle: JDK 21 at C:\Program Files\Eclipse Adoptium\jdk-21.0.13.9-hotspot (the path in AGENTS.md does not exist on this machine).
+
+Still NOT run: QV1-QV9, SD1-SD5, IJ1-IJ6, QP3-QP8, QP1a (TalkBack), QL2 (Arabic labels on real entries), text-size visual measurement, routine creation UI, alarm on device.
+
+## Session 2026-11-13 (continued): About cleanup, update check, routines UI, text size
+
+About section (Settings):
+- Reduced to two rows: version and "Check for updates". Removed GitHub, Report issue, Share debug report, Developer, Built by, plus their helper functions, URL constants and 5 unused imports.
+- "Check for updates" now calls UpdateChecker.checkNow: queries GitHub latest release, shows version + release notes (body) with Update / Later, "up to date" dialog, or an error dialog. Device result: "GitHub responded with 404" because the repo path has no published release. The newer-version dialog is NOT device-verified (no release to compare).
+
+Routines (roadmap item 8) UI:
+- New RoutinesActivity (view-based, like ActionLogActivity), manifest entry exported=false, row in Settings > Tools.
+- Create (name, prompt, HH:mm, weekdays), list, enable/disable, delete. Every change calls RoutineScheduler.rescheduleAll.
+- Device verified: saved routine armed as RTC_WAKEUP ROUTINE_FIRE for the next weekday 08:30 (UTC+4); a 2-minute test routine posted its reminder notification at 15:11:00 ("Routine reminder posted"); deleting it removed its system alarm. Reminder only notifies; prompt is not executed.
+- Test routines removed; "Morning check" (08:30 Mon-Fri) left enabled on the phone.
+
+Text size measurement (Device, HONOR MBH-N49), error-bubble wrapped height / Tokyo single-line height:
+- Normal: 257 / 178
+- Slightly larger: not captured / 204
+- Larger: 388 / 230
+- Largest: 481 / 179
+The wrapped error bubble grows monotonically (257 -> 388 -> 481), so the scale applies. Single-line height is not reliable at Largest (bubble widens, line no longer wraps). Setting restored to Normal after testing.
+- Note: the scale applies on cold start; the chat activity does not re-render it when returning from Settings without restart.
+
+Known open items after this session:
+- Slightly larger error-bubble height not captured.
+- Newer-version update dialog not device-verified (needs a published GitHub release).
+- Tokyo: plan gate RUN path verified with Allow tap (log "Plan preview outcome=RUN"); the earlier RUN without tap is NOT reproduced.
+- Not run: QV1-QV9, SD1-SD5, IJ1-IJ6, QP3-QP8, QP1a (TalkBack), QL2.
+- No release version created yet (user will decide).
+
+## Session 2026-11-13 (security tests start): QP3, crash, router gap
+
+QP3 (Confirm sending files OFF):
+- Switch toggled OFF on device: row shows "Disabled / موقوف". PASS for the setting itself.
+- Could NOT verify the runtime behaviour: TaskParser.matchSendMessage (agent/TaskParser.kt) maps any "send ... to ..." phrase to send_message. There is no send_file rule, so a file request from chat never reaches the send_file tool. The only path to send_file is DebugTaskReceiver "tool" extra, which calls executeTool directly and bypasses SafetyGate, so it is not valid evidence for QP3.
+- Gap: chat cannot trigger send_file. Needs a product decision (add a file route, or accept that file sending is out of chat scope).
+
+Crash observed (once, not reproduced in a second run):
+- FATAL EXCEPTION main: android.app.RemoteServiceException ForegroundServiceDidNotStartInTimeException. Process io.agents.pokeclaw PID 14521 died at 15:22:27 right after a chat send.
+- Notification permission was granted at the time (checked), so the onCreate stopSelf branch was not the cause.
+- ForegroundService.onCreate calls startForeground only when permission is granted; if the service started without it, Android kills the process. Needs investigation of the start path (ForegroundService.start called from where, and why startForeground is not reached in time).
+- Second identical send did not crash (PID 15740 stayed alive).
+
+Not yet run from the security list: QP5, QP6, IJ1, IJ2, QV3, QV4.
+
+## Session 2026-11-13 (late, security + send-media): full status
+
+Stopped before sending. NO message was sent to any real contact in the last test rounds, except ONE earlier message (see below).
+
+IMPORTANT, real message sent by mistake:
+- Text "Send media file /sdcard/Download/send_media_test.txt to My Heartbeat on WhatsApp" was delivered to the WhatsApp Business chat "My Heartbeat" (w4b). It was a test request that should not have been sent. Cause: the phrase reached plain send_message, not send_media, and no confirmation dialog appeared. Action: inform the contact owner if needed.
+
+Security findings (fixed in code, built, unit tests pass, NOT yet device-verified):
+1. Tier-1 direct tools (PipelineRouter.executeTool) bypassed SafetyGate: no confirmation for risky tools (send_message, send_file, make_call). Fix: PipelineRouter.executeTool now calls SafetyGate.evaluate before running the tool. The agent loop already calls SafetyGate, so no double prompt.
+2. ForegroundService.onCreate skipped startForeground when notification permission was missing, causing ForegroundServiceDidNotStartInTimeException (observed once). Fix: always call startForeground first, then stopSelf if permission missing.
+
+Feature work (built, unit-tested, device send NOT verified):
+- New tool SendMediaTool (send_media): opens app, finds contact, taps Attach then Document, picks file by name. Classified SEND_MESSAGE in RiskClassifier.
+- TaskParser.matchSendMedia routes "send media file <path> to <contact> [on <app>]" to send_media. Unit tests added in TaskParserTest.
+- OpenAppTool: WhatsApp resolves to whichever package is installed (com.whatsapp or com.whatsapp.w4b).
+
+Input focus issue (open, not solved):
+- On this phone, text typed via adb into the chat input goes to the fallback input connection (mServedView=null). The input never gets focus, so the text does not land in the field the send uses.
+- Gesture fix applied in ChatScreen.dismissKeyboardOnBackgroundTap (do not clear focus on a consumed tap). Built and installed; did NOT resolve the adb typing problem.
+- Manual typing on the phone works: the text appeared in the field and was verified by UI dump.
+
+Security checklist status (from the user's list):
+- QP3: switch "Confirm sending files" set OFF and shown as "Disabled / موقوف". Behaviour not verified (no real send_file path from chat).
+- QP5, QP6, IJ1, IJ2, QV3, QV4: NOT run.
+
+Next steps (new chat):
+1. Confirm that the Tier-1 SafetyGate fix shows a confirmation dialog before a send (device test with a harmless target the user chooses).
+2. Verify send_media end to end with a test contact the user approves.
+3. Run QP5, QP6, IJ1, IJ2, QV3, QV4.
+4. Resolve adb/IME focus issue or test manual typing flow.
+5. No release until 1-4 are done.

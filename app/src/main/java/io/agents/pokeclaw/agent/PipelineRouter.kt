@@ -103,6 +103,13 @@ class PipelineRouter(private val context: Context) {
      * Execute a Tier 1 direct tool call.
      */
     fun executeTool(toolName: String, params: Map<String, Any>): ToolResult {
+        // Tier 1 tools skip the agent loop, so they must pass the same safety gate the agent uses:
+        // blocklist first, then confirmation for risky tools when their switch is on.
+        val decision = io.agents.pokeclaw.safety.SafetyGate.evaluate(toolName, params, "tier1:$toolName")
+        if (!decision.allow) {
+            XLog.w(TAG, "Tier 1 tool blocked by safety gate: $toolName")
+            return ToolResult.error(decision.message ?: "Blocked by safety settings")
+        }
         val result = ToolRegistry.getInstance().executeTool(toolName, params)
         XLog.i(TAG, "Executed tool: $toolName → ${if (result.isSuccess) "success" else result.error}")
         return result

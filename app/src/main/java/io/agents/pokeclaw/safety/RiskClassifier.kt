@@ -32,6 +32,8 @@ object RiskClassifier {
     private val riskyTools: Map<String, RiskKind> = mapOf(
         "send_message" to RiskKind.SEND_MESSAGE,
         "send_file" to RiskKind.SEND_FILE,
+        // Attaching a file to a contact is a message to a person: same switch as send_message.
+        "send_media" to RiskKind.SEND_MESSAGE,
         "make_call" to RiskKind.CALL,
         "search_app_in_store" to RiskKind.INSTALL,
     )

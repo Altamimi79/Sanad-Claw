@@ -212,6 +212,11 @@
             android:name=".ui.settings.ActionLogActivity"
             android:exported="false" />
 
+        <!-- Scheduled routines (roadmap item 8): reminder-only, never exported. -->
+        <activity
+            android:name=".ui.settings.RoutinesActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

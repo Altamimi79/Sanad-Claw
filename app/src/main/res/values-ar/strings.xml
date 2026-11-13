@@ -149,7 +149,7 @@
     <string name="about_app_name">سند كلو</string>
     <string name="about_version_label">الإصدار</string>
     <string name="about_check_update">التحقق من التحديثات</string>
-    <string name="about_check_update_hint">يفتح صفحة الإصدارات. لا يتم التنزيل تلقائياً.</string>
+    <string name="about_check_update_hint">يفحص GitHub الآن ويعرض الإصدار الجديد وما تغيّر. لا يتم التنزيل تلقائياً.</string>
     <string name="about_github">مستودع GitHub</string>
     <string name="about_github_hint">الكود المصدري والإصدارات والتوثيق</string>
     <string name="about_report_issue">الإبلاغ عن مشكلة</string>
@@ -503,4 +503,22 @@
     <string name="llm_cloud_suffix">سحابي</string>
     <string name="llm_no_default_cloud_model">لا يوجد نموذج سحابي افتراضي</string>
     <string name="llm_downloaded_done">تم التحميل!</string>
+    <string name="msg_actions_title">الرسالة</string>
+    <string name="routines_title">الروتينات</string>
+    <string name="routines_empty">لا توجد روتينات بعد. أضف واحداً لتصلك تذكرة في وقت محدد.</string>
+    <string name="routines_add">إضافة روتين</string>
+    <string name="routines_enable">تفعيل</string>
+    <string name="routines_disable">تعطيل</string>
+    <string name="routines_delete">حذف</string>
+    <string name="routines_save">حفظ</string>
+    <string name="routines_field_name">الاسم</string>
+    <string name="routines_field_prompt">ماذا تريد أن تقول لك التذكرة؟</string>
+    <string name="routines_field_time">الوقت (HH:mm، بنظام 24 ساعة)</string>
+    <string name="routines_error_missing">أدخل الاسم والنص.</string>
+    <string name="routines_error_time">أدخل وقتاً صحيحاً مثل 08:30.</string>
+    <string name="routines_error_days">اختر يوماً واحداً على الأقل.</string>
+    <string name="routines_saved">تم حفظ الروتين.</string>
+    <string name="msg_action_copy">نسخ النص</string>
+    <string name="msg_action_delete">حذف الرسالة</string>
+    <string name="msg_action_cancel">إلغاء</string>
 </resources>

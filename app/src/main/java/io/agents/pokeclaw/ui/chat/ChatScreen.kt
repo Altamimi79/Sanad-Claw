@@ -20,6 +20,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -124,12 +126,15 @@ val AbyssDark = PokeclawColors(
     inputBorder = Color(0xFF1E293B),
 )
 
+// Taps on the background dismiss the keyboard only when the user tapped empty space.
+// A tap the input field or a button already consumed is left alone, so the input keeps focus.
 private fun Modifier.dismissKeyboardOnBackgroundTap(onDismissKeyboard: () -> Unit): Modifier =
     pointerInput(onDismissKeyboard) {
         awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
+            val down = awaitFirstDown(requireUnconsumed = false)
+            if (down.isConsumed) return@awaitEachGesture
             val up = waitForUpOrCancellation()
-            if (up != null) {
+            if (up != null && !up.isConsumed) {
                 onDismissKeyboard()
             }
         }
@@ -151,6 +156,7 @@ fun ChatScreen(
     sessionTokens: Int = 0,
     sessionCost: Double = 0.0,
     onSendChat: (String) -> Unit,
+    onDeleteMessage: (Int) -> Unit = {},
     onSendTask: (String) -> Unit,
     onStartMonitor: (MonitorTargetSpec) -> Unit = {},
     onSendDirectMessage: (contact: String, app: String, message: String) -> Unit = { _, _, _ -> },
@@ -361,6 +367,7 @@ fun ChatScreen(
                             messages = messages,
                             colors = colors,
                             onBackgroundTap = dismissKeyboard,
+                            onDeleteMessage = onDeleteMessage,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -646,9 +653,12 @@ private fun MessageList(
     messages: List<ChatMessage>,
     colors: PokeclawColors,
     onBackgroundTap: () -> Unit = {},
+    onDeleteMessage: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    var actionIndex by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(messages.size) {
@@ -669,12 +679,45 @@ private fun MessageList(
         items(messages.size) { index ->
             val message = messages[index]
             when (message.role) {
-                ChatMessage.Role.USER -> UserBubble(message.content, message.timestamp, colors)
-                ChatMessage.Role.ASSISTANT -> AssistantBubble(message.content, message.timestamp, colors, message.modelName)
+                ChatMessage.Role.USER -> Box(Modifier.combinedClickable(onClick = {}, onLongClick = { actionIndex = index })) {
+                    UserBubble(message.content, message.timestamp, colors)
+                }
+                ChatMessage.Role.ASSISTANT -> Box(Modifier.combinedClickable(onClick = {}, onLongClick = { actionIndex = index })) {
+                    AssistantBubble(message.content, message.timestamp, colors, message.modelName)
+                }
                 ChatMessage.Role.SYSTEM -> SystemMessage(message.content, colors)
                 ChatMessage.Role.TOOL_GROUP -> ToolGroup(message, colors)
             }
         }
+    }
+
+    actionIndex?.let { index ->
+        val target = messages.getOrNull(index)
+        AlertDialog(
+            onDismissRequest = { actionIndex = null },
+            title = { Text(stringResource(R.string.msg_actions_title)) },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            target?.let { clipboard.setText(AnnotatedString(it.content)) }
+                            actionIndex = null
+                        },
+                    ) { Text(stringResource(R.string.msg_action_copy)) }
+                    TextButton(
+                        onClick = {
+                            onDeleteMessage(index)
+                            actionIndex = null
+                        },
+                    ) { Text(stringResource(R.string.msg_action_delete)) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { actionIndex = null }) {
+                    Text(stringResource(R.string.msg_action_cancel))
+                }
+            },
+        )
     }
 }
 
@@ -692,13 +735,15 @@ private fun UserBubble(text: String, timestamp: Long, colors: PokeclawColors) {
                 color = colors.userBubble,
                 shape = RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp),
             ) {
-                Text(
-                    text = text,
-                    color = colors.userText,
-                    fontSize = 15.sp,
-                    lineHeight = 21.sp,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                )
+                SelectionContainer {
+                    Text(
+                        text = text,
+                        color = colors.userText,
+                        fontSize = 15.sp,
+                        lineHeight = 21.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    )
+                }
             }
         }
         Text(
@@ -751,16 +796,18 @@ private fun AssistantBubble(text: String, timestamp: Long, colors: PokeclawColor
                     shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp),
                     border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.aiBubbleBorder),
                 ) {
-                    MarkdownText(
-                        markdown = text,
-                        color = colors.aiText,
-                        style = TextStyle(
-                fontSize = 15.sp,
-                lineHeight = 21.sp,
-                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-            ),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    )
+                    SelectionContainer {
+                        MarkdownText(
+                            markdown = text,
+                            color = colors.aiText,
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                lineHeight = 21.sp,
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            ),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        )
+                    }
                 }
             }
         }

@@ -148,7 +148,7 @@
     <string name="about_app_name">Sanad Claw</string>
     <string name="about_version_label">Version</string>
     <string name="about_check_update">Check for updates</string>
-    <string name="about_check_update_hint">Opens the releases page. Nothing is downloaded automatically.</string>
+    <string name="about_check_update_hint">Checks GitHub now. Shows the new version and what changed. Nothing is downloaded automatically.</string>
     <string name="about_github">GitHub repository</string>
     <string name="about_github_hint">Source code, releases and documentation</string>
     <string name="about_report_issue">Report an issue</string>
@@ -502,4 +502,22 @@
     <string name="llm_cloud_suffix">Cloud</string>
     <string name="llm_no_default_cloud_model">No default cloud model</string>
     <string name="llm_downloaded_done">Downloaded!</string>
+    <string name="msg_actions_title">Message</string>
+    <string name="routines_title">Routines</string>
+    <string name="routines_empty">No routines yet. Add one to get a reminder at a set time.</string>
+    <string name="routines_add">Add routine</string>
+    <string name="routines_enable">Enable</string>
+    <string name="routines_disable">Disable</string>
+    <string name="routines_delete">Delete</string>
+    <string name="routines_save">Save</string>
+    <string name="routines_field_name">Name</string>
+    <string name="routines_field_prompt">What should the reminder say?</string>
+    <string name="routines_field_time">Time (HH:mm, 24-hour)</string>
+    <string name="routines_error_missing">Enter a name and a prompt.</string>
+    <string name="routines_error_time">Enter a valid time like 08:30.</string>
+    <string name="routines_error_days">Select at least one day.</string>
+    <string name="routines_saved">Routine saved.</string>
+    <string name="msg_action_copy">Copy text</string>
+    <string name="msg_action_delete">Delete message</string>
+    <string name="msg_action_cancel">Cancel</string>
 </resources>

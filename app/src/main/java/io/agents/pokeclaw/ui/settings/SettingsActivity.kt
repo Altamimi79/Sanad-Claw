@@ -12,7 +12,6 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -30,13 +29,9 @@ import io.agents.pokeclaw.AppCapabilityCoordinator
 import io.agents.pokeclaw.AppRequirement
 import io.agents.pokeclaw.appViewModel
 import io.agents.pokeclaw.server.ConfigServerManager
-import io.agents.pokeclaw.service.ForegroundService
-import io.agents.pokeclaw.support.DebugReportManager
 import io.agents.pokeclaw.utils.KVUtils
 import io.agents.pokeclaw.utils.XLog
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Settings screen
@@ -45,8 +40,6 @@ class SettingsActivity : BaseActivity() {
 
     companion object {
         /** Repository that owns this fork's releases and issues. */
-        private const val REPO_URL = "https://github.com/Altamimi79/Sanad-Claw"
-        private const val RELEASES_URL = "https://github.com/Altamimi79/Sanad-Claw/releases"
     }
 
     // Poll permissions every second (same as original HomeActivity)
@@ -679,6 +672,13 @@ class SettingsActivity : BaseActivity() {
             leadingIcon = android.R.drawable.ic_menu_sort_by_size,
             title = getString(R.string.safety_action_log_setting),
             onClick = { startActivity(Intent(this, ActionLogActivity::class.java)) },
+            showDivider = true
+        )
+
+        toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_today,
+            title = getString(R.string.routines_title),
+            onClick = { startActivity(Intent(this, io.agents.pokeclaw.ui.settings.RoutinesActivity::class.java)) },
             showDivider = false
         )
 
@@ -741,56 +741,12 @@ class SettingsActivity : BaseActivity() {
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_popup_sync,
             title = getString(R.string.about_check_update),
-            onClick = { openUrl(RELEASES_URL) },
-            showDivider = true
+            onClick = { io.agents.pokeclaw.utils.UpdateChecker.checkNow(this@SettingsActivity) },
+            showDivider = false
         ).apply {
             setTrailingText(getString(R.string.about_check_update_hint))
         }
 
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_share,
-            title = getString(R.string.about_github),
-            onClick = { openUrl(REPO_URL) },
-            showDivider = true
-        ).apply {
-            setTrailingText(getString(R.string.about_github_hint))
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_send,
-            title = getString(R.string.about_report_issue),
-            onClick = { reportBug() },
-            showDivider = true
-        ).apply {
-            setTrailingText(getString(R.string.about_report_issue_hint))
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_upload,
-            title = getString(R.string.share_debug_report_title),
-            onClick = { shareDebugReport() },
-            showDivider = true
-        ).apply {
-            setTrailingText("ZIP")
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_compass,
-            title = getString(R.string.about_developer),
-            onClick = { openUrl(REPO_URL) },
-            showDivider = true
-        ).apply {
-            setTrailingText(getString(R.string.about_base_fork))
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_info_details,
-            title = getString(R.string.built_by_title),
-            onClick = { openUrl(REPO_URL) },
-            showDivider = false
-        ).apply {
-            setTrailingText("Altamimi79")
-        }
     }
 
     private fun openUrl(url: String) {
@@ -799,141 +755,6 @@ class SettingsActivity : BaseActivity() {
         } catch (e: ActivityNotFoundException) {
             XLog.w("SettingsActivity", "No browser for $url")
             Toast.makeText(this, getString(R.string.about_no_browser), Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun reportBug() {
-        buildSupportBundle(
-            preparingToast = "Preparing bug report…"
-        ) { report ->
-            AlertDialog.show(
-                context = this@SettingsActivity,
-                title = "Bug report ready",
-                message = """
-                    ${report.name} is ready.
-
-                    Open GitHub Issue to file the bug now.
-                    If your browser or GitHub app makes attachment upload awkward, tap Share ZIP instead and send the report manually.
-                """.trimIndent(),
-                actionTitle = "Open GitHub Issue",
-                cancelTitle = "Share ZIP",
-                onAction = { openGitHubIssue(report) },
-                onCancel = {
-                    shareReportFile(
-                        report = report,
-                        chooserTitle = "Share bug report ZIP",
-                        subject = "PokeClaw bug report ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}",
-                        body = """
-                            Attach this ZIP to your GitHub issue:
-                            https://github.com/Altamimi79/Sanad-Claw/issues/new
-                        """.trimIndent()
-                    )
-                }
-            )
-        }
-    }
-
-    private fun shareDebugReport() {
-        buildSupportBundle(
-            preparingToast = "Preparing debug report…",
-        ) { report ->
-            shareReportFile(
-                report = report,
-                chooserTitle = "Share debug report",
-                subject = "PokeClaw debug report ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}",
-                body = "Attach this debug report when reporting a PokeClaw issue."
-            )
-        }
-    }
-
-    private fun buildSupportBundle(
-        preparingToast: String,
-        onReportReady: (java.io.File) -> Unit,
-    ) {
-        lifecycleScope.launch {
-            Toast.makeText(this@SettingsActivity, preparingToast, Toast.LENGTH_SHORT).show()
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    DebugReportManager.buildReport(this@SettingsActivity)
-                }
-            }.onSuccess { report ->
-                onReportReady(report)
-            }.onFailure { error ->
-                XLog.e("SettingsActivity", "Failed to build debug report", error)
-                Toast.makeText(this@SettingsActivity, "Failed to build debug report", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun openGitHubIssue(report: java.io.File) {
-        val issueUri = "https://github.com/Altamimi79/Sanad-Claw/issues/new".toUri()
-            .buildUpon()
-            .appendQueryParameter(
-                "title",
-                "[Bug] ${Build.MANUFACTURER} ${Build.MODEL} - "
-            )
-            .appendQueryParameter("body", buildGitHubIssueBody(report))
-            .build()
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, issueUri))
-            Toast.makeText(
-                this,
-                "Attach ${report.name} to the GitHub issue after the page opens",
-                Toast.LENGTH_LONG
-            ).show()
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "No app available to open GitHub", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun buildGitHubIssueBody(report: java.io.File): String {
-        return """
-            ## What happened
-            -
-
-            ## What you expected
-            -
-
-            ## Exact steps to reproduce
-            1.
-            2.
-            3.
-
-            ## Device
-            - Manufacturer: ${Build.MANUFACTURER}
-            - Model: ${Build.MODEL}
-            - Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
-
-            ## Attachments
-            - Attach this ZIP from PokeClaw: `${report.name}`
-            - If this looks device-specific and you have ADB available, also attach `adb logcat`
-
-            Generated by PokeClaw ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}.
-        """.trimIndent()
-    }
-
-    private fun shareReportFile(
-        report: java.io.File,
-        chooserTitle: String,
-        subject: String,
-        body: String,
-    ) {
-        val uri = FileProvider.getUriForFile(
-            this@SettingsActivity,
-            "${packageName}.fileprovider",
-            report
-        )
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/zip"
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra(Intent.EXTRA_TEXT, body)
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        try {
-            startActivity(Intent.createChooser(intent, chooserTitle))
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this@SettingsActivity, "No app available to share the report", Toast.LENGTH_LONG).show()
         }
     }
 

@@ -28,18 +28,30 @@ public class UpdateChecker {
     private static final String GITHUB_API = "https://api.github.com/repos/Altamimi79/Sanad-Claw/releases/latest";
     private static final long CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once per day
 
+    /** Automatic check: at most once per day. Shows a dialog only when a newer release exists. */
     public static void checkForUpdate(Activity activity) {
-        boolean debugBuild = (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-        XLog.d(TAG, "Checking for updates on " + (debugBuild ? "debug" : "release") + " build");
-
-        // Only check once per day
         long lastCheck = io.agents.pokeclaw.utils.KVUtils.INSTANCE.getLong("last_update_check", 0);
         long now = System.currentTimeMillis();
         if (now - lastCheck < CHECK_INTERVAL_MS) {
             XLog.d(TAG, "Skipping update check, last check was " + ((now - lastCheck) / 1000 / 60) + " min ago");
             return;
         }
+        runCheck(activity, true);
+    }
 
+    /**
+     * Manual check from the About screen. Ignores the daily limit. Always reports a result:
+     * a newer version dialog, an "up to date" message, or a network error message.
+     */
+    public static void checkNow(Activity activity) {
+        runCheck(activity, false);
+    }
+
+    private static void runCheck(Activity activity, boolean automatic) {
+        boolean debugBuild = (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        XLog.d(TAG, "Checking for updates (automatic=" + automatic + ") on " + (debugBuild ? "debug" : "release") + " build");
+
+        final long now = System.currentTimeMillis();
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 String currentVersion = activity.getPackageManager()
@@ -52,6 +64,7 @@ public class UpdateChecker {
 
                 if (conn.getResponseCode() != 200) {
                     XLog.w(TAG, "GitHub API returned " + conn.getResponseCode());
+                    reportFailure(activity, automatic, "GitHub responded with " + conn.getResponseCode());
                     return;
                 }
 
@@ -64,6 +77,7 @@ public class UpdateChecker {
                 JSONObject release = new JSONObject(sb.toString());
                 String latestTag = release.getString("tag_name").replaceFirst("^v", "").replaceFirst("-.*", "");
                 String downloadUrl = release.getString("html_url");
+                String notes = release.optString("body", "").trim();
 
                 XLog.i(TAG, "Current: " + currentVersion + ", Latest: " + latestTag);
 
@@ -71,13 +85,33 @@ public class UpdateChecker {
                 io.agents.pokeclaw.utils.KVUtils.INSTANCE.putLong("last_update_check", now);
 
                 if (isNewer(latestTag, currentVersion)) {
-                    activity.runOnUiThread(() -> showUpdateDialog(activity, latestTag, downloadUrl, debugBuild));
+                    activity.runOnUiThread(() -> showUpdateDialog(activity, latestTag, downloadUrl, notes, debugBuild));
+                } else if (!automatic) {
+                    activity.runOnUiThread(() -> showUpToDate(activity, currentVersion));
                 }
 
             } catch (Exception e) {
                 XLog.w(TAG, "Update check failed", e);
+                reportFailure(activity, automatic, "Could not check for updates. Check your internet connection.");
             }
         });
+    }
+
+    private static void reportFailure(Activity activity, boolean automatic, String reason) {
+        if (automatic) return; // automatic checks stay silent; the user asked for nothing
+        activity.runOnUiThread(() -> new AlertDialog.Builder(activity)
+                .setTitle("Update check failed")
+                .setMessage(reason)
+                .setPositiveButton("OK", null)
+                .show());
+    }
+
+    private static void showUpToDate(Activity activity, String currentVersion) {
+        new AlertDialog.Builder(activity)
+                .setTitle("No update available")
+                .setMessage("You are running the latest version (v" + currentVersion + ").")
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     /**
@@ -99,20 +133,21 @@ public class UpdateChecker {
         return false;
     }
 
-    private static void showUpdateDialog(Activity activity, String version, String url, boolean debugBuild) {
+    private static void showUpdateDialog(Activity activity, String version, String url, String notes, boolean debugBuild) {
         try {
             StringBuilder message = new StringBuilder()
-                    .append("PokeClaw v")
+                    .append("New version: v")
                     .append(version)
-                    .append(" is available. You are running an older version.\n\n")
-                    .append("Would you like to download the update?");
+                    .append("\n\nWhat's changed:\n")
+                    .append(notes.isEmpty() ? "No release notes were provided." : notes)
+                    .append("\n\nDo you want to update now?");
             if (debugBuild) {
                 message.append("\n\nThis build is debuggable. If Android blocks the install, uninstall the old debug build first, then install the new APK.");
             }
             new AlertDialog.Builder(activity)
-                    .setTitle("Update Available")
+                    .setTitle("Update available")
                     .setMessage(message.toString())
-                    .setPositiveButton("Download", (d, w) -> {
+                    .setPositiveButton("Update", (d, w) -> {
                         activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                     })
                     .setNegativeButton("Later", null)

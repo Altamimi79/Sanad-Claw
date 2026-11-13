@@ -3,6 +3,7 @@
 
 package io.agents.pokeclaw.safety
 
+import io.agents.pokeclaw.utils.XLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +21,8 @@ import java.util.concurrent.atomic.AtomicLong
 object SafetyCoordinator {
 
     private const val TAG = "SafetyCoordinator"
+    private const val UI_GRACE_MS = 15_000L
+    private const val UI_POLL_MS = 250L
 
     data class ConfirmationRequest(
         val id: Long,
@@ -45,8 +48,29 @@ object SafetyCoordinator {
 
     fun isUiAvailable(): Boolean = uiAvailable
 
+    /** Polls for UI availability for up to [graceMs]. Returns true as soon as the UI is back. */
+    private fun awaitUi(graceMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + graceMs
+        while (!uiAvailable) {
+            if (System.currentTimeMillis() >= deadline) return false
+            try {
+                Thread.sleep(UI_POLL_MS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return false
+            }
+        }
+        return true
+    }
+
     fun requestConfirmation(message: String, risk: String, timeoutMs: Long = 45_000L): Boolean {
-        if (!uiAvailable) return false
+        // The chat UI can be briefly unavailable (e.g. the activity is paused while the user is
+        // in Settings). Wait for it to return instead of denying immediately; deny only if it
+        // stays unavailable for the whole grace period. Risky actions still never run unattended.
+        if (!uiAvailable && !awaitUi(UI_GRACE_MS)) {
+            XLog.w(TAG, "confirmation denied: chat UI unavailable for ${UI_GRACE_MS}ms")
+            return false
+        }
         val request = ConfirmationRequest(ids.incrementAndGet(), message, risk)
         val newLatch = CountDownLatch(1)
         synchronized(this) {

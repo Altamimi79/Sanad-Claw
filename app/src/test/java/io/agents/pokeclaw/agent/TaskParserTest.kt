@@ -28,4 +28,24 @@ class TaskParserTest {
     fun `email commands do not route to messaging app tool`() {
         assertNull(TaskParser.parse("send email to nicole@example.com"))
     }
+
+    @Test
+    fun `send media with a file path routes to send_media tool`() {
+        val parsed = TaskParser.parse("send media file /sdcard/Download/report.pdf to Mom on WhatsApp")
+
+        assertNotNull(parsed)
+        assertEquals("send_media", parsed!!.action)
+        assertEquals("send_media", parsed.toolName)
+        assertEquals("/sdcard/Download/report.pdf", parsed.toolParams!!["file_path"])
+        assertEquals("Mom", parsed.toolParams!!["contact"])
+        assertEquals("WhatsApp", parsed.toolParams!!["app"])
+    }
+
+    @Test
+    fun `text message is not mistaken for a media send`() {
+        val parsed = TaskParser.parse("send hi to Mom on WhatsApp")
+
+        assertNotNull(parsed)
+        assertEquals("send_message", parsed!!.toolName)
+    }
 }

@@ -206,6 +206,13 @@ class ComposeChatActivity : ComponentActivity() {
                 sessionTokens = _sessionTokens.value,
                 sessionCost = _sessionCost.value,
                 onSendChat = { sendChat(it) },
+                onDeleteMessage = { index ->
+                    if (index in _messages.indices) {
+                        XLog.i("ChatScreen", "message deleted at index=$index")
+                        _messages.removeAt(index)
+                        saveChat()
+                    }
+                },
                 onSendTask = { taskFlowController.sendTask(it) },
                 onStartMonitor = { target -> taskFlowController.startMonitor(target) },
                 onSendDirectMessage = { contact, app, message ->
