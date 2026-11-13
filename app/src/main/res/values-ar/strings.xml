@@ -83,6 +83,7 @@
     <string name="cd_menu">القائمة</string>
     <string name="cd_settings">الإعدادات</string>
     <string name="cd_toggle_theme">تبديل الوضع الليلي والنهاري</string>
+    <string name="cd_attach">إرفاق صورة أو ملف</string>
     <string name="cd_switch_model">تبديل النموذج</string>
     <string name="cd_toggle">تبديل</string>
     <string name="action_rename">إعادة تسمية</string>
@@ -433,7 +434,7 @@
 
     <!-- Chat UI (phase 2) -->
     <string name="chat_tab_chat">دردشة</string>
-    <string name="chat_tab_task">مهمة</string>
+    <string name="chat_tab_task">الوكيل</string>
     <string name="chat_placeholder_chat">دردش مع الذكاء المحلي…</string>
     <string name="chat_placeholder_task">صف مهمة على الهاتف…</string>
     <string name="chat_placeholder_cloud">دردش أو اطلب مهمة…</string>

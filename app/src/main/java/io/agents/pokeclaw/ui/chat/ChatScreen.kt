@@ -1,4 +1,4 @@
-﻿// Copyright 2026 PokeClaw (agents.io). All rights reserved.
+// Copyright 2026 PokeClaw (agents.io). All rights reserved.
 // Licensed under the Apache License, Version 2.0.
 
 package io.agents.pokeclaw.ui.chat
@@ -35,6 +35,14 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberUpdatedState
@@ -993,6 +1001,40 @@ private fun ChatInputBar(
     // confirmation that appears later is not approvable by this utterance.
     var voiceCapturedConfirmId by remember { mutableStateOf<Long?>(null) }
 
+    // ---- Attachments (image / file) ----
+    var attachmentName by remember { mutableStateOf<String?>(null) }
+    var attachmentPath by remember { mutableStateOf<String?>(null) }
+    var attachmentIsImage by remember { mutableStateOf(false) }
+
+    val attachLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            try {
+                val resolver = context.contentResolver
+                var name = "attachment"
+                resolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (idx >= 0) cursor.getString(idx)?.let { name = it }
+                    }
+                }
+                val dir = java.io.File(context.cacheDir, "attachments").apply { mkdirs() }
+                val out = java.io.File(dir, System.currentTimeMillis().toString() + "_" + name)
+                resolver.openInputStream(uri)?.use { input ->
+                    out.outputStream().use { output -> input.copyTo(output) }
+                }
+                attachmentName = name
+                attachmentPath = out.absolutePath
+                attachmentIsImage = (resolver.getType(uri) ?: "").startsWith("image/")
+                XLog.i("ChatScreen", "attachment picked: $name image=$attachmentIsImage")
+            } catch (e: Exception) {
+                XLog.w("ChatScreen", "attachment pick failed: ${e.message}")
+                Toast.makeText(context, R.string.attach_not_supported, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     fun resetVoiceUi() {
         voiceCapturedConfirmId = null
         voiceStartedAt = 0L
@@ -1004,10 +1046,29 @@ private fun ChatInputBar(
     }
 
     fun sendCurrentMessage() {
-        if (!currentInputEnabled || currentIsAwaitingReply || currentTaskRunning || text.isBlank()) return
-        val message = text.trim()
-        if (isLocalModel && !isTaskMode) onSendChat(message) else onSendTask(message)
+        if (!currentInputEnabled || currentIsAwaitingReply || currentTaskRunning) return
+        var message = text.trim()
+        val path = attachmentPath
+        if (path != null) {
+            val name = attachmentName ?: "file"
+            if (attachmentIsImage) {
+                message += (if (message.isBlank()) "" else "\n\n") + "[Attached image: $path]"
+            } else {
+                val content = runCatching { java.io.File(path).readText().take(4000) }.getOrDefault("")
+                message += if (content.isNotBlank()) {
+                    (if (message.isBlank()) "" else "\n\n") + "[Attached file: $name]\n$content"
+                } else {
+                    (if (message.isBlank()) "" else "\n\n") + "[Attached file: $path]"
+                }
+            }
+        }
+        if (message.isBlank()) return
+        // Chat = pure conversation; Agent = device control. Independent of model kind.
+        if (isTaskMode) onSendTask(message) else onSendChat(message)
         text = ""
+        attachmentName = null
+        attachmentPath = null
+        attachmentIsImage = false
         focusManager.clearFocus()
         keyboardController?.hide()
     }
@@ -1212,61 +1273,65 @@ private fun ChatInputBar(
         }
     }
 
-    val taskBg = Color(0xFF1A1410)
+    val taskBg = if (ThemeManager.isDark()) Color(0xFF1A1410) else colors.aiBubble
     val taskBorder = colors.accent.copy(alpha = 0.25f)
 
     Column(
         modifier = Modifier
-            .background(if (isTaskMode && isLocalModel) taskBg else colors.surface)
+            .background(if (isTaskMode) taskBg else colors.surface)
             .navigationBarsPadding()
     ) {
         HorizontalDivider(
-            color = if (isTaskMode && isLocalModel) taskBorder else colors.divider,
+            color = if (isTaskMode) taskBorder else colors.divider,
             thickness = 1.dp,
         )
 
-        // Segmented Chat/Task toggle — Local LLM only
-        if (isLocalModel) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 10.dp, end = 10.dp, top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+        // Segmented Chat/Agent toggle (independent of model kind)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp, top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            // Chat button
+            Surface(
+                onClick = { onTaskModeChange(false) },
+                shape = RoundedCornerShape(10.dp),
+                color = if (!isTaskMode) colors.accent else Color.Transparent,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (!isTaskMode) colors.accent else colors.inputBorder
+                ),
+                modifier = Modifier.weight(1f),
             ) {
-                // Chat button
-                Surface(
-                    onClick = { onTaskModeChange(false) },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (!isTaskMode) colors.aiBubble else Color.Transparent,
-                    border = if (!isTaskMode) androidx.compose.foundation.BorderStroke(1.dp, colors.aiBubbleBorder) else null,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        "💬 " + stringResource(R.string.chat_tab_chat),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (!isTaskMode) colors.textPrimary else colors.textTertiary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 9.dp),
-                    )
-                }
-                // Task button
-                Surface(
-                    onClick = { onTaskModeChange(true) },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (isTaskMode) colors.accent else Color.Transparent,
-                    border = if (isTaskMode) androidx.compose.foundation.BorderStroke(1.dp, colors.accent) else null,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        "🤖 " + stringResource(R.string.chat_tab_task),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isTaskMode) Color.White else colors.textTertiary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 9.dp),
-                    )
-                }
+                Text(
+                    "💬 " + stringResource(R.string.chat_tab_chat),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (!isTaskMode) Color.White else colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 9.dp),
+                )
+            }
+            // Agent button
+            Surface(
+                onClick = { onTaskModeChange(true) },
+                shape = RoundedCornerShape(10.dp),
+                color = if (isTaskMode) colors.accent else Color.Transparent,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (isTaskMode) colors.accent else colors.inputBorder
+                ),
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    "🤖 " + stringResource(R.string.chat_tab_task),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isTaskMode) Color.White else colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 9.dp),
+                )
             }
         }
 
@@ -1321,6 +1386,55 @@ private fun ChatInputBar(
             )
         }
 
+        // Attachment chip (image / file)
+        attachmentName?.let { name ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = colors.aiBubble,
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, colors.inputBorder),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Icon(
+                            if (attachmentIsImage) Icons.Default.Image else Icons.Default.AttachFile,
+                            contentDescription = null,
+                            tint = colors.textSecondary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            name,
+                            fontSize = 11.sp,
+                            color = colors.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove attachment",
+                            tint = colors.textSecondary,
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clickable {
+                                    attachmentName = null
+                                    attachmentPath = null
+                                    attachmentIsImage = false
+                                },
+                        )
+                    }
+                }
+            }
+        }
+
         // Input bar — always visible, style changes in Task mode
         Row(
             modifier = Modifier
@@ -1334,31 +1448,58 @@ private fun ChatInputBar(
                 placeholder = {
                     Text(
                         when {
-                            isLocalModel && isTaskMode -> stringResource(R.string.chat_placeholder_task)
-                            !isLocalModel -> stringResource(R.string.chat_placeholder_cloud)
+                            isTaskMode -> stringResource(R.string.chat_placeholder_task)
                             else -> stringResource(R.string.chat_placeholder_chat)
                         },
-                        color = if (isTaskMode && isLocalModel) colors.accent.copy(alpha = 0.5f) else colors.textTertiary,
+                        color = if (isTaskMode) colors.accent.copy(alpha = 0.5f) else colors.textTertiary,
                         fontSize = 14.sp,
                     )
                 },
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 40.dp, max = 100.dp)
-                    .focusRequester(textFieldFocus),
+                    .focusRequester(textFieldFocus)
+                    .onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                            sendCurrentMessage()
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { sendCurrentMessage() }),
                 shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isTaskMode && isLocalModel) colors.accent else colors.accent.copy(alpha = 0.4f),
-                    unfocusedBorderColor = if (isTaskMode && isLocalModel) colors.accent.copy(alpha = 0.6f) else colors.inputBorder,
-                    cursorColor = if (isTaskMode && isLocalModel) colors.accent else colors.accent,
+                    focusedBorderColor = if (isTaskMode) colors.accent else colors.accent.copy(alpha = 0.4f),
+                    unfocusedBorderColor = if (isTaskMode) colors.accent.copy(alpha = 0.6f) else colors.inputBorder,
+                    cursorColor = if (isTaskMode) colors.accent else colors.accent,
                     focusedTextColor = colors.textPrimary,
                     unfocusedTextColor = colors.textPrimary,
-                    focusedContainerColor = if (isTaskMode && isLocalModel) taskBg else Color.Transparent,
-                    unfocusedContainerColor = if (isTaskMode && isLocalModel) taskBg else Color.Transparent,
+                    focusedContainerColor = if (isTaskMode) taskBg else Color.Transparent,
+                    unfocusedContainerColor = if (isTaskMode) taskBg else Color.Transparent,
                 ),
                 textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                 maxLines = 4,
             )
+
+            Spacer(Modifier.width(6.dp))
+
+            // Attach image/file button
+            FloatingActionButton(
+                onClick = { attachLauncher.launch(arrayOf("*/*")) },
+                modifier = Modifier.size(34.dp),
+                containerColor = colors.aiBubble,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+            ) {
+                Icon(
+                    Icons.Default.AttachFile,
+                    contentDescription = stringResource(R.string.cd_attach),
+                    tint = colors.textSecondary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
 
             Spacer(Modifier.width(6.dp))
 
@@ -1374,66 +1515,19 @@ private fun ChatInputBar(
                 modifier = Modifier
                     .size(34.dp)
                     .alpha(if (micEnabled) 1f else 0.35f),
-                containerColor = if (voiceActive || voiceProcessing) colors.accent.copy(alpha = 0.18f) else colors.background,
+                containerColor = if (voiceActive || voiceProcessing) colors.accent.copy(alpha = 0.18f) else colors.aiBubble,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
             ) {
                 Icon(
                     Icons.Default.Mic,
                     contentDescription = stringResource(R.string.voice_input_button_cd),
-                    tint = if (voiceActive || voiceProcessing) colors.accent else colors.textTertiary,
+                    tint = if (voiceActive || voiceProcessing) colors.accent else colors.textSecondary,
                     modifier = Modifier.size(16.dp),
                 )
             }
 
             Spacer(Modifier.width(6.dp))
-
-            FloatingActionButton(
-                onClick = {
-                    if (isTaskRunning) {
-                        onStopAll()
-                    } else if (!isAwaitingReply && inputEnabled && text.isNotBlank()) {
-                        if (!isLocalModel || isTaskMode) {
-                            onSendTask(text.trim())
-                            text = ""
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                        } else {
-                            onSendChat(text.trim())
-                            text = ""
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .size(34.dp)
-                    .alpha(if ((text.isBlank() || !inputEnabled || isAwaitingReply) && !isTaskRunning) 0.35f else 1f),
-                containerColor = when {
-                    isTaskRunning -> Color(0xFFF44336)
-                    isAwaitingReply -> colors.background
-                    text.isBlank() -> colors.background
-                    isTaskMode && isLocalModel -> colors.accent
-                    else -> colors.userBubble
-                },
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
-            ) {
-                Icon(
-                    when {
-                        isTaskRunning -> Icons.Default.Close
-                        isAwaitingReply -> Icons.Default.MoreHoriz
-                        else -> Icons.Default.ArrowUpward
-                    },
-                    contentDescription = when {
-                        isTaskRunning -> "Stop"
-                        isAwaitingReply -> "Waiting for reply"
-                        else -> "Send"
-                    },
-                    tint = Color.White,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
         }
     }
 }

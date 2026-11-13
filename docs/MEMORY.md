@@ -483,3 +483,9 @@ Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; us
 - Light themes: text colors now derive from each palette (no hardcoded warm brown on blue/green/neutral).
 - Models page: selected provider tab and model radios use the active theme accent instead of the generic purple.
 - Verified on device: theme toggle dark<->light, language toggle EN<->AR (RTL), Models light mode readable with orange accent.
+### Chat/Agent UX + attachments (2026-11-13)
+- Chat/Agent segmented control is now shown for every model (cloud included); active tab uses the accent color, inactive uses a border. Agent mode uses a theme-aware background in light themes.
+- Removed the send FAB. Sending is via Enter / IME Send (`KeyboardOptions(imeAction = Send)` + `onPreviewKeyEvent`).
+- Attach button opens the system document picker (OpenDocument, "*/*"), copies the file to cache/attachments, and shows a removable chip. Text files are inlined (up to 4000 chars); images are referenced by path.
+- Verified on device: Enter sends in Chat mode ("what is 2 plys 2" -> "2 plus 2 is 4."), attach opens DocumentsUI, Chat/Agent colors are clear in light mode.
+- Note: GetContent("*/*") could resolve to WhatsApp once; switched to OpenDocument.

@@ -8,8 +8,13 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 - User-selectable update channel in Settings → About: **Stable** or **Beta**. Persisted in `KVUtils`; defaults to Beta on dev/rc builds.
 - `UpdateChecker` now reads `/releases/latest` on Stable and `/releases` (newest, including pre-releases) on Beta.
 - Chat toolbar quick toggles: sun/moon **theme switch** and **EN/ع language switch** (replaces the settings icon; Settings stays in the sidebar).
+- **Chat / Agent sections** are now available for every model (cloud included) with a clear segmented control (active = accent, inactive = bordered).
+- **Attachments**: an attach button in the composer opens the system document picker, copies the file to the app cache, and shows a removable chip. Text files are inlined into the message; images are referenced by path.
+- **Enter sends**: the keyboard action is `Send` and Enter (hardware or IME) submits the message.
 
 ### Changed
+- Removed the send FAB; sending is via Enter / IME Send (mic + attach remain).
+- Agent mode uses a theme-aware background in light themes (no hardcoded dark bar).
 - **Default UI language is now English.** Choosing Arabic is remembered until the next app update; an update resets the language to English (`AppLocale.applyUpdateLanguageReset`).
 - Voice dictation is more patient: silence complete 3.0 s / possibly-complete 2.0 s / minimum 1.5 s, and the hard cap is 120 s (was 60 s).
 - Light themes derive text colors from each palette instead of forcing warm brown onto blue/green/neutral themes.
