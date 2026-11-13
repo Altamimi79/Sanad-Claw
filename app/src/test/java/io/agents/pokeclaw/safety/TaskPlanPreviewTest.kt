@@ -72,6 +72,12 @@ class TaskPlanPreviewTest {
     }
 
     @Test
+    fun previewOff_doesNotRequireApproval_keepingDefaultBehavior() {
+        assertFalse(TaskPlanPreview.requiresPreview(previewEnabled = false))
+        assertTrue(TaskPlanPreview.requiresPreview(previewEnabled = true))
+    }
+
+    @Test
     fun noSensitiveSteps_reportsFalse() {
         val plan = TaskPlanPreview.buildPlan(listOf("open settings"), noSensitive)
         assertFalse(plan.hasSensitiveSteps)

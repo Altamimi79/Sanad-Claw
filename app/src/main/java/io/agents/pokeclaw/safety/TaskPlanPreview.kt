@@ -59,6 +59,12 @@ object TaskPlanPreview {
         }
     }
 
+    /**
+     * Whether a task must wait for plan approval. Off by default. Disabled previews run the
+     * task directly, exactly as before this gate existed.
+     */
+    fun requiresPreview(previewEnabled: Boolean): Boolean = previewEnabled
+
     /** Removes control, bidi-override and zero-width characters, collapses spaces, caps length. */
     internal fun sanitize(raw: String): String {
         val noControl = buildString {

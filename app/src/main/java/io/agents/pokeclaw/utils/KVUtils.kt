@@ -454,6 +454,12 @@ object KVUtils {
     fun isVoiceAutoSendEnabled(): Boolean = getBoolean(KEY_VOICE_AUTO_SEND, false)
     fun setVoiceAutoSendEnabled(enabled: Boolean) = putBoolean(KEY_VOICE_AUTO_SEND, enabled)
 
+    // ==================== Plan preview (roadmap item 5) ====================
+    private const val KEY_PLAN_PREVIEW = "KEY_PLAN_PREVIEW_BEFORE_RUN"
+    /** When true, a task shows a plan and waits for approval before running; default false. */
+    fun isPlanPreviewEnabled(): Boolean = getBoolean(KEY_PLAN_PREVIEW, false)
+    fun setPlanPreviewEnabled(enabled: Boolean) = putBoolean(KEY_PLAN_PREVIEW, enabled)
+
     // ==================== Global Prompt (#45) ====================
     // User-defined persistent instructions prepended to every system prompt.
     // Empty string = disabled. No separate enable toggle by design (less to misconfigure).
