@@ -153,15 +153,35 @@ class DefaultAgentService : AgentService {
         }
 
         // Plan preview (roadmap item 5). Off by default: the task runs exactly as before.
+        // The gate runs on the background executor: it makes a network call and blocks
+        // waiting for approval, neither of which may happen on the UI thread.
         if (io.agents.pokeclaw.safety.TaskPlanPreview.requiresPreview(
                 io.agents.pokeclaw.utils.KVUtils.isPlanPreviewEnabled(),
             )
         ) {
-            if (!awaitPlanApproval(userPrompt)) {
-                XLog.i(TAG, "Plan preview: not approved, task not started")
-                callback.onError(0, RuntimeException(ClawApplication.instance.getString(R.string.plan_preview_denied)), 0)
-                return
+            running.set(true)
+            cancelled.set(false)
+            taskFuture = executor?.submit {
+                try {
+                    if (awaitPlanApproval(userPrompt)) {
+                        running.set(false)
+                        startRun(userPrompt, callback)
+                    } else {
+                        XLog.i(TAG, "Plan preview: not approved, task not started")
+                        running.set(false)
+                        callback.onError(
+                            0,
+                            RuntimeException(ClawApplication.instance.getString(R.string.plan_preview_denied)),
+                            0,
+                        )
+                    }
+                } catch (e: Exception) {
+                    running.set(false)
+                    XLog.e(TAG, "Plan preview failed", e)
+                    callback.onError(0, e, 0)
+                }
             }
+            return
         }
 
         startRun(userPrompt, callback)
