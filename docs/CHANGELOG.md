@@ -9,6 +9,7 @@ Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md`
 
 ### Fixed
 - UpdateChecker: version comparison now strips -dev/-rc/-beta suffixes before parsing, so a stable release correctly wins over a prerelease of the same base, and 1.0.3-dev-5 no longer breaks Integer.parseInt. The latest-tag read no longer strips the prerelease suffix (so the dialog shows the real tag).
+- CI: upgraded `android-actions/setup-android` from v3 to v4 and pinned `platform-tools platforms;android-36 build-tools;36.0.0`. This fixes the "Setup Android SDK" failure that blocked every release run (Google removed the `tools` package that v3 relied on).
 
 ### Changed
 - Version bumped to 1.0.3-dev-6 (code 107).

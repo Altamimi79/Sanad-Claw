@@ -464,3 +464,8 @@ Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; us
 - Signed release: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB), SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD.
 - Tests: 318 / 57 classes / 0 failures.
 - Latest GitHub release before this: v1.0.2; the in-app check correctly reports "no update" for 1.0.3-dev-5 because 1.0.2 < 1.0.3.
+### Final cleanup + publish (2026-11-13)
+- CI root cause fixed: ndroid-actions/setup-android@v3 -> @v4 + pinned packages platform-tools platforms;android-36 build-tools;36.0.0. SDK setup now passes; the only remaining CI blocker is the four signing secrets (ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD).
+- Release published manually via the GitHub API because the Actions secrets are not configured: tag 1.0.3-dev-6 (prerelease), asset SanadClaw_v1.0.3-dev-6_20261113_173020.apk (102 MB, SHA-256 CD9A0B82FC9419ECBBCE9394CE86E5C4FF4D9B35B1E1994551F945B97BD3A0CD).
+- Signing material kept in keys/ (gitignored): sanad-release.jks, KEYSTORE_INFO.txt, GITHUB_SECRETS.txt (copy-paste values for the four Actions secrets).
+- Cleanup: gradlew clean, temp capture files, and the device-side exported action log removed. Keystore and secrets file intentionally kept.
