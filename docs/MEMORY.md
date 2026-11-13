@@ -245,3 +245,11 @@ Readiness snapshot: **~72% overall** / **~90% for daily cloud-chat use** (UI 90,
 - app/build.gradle.kts still modified (testOptions line from an earlier phase); not committed; decision pending.
 - No QV10 added: QV3 already covers the scenario. Device QA NOT EXECUTED.
 
+
+## Handoff (2026-11-13)
+
+- Current HEAD on sanad/dev-1.0.3: 14b719c (pushed). Tags v1.0.3-dev and v1.0.3-dev-2 on origin.
+- Pre-release v1.0.3-dev-2 published with APK + SHA-256 (verified after download). Latest stays v1.0.2.
+- Device QA: NOT EXECUTED (no device at build time).
+- Resume instructions: docs/RESUME.md.
+
