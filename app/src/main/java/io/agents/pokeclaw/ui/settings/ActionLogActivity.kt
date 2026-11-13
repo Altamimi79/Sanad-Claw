@@ -103,7 +103,7 @@ class ActionLogActivity : BaseActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
             ).apply { setMargins(dp(14), dp(6), dp(14), 0) }
-            setOnClickListener { exportLauncher.launch("pokeclaw-action-log.txt") }
+            setOnClickListener { exportLauncher.launch("sanadclaw-action-log.txt") }
         }
         root.addView(exportBtn)
 

@@ -2146,7 +2146,7 @@ private fun TaskSkillsPanel(
                 modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
             ) {
                 Text(
-                    "Experimental — more workflows coming soon",
+                    stringResource(R.string.skills_experimental_badge),
                     fontSize = 11.sp,
                     color = colors.accent,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -2161,7 +2161,7 @@ private fun TaskSkillsPanel(
             SkillCard(
                 icon = Icons.AutoMirrored.Outlined.Send,
                 title = stringResource(R.string.skill_send_message),
-                description = "Send a message to someone via any messaging app",
+                description = stringResource(R.string.skill_send_message_desc),
                 onClick = onSendClick,
                 colors = colors,
             )
@@ -2528,9 +2528,9 @@ private fun SendMessageDialog(
         },
         text = {
             Column {
-                Text("With a smarter LLM, you can just type:", fontSize = 11.sp, color = colors.textTertiary)
+                Text(stringResource(R.string.send_smart_llm_hint), fontSize = 11.sp, color = colors.textTertiary)
                 Spacer(Modifier.height(2.dp))
-                Text("\"send hi to Mom on WhatsApp\"", fontSize = 11.sp, color = colors.accent.copy(alpha = 0.7f))
+                Text(stringResource(R.string.send_example_phrase), fontSize = 11.sp, color = colors.accent.copy(alpha = 0.7f))
                 Spacer(Modifier.height(16.dp))
 
                 // Fill-in-the-blank: "Send [___] to [___] on [WhatsApp ▾]"
@@ -2538,12 +2538,12 @@ private fun SendMessageDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Send ", fontSize = 15.sp, color = colors.textPrimary)
+                    Text(stringResource(R.string.send_word_send), fontSize = 15.sp, color = colors.textPrimary)
                     Text("\"", fontSize = 15.sp, color = colors.textTertiary)
                     OutlinedTextField(
                         value = message,
                         onValueChange = { message = it },
-                        placeholder = { Text("message", color = colors.textTertiary, fontSize = 14.sp) },
+                        placeholder = { Text(stringResource(R.string.send_placeholder_message), color = colors.textTertiary, fontSize = 14.sp) },
                         modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
@@ -2563,11 +2563,11 @@ private fun SendMessageDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("to ", fontSize = 15.sp, color = colors.textPrimary)
+                    Text(stringResource(R.string.send_word_to), fontSize = 15.sp, color = colors.textPrimary)
                     OutlinedTextField(
                         value = contact,
                         onValueChange = { contact = it },
-                        placeholder = { Text("name", color = colors.textTertiary, fontSize = 14.sp) },
+                        placeholder = { Text(stringResource(R.string.send_placeholder_name), color = colors.textTertiary, fontSize = 14.sp) },
                         modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
@@ -2580,7 +2580,7 @@ private fun SendMessageDialog(
                             unfocusedTextColor = colors.textPrimary,
                         ),
                     )
-                    Text(" on ", fontSize = 15.sp, color = colors.textPrimary)
+                    Text(stringResource(R.string.send_word_on), fontSize = 15.sp, color = colors.textPrimary)
                     Box {
                         Surface(
                             onClick = { appMenuExpanded = true },

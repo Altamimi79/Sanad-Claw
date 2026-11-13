@@ -186,7 +186,9 @@ public class OpenAppTool extends BaseTool {
     private String resolveAppName(String appName) {
         String lower = appName.toLowerCase().trim();
         // WhatsApp has two packages (consumer and Business). Use whichever is installed.
-        if (lower.equals("whatsapp") || lower.equals("whatsapp business")) {
+        // "WA Business" is the label get_installed_apps returns for com.whatsapp.w4b.
+        if (lower.equals("whatsapp") || lower.equals("whatsapp business")
+                || lower.equals("wa business")) {
             return installedPackage("com.whatsapp", "com.whatsapp.w4b");
         }
         // Common app name → package name mapping

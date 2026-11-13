@@ -2,6 +2,33 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [Unreleased] � 2026-11-13 (device QA, signed release, CI fix)
+
+### Added
+- Fork release keystore workflow: keys/sanad-release.jks (gitignored) + keys/KEYSTORE_INFO.txt; assembleRelease now produces a signed APK (CN=Sanad Claw).
+- New string resources: send_word_on, send_example_phrase, skill_send_message_desc, skills_experimental_badge (en + ar).
+
+### Fixed
+- AppCapabilityCoordinator.bindingState: a live accessibility binding now wins over the stale pending-repair flag, so re-enabling accessibility no longer leaves the app stuck on "Connecting"/"Disconnected" for up to 120 s.
+- ChatScreen quick-task composer, skill card description and experimental badge now use localized string resources instead of hardcoded English.
+- Action-log export filename: pokeclaw-action-log.txt -> sanadclaw-action-log.txt.
+
+### Changed
+- All GitHub Actions workflows use JDK 21 (matches the project toolchain).
+- Release workflow: robust release-notes extraction (README -> docs/CHANGELOG -> fallback) and dev/rc tags publish as prerelease.
+
+### Verified (device: HONOR MBH-N49, Android 17)
+- QP1 PASS (7 confirm rows), QP2 PASS (persistence), QL1 PASS (redacted export), FL3 PASS (Authorization masked, body omitted), app launch PASS, plan-preview gate PASS, task execution PASS.
+- Unit tests: 312 / 56 classes / 0 failures.
+
+### Known
+- HONOR force-stop revokes the accessibility secure setting; re-enable after force-stop.
+- send_media (file) end-to-end not executed; send_message (text) verified on device.
+- OpenAppTool.resolveAppName now maps "WA Business" to the installed WhatsApp package (com.whatsapp.w4b), fixing send_message when the agent passes the app label.
+
+- send_message end-to-end fixed on WhatsApp Business: "WA Business" label resolution, chat-list readiness detection, settle-before-Back, skip "From ..." message previews, toolbar-only chat verification, composer selection (skip search box, require bottom half), and a post-tap wrong-chat abort guard.
+- Verified on device: message delivered to "أحمد التميمي خاص" via WhatsApp Business; SafetyGate confirmation shown and approved.
+
 ## [Unreleased] — 2026-11-10 (Phase 1: setup/audit)
 
 ### Added

@@ -99,6 +99,10 @@
     <string name="send_placeholder_message">message</string>
     <string name="send_word_to">to </string>
     <string name="send_placeholder_name">name</string>
+    <string name="send_word_on"> on </string>
+    <string name="send_example_phrase">\"send hi to Mom on WhatsApp\"</string>
+    <string name="skill_send_message_desc">Send a message to someone via any messaging app</string>
+    <string name="skills_experimental_badge">Experimental — more workflows coming soon</string>
     <string name="quick_task_templates">Quick Task Templates</string>
     <string name="background_badge">BACKGROUND</string>
     <string name="monitor_auto_reply_title">Monitor &amp; Auto-Reply</string>

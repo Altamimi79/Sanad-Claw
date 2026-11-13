@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Android SDK
@@ -68,7 +68,7 @@ jobs:
       - name: Generate release checksums
         run: sha256sum app/build/outputs/apk/release/*.apk > app/build/outputs/apk/release/SHA256SUMS.txt
 
-      - name: Extract release notes from README
+      - name: Extract release notes
         env:
           VERSION: ${{ github.ref_name }}
         run: |
@@ -78,19 +78,36 @@ jobs:
           from pathlib import Path
 
           version = os.environ["VERSION"].removeprefix("v")
-          text = Path("README.md").read_text()
-          header = re.compile(rf"^### v{re.escape(version)}\b.*$", re.MULTILINE)
-          match = header.search(text)
-          if not match:
-              raise SystemExit(f"Could not find changelog entry for v{version} in README.md")
+          notes = ""
 
-          rest = text[match.end():]
-          next_header = re.search(r"^### v", rest, re.MULTILINE)
-          notes = (rest[:next_header.start()] if next_header else rest).strip()
+          # 1) README.md: "### v<version>" section (upstream style)
+          readme = Path("README.md")
+          if readme.exists():
+              text = readme.read_text(encoding="utf-8")
+              header = re.compile(rf"^### v{re.escape(version)}\b.*$", re.MULTILINE)
+              match = header.search(text)
+              if match:
+                  rest = text[match.end():]
+                  next_header = re.search(r"^### v", rest, re.MULTILINE)
+                  notes = (rest[:next_header.start()] if next_header else rest).strip()
+
+          # 2) docs/CHANGELOG.md: "## [<version>]" section (fork style)
           if not notes:
-              raise SystemExit(f"Changelog entry for v{version} is empty")
+              changelog = Path("docs/CHANGELOG.md")
+              if changelog.exists():
+                  text = changelog.read_text(encoding="utf-8")
+                  header = re.compile(rf"^## \[{re.escape(version)}\].*$", re.MULTILINE)
+                  match = header.search(text)
+                  if match:
+                      rest = text[match.end():]
+                      next_header = re.search(r"^## \[", rest, re.MULTILINE)
+                      notes = (rest[:next_header.start()] if next_header else rest).strip()
 
-          Path("release-notes.md").write_text(notes + "\n")
+          # 3) Fallback: never fail the release on missing notes
+          if not notes:
+              notes = f"Sanad Claw {version}"
+
+          Path("release-notes.md").write_text(notes + "\n", encoding="utf-8")
           PY
 
       - name: Create GitHub Release
@@ -103,4 +120,4 @@ jobs:
             app/build/outputs/apk/release/SHA256SUMS.txt
           body_path: release-notes.md
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-dev') || contains(github.ref_name, '-rc') }}

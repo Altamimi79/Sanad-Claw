@@ -100,6 +100,10 @@
     <string name="send_placeholder_message">الرسالة</string>
     <string name="send_word_to">إلى </string>
     <string name="send_placeholder_name">الاسم</string>
+    <string name="send_word_on"> على </string>
+    <string name="send_example_phrase">\"أرسل مرحبًا إلى أمي على واتساب\"</string>
+    <string name="skill_send_message_desc">أرسل رسالة إلى أي شخص عبر أي تطبيق مراسلة</string>
+    <string name="skills_experimental_badge">تجريبي — المزيد من سير العمل قريبًا</string>
     <string name="quick_task_templates">مهام سريعة جاهزة</string>
     <string name="background_badge">في الخلفية</string>
     <string name="monitor_auto_reply_title">المراقبة والرد التلقائي</string>

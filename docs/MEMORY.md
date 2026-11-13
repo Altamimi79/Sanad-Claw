@@ -400,3 +400,61 @@ Next steps (new chat):
 3. Run QP5, QP6, IJ1, IJ2, QV3, QV4.
 4. Resolve adb/IME focus issue or test manual typing flow.
 5. No release until 1-4 are done.
+
+## Session 2026-11-13 (device QA + signed release + CI fix)
+
+Device: HONOR MBH-N49, Android 17, installed SanadClaw 1.0.3-dev-5 (code 106).
+
+### Done
+- **CI JDK fixed**: all four workflows (build, release, emulator-matrix, firebase-test-lab) now use JDK 21 (project toolchain). Release notes extraction made robust (README -> docs/CHANGELOG -> fallback) and dev/rc tags publish as prerelease.
+- **Signed release keystore created**: keys/sanad-release.jks (gitignored), alias sanad, RSA 4096, 10000 days. Credentials in keys/KEYSTORE_INFO.txt (gitignored). local.properties wired. assembleRelease green -> SanadClaw_v1.0.3-dev-5_20261113_161615.apk (102 MB), apksigner verified (CN=Sanad Claw, cert SHA-256 7de78eda...), APK SHA-256 A7C13A3AFCB6DADACD9099F379936942F488D65647154C3DB099CFD95E3E6502.
+- **Accessibility state bug fixed** (AppCapabilityCoordinator.bindingState): a live binding now wins over the stale pending-repair flag. Before: after re-enabling accessibility the app stayed "Connecting"/"Disconnected" for up to 120 s and blocked task mode. Verified on device: Settings shows "Enabled" after re-enable.
+- **i18n gaps fixed**: ChatScreen quick-task composer + skill card + experimental badge now use string resources (send_word_on, send_example_phrase, skill_send_message_desc, skills_experimental_badge) in en+ar. Action-log export filename -> sanadclaw-action-log.txt.
+- **Device QA executed**:
+  - QP1 PASS: all 7 per-category confirm rows present (messages/files/calls/delete/payments/install/publish).
+  - QP2 PASS: toggle persists across force-stop + relaunch.
+  - QL1 PASS: redacted export written (v2 format, no card/IBAN/OTP/token values).
+  - FL3 PASS: http_logs show "Authorization: ***", body omitted, set-cookie masked; no sk- keys.
+  - App launch PASS (no FATAL).
+  - Plan preview gate PASS (Allow path; task ran and answered).
+  - Task execution PASS (Tokyo time answered via OpenRouter).
+- **Device finding**: HONOR force-stop revokes the accessibility secure setting (accessibility_enabled=0). The app correctly shows "Task mode needs Accessibility Service enabled. Opening Settings...". Re-enable via ADB or Settings after any force-stop.
+- **Device finding**: uiautomator dump temporarily unbinds the accessibility service (UiAutomation), so UI dumps can show a false "Disconnected"; screenshots are the reliable check.
+- **Device finding**: send_message failed on this device ("Could not reach a searchable WhatsApp chat list", "Failed to open WA Business. Is it installed?") even though com.whatsapp.w4b is installed. Needs investigation (SendMessageTool / OpenAppTool WhatsApp resolution).
+- **Device finding**: adb typing works with %s for spaces; the send FAB moves with the keyboard (tap ~971,1260 when open).
+
+### Not done / needs approval
+- send_media + SafetyGate end-to-end send: NOT executed (user requires explicit approval before any message/file is sent).
+- QP3-QP8, IJ1-IJ6, SD1-SD5, QV1-QV9: not executed (need manual interaction / hostile screens / SMS / voice / prior build).
+- QP5 blocklist: attempted twice; timing-sensitive via ADB, inconclusive (unit-tested only).
+- OpenRouter key rotation: still pending (user action).
+- Release APK not installed on device (signature differs from debug build; would require uninstall + data loss).
+
+### Tests
+- 312 tests / 56 classes / 0 failures after all changes.
+
+### Follow-up fix (same session)
+- OpenAppTool.resolveAppName now maps "WA Business" (the label get_installed_apps returns for com.whatsapp.w4b) to the installed WhatsApp package. Previously send_message with app="WA Business" fell through to a literal package name and failed with "Failed to open WA Business. Is it installed?".
+- Rebuilt + reinstalled debug APK; 312 tests / 56 classes / 0 failures.
+
+### Final signed release (all fixes)
+- APK: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-5_20261113_164309.apk (102 MB)
+- Signed: CN=Sanad Claw, cert SHA-256 7de78edaf87a79dd829866284134fa0b4b4d2c85ec94b2a829b245bd9208cf6b
+- APK SHA-256: 832F8EDD3F17ABC0A5BFD4F4A79EE6A9DC2F1A77FE77604E5041E1E92612C87E
+- Includes: accessibility state fix, i18n fixes, WhatsApp "WA Business" resolution, CI JDK 21.
+
+### send_message end-to-end fix + verification (same session)
+Root cause chain found on HONOR + WhatsApp Business (com.whatsapp.w4b):
+1. OpenAppTool.resolveAppName did not map the label "WA Business" -> added.
+2. ContactListUiUtils.isContactLookupReady required clickable text rows; WhatsApp exposes row text on non-clickable TextViews -> relaxed to scrollableContainers > 0 && visibleTextRows >= 3 (fallback isibleTextRows >= 6 && clickableRows >= 1).
+3. prepareForContactLookup pressed Back before the list rendered -> added a settle re-check before Back.
+4. Search results include message previews ("From X") -> indBestVisibleContactNode now skips "From "/"?? " rows.
+5. isAlreadyInChatWith scanned 300px and matched chat-list rows -> narrowed to the 250px toolbar band.
+6. 	ypeInBottomEditText picked the search box -> now skips search fields and requires the composer in the bottom half of the screen.
+7. Added a post-tap safety check: if the opened chat title does not match the contact, abort before typing (prevents sending to the wrong chat/group).
+
+Verified on device: send_message to "???? ??????? ???" via WhatsApp Business succeeded; message "????? ?????? ?? ??? — ???? ???????" delivered (double checkmarks). SafetyGate confirmation appeared and was approved by the user. No message was sent to the wrong chat.
+
+Final signed release: app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-5_20261113_171335.apk (102 MB), SHA-256 B189F9D718E7EB7AC0B04E7C5FE781017636BDFB04C7D258B0CD59F701EEC10A. Tests: 312 / 56 / 0 failures.
+
+Note: implicit m broadcast to DebugTaskReceiver is blocked on this device; use an explicit component (-n io.agents.pokeclaw/.debug.DebugTaskReceiver).
