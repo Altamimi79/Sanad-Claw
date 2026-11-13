@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 public class UpdateChecker {
 
     private static final String TAG = "UpdateChecker";
-    private static final String GITHUB_API = "https://api.github.com/repos/agents-io/PokeClaw/releases/latest";
+    private static final String GITHUB_API = "https://api.github.com/repos/Altamimi79/Sanad-Claw/releases/latest";
     private static final long CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // Once per day
 
     public static void checkForUpdate(Activity activity) {

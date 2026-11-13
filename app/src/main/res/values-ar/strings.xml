@@ -146,6 +146,18 @@
     <string name="report_bug_title">الإبلاغ عن خطأ</string>
     <string name="share_debug_report_title">مشاركة تقرير التشخيص</string>
     <string name="built_by_title">طوَّره</string>
+    <string name="about_app_name">سند كلو</string>
+    <string name="about_version_label">الإصدار</string>
+    <string name="about_check_update">التحقق من التحديثات</string>
+    <string name="about_check_update_hint">يفتح صفحة الإصدارات. لا يتم التنزيل تلقائياً.</string>
+    <string name="about_github">مستودع GitHub</string>
+    <string name="about_github_hint">الكود المصدري والإصدارات والتوثيق</string>
+    <string name="about_report_issue">الإبلاغ عن مشكلة</string>
+    <string name="about_report_issue_hint">افتح بلاغاً على GitHub وأرفق ملف تقرير التشخيص</string>
+    <string name="about_developer">المطوّر</string>
+    <string name="about_base_fork">مبني على PokeClaw (Apache-2.0)</string>
+    <string name="about_no_browser">لا يوجد تطبيق لفتح هذا الرابط</string>
+    <string name="about_bug_title_prefix">[خطأ]</string>
     <string name="max_tokens_per_task">الحد الأقصى للرموز لكل مهمة</string>
     <string name="blank_no_cost_cap">فارغ = بدون حد للتكلفة</string>
     <string name="enable_external_automation_question">هل تريد تفعيل الأتمتة الخارجية؟</string>

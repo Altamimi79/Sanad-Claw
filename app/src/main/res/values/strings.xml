@@ -145,6 +145,18 @@
     <string name="report_bug_title">Report a Bug</string>
     <string name="share_debug_report_title">Share Debug Report</string>
     <string name="built_by_title">Built by</string>
+    <string name="about_app_name">Sanad Claw</string>
+    <string name="about_version_label">Version</string>
+    <string name="about_check_update">Check for updates</string>
+    <string name="about_check_update_hint">Opens the releases page. Nothing is downloaded automatically.</string>
+    <string name="about_github">GitHub repository</string>
+    <string name="about_github_hint">Source code, releases and documentation</string>
+    <string name="about_report_issue">Report an issue</string>
+    <string name="about_report_issue_hint">Open a GitHub issue; attach the debug report ZIP</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_base_fork">Based on PokeClaw (Apache-2.0)</string>
+    <string name="about_no_browser">No app available to open this link</string>
+    <string name="about_bug_title_prefix">[Bug]</string>
     <string name="max_tokens_per_task">Max tokens per task</string>
     <string name="blank_no_cost_cap">Blank = no cost cap</string>
     <string name="enable_external_automation_question">Enable External Automation?</string>

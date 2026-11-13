@@ -43,6 +43,12 @@ import kotlinx.coroutines.withContext
  */
 class SettingsActivity : BaseActivity() {
 
+    companion object {
+        /** Repository that owns this fork's releases and issues. */
+        private const val REPO_URL = "https://github.com/Altamimi79/Sanad-Claw"
+        private const val RELEASES_URL = "https://github.com/Altamimi79/Sanad-Claw/releases"
+    }
+
     // Poll permissions every second (same as original HomeActivity)
     private val handler = Handler(Looper.getMainLooper())
     private val permPoller = object : Runnable {
@@ -652,26 +658,44 @@ class SettingsActivity : BaseActivity() {
             setTrailingText(getString(R.string.coming_soon))
         }
 
-        // About
+        // About: app identity, update check, repository, support, credits.
         val aboutGroup = findViewById<MenuGroup>(R.id.aboutGroup)
         aboutGroup.setTitle(getString(R.string.about_group_title))
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_info_details,
-            title = "Sanad Claw",
+            title = getString(R.string.about_app_name),
             onClick = { },
             showDivider = true
         ).apply {
-            setTrailingText("v${io.agents.pokeclaw.BuildConfig.VERSION_NAME}")
+            setTrailingText("${getString(R.string.about_version_label)} ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}")
+        }
+
+        aboutGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_popup_sync,
+            title = getString(R.string.about_check_update),
+            onClick = { openUrl(RELEASES_URL) },
+            showDivider = true
+        ).apply {
+            setTrailingText(getString(R.string.about_check_update_hint))
+        }
+
+        aboutGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_share,
+            title = getString(R.string.about_github),
+            onClick = { openUrl(REPO_URL) },
+            showDivider = true
+        ).apply {
+            setTrailingText(getString(R.string.about_github_hint))
         }
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_send,
-            title = getString(R.string.report_bug_title),
+            title = getString(R.string.about_report_issue),
             onClick = { reportBug() },
             showDivider = true
         ).apply {
-            setTrailingText("GitHub + ZIP")
+            setTrailingText(getString(R.string.about_report_issue_hint))
         }
 
         aboutGroup.addMenuItem(
@@ -680,29 +704,34 @@ class SettingsActivity : BaseActivity() {
             onClick = { shareDebugReport() },
             showDivider = true
         ).apply {
-            setTrailingText("ZIP logs + state")
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_share,
-            title = "GitHub",
-            onClick = {
-                startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/agents-io/PokeClaw".toUri()))
-            },
-            showDivider = true
-        ).apply {
-            setTrailingText("agents-io/PokeClaw")
+            setTrailingText("ZIP")
         }
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_compass,
+            title = getString(R.string.about_developer),
+            onClick = { openUrl(REPO_URL) },
+            showDivider = true
+        ).apply {
+            setTrailingText(getString(R.string.about_base_fork))
+        }
+
+        aboutGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_info_details,
             title = getString(R.string.built_by_title),
-            onClick = {
-                startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/ithiria894".toUri()))
-            },
+            onClick = { openUrl(REPO_URL) },
             showDivider = false
         ).apply {
-            setTrailingText("ithiria894")
+            setTrailingText("Altamimi79")
+        }
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+        } catch (e: ActivityNotFoundException) {
+            XLog.w("SettingsActivity", "No browser for $url")
+            Toast.makeText(this, getString(R.string.about_no_browser), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -729,7 +758,7 @@ class SettingsActivity : BaseActivity() {
                         subject = "PokeClaw bug report ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}",
                         body = """
                             Attach this ZIP to your GitHub issue:
-                            https://github.com/agents-io/PokeClaw/issues/new
+                            https://github.com/Altamimi79/Sanad-Claw/issues/new
                         """.trimIndent()
                     )
                 }
@@ -770,7 +799,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun openGitHubIssue(report: java.io.File) {
-        val issueUri = "https://github.com/agents-io/PokeClaw/issues/new".toUri()
+        val issueUri = "https://github.com/Altamimi79/Sanad-Claw/issues/new".toUri()
             .buildUpon()
             .appendQueryParameter(
                 "title",
