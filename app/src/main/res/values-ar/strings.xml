@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">سند كلو</string>
 
@@ -353,6 +353,12 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">تأكيد إجراء حسّاس</string>
     <string name="safety_confirm_allow">السماح</string>
+    <string name="text_size_title">حجم النص</string>
+    <string name="text_size_normal">عادي</string>
+    <string name="text_size_slightly_larger">كبير قليلاً</string>
+    <string name="text_size_larger">أكبر</string>
+    <string name="text_size_largest">الأكبر</string>
+    <string name="text_appearance_applied">أعد تشغيل المحادثة لتطبيق التغيير</string>
     <string name="plan_preview_title">مراجعة الخطة قبل التنفيذ</string>
     <string name="plan_preview_enabled_toast">ستعرض المهام خطة للموافقة أولاً</string>
     <string name="plan_preview_disabled_toast">ستُنفَّذ المهام دون مراجعة الخطة</string>

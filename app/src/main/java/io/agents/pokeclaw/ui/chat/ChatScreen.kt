@@ -1,4 +1,4 @@
-// Copyright 2026 PokeClaw (agents.io). All rights reserved.
+﻿// Copyright 2026 PokeClaw (agents.io). All rights reserved.
 // Licensed under the Apache License, Version 2.0.
 
 package io.agents.pokeclaw.ui.chat
@@ -754,7 +754,11 @@ private fun AssistantBubble(text: String, timestamp: Long, colors: PokeclawColor
                     MarkdownText(
                         markdown = text,
                         color = colors.aiText,
-                        style = TextStyle(fontSize = 15.sp, lineHeight = 21.sp),
+                        style = TextStyle(
+                fontSize = 15.sp,
+                lineHeight = 21.sp,
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+            ),
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     )
                 }
@@ -1250,7 +1254,7 @@ private fun ChatInputBar(
                     focusedContainerColor = if (isTaskMode && isLocalModel) taskBg else Color.Transparent,
                     unfocusedContainerColor = if (isTaskMode && isLocalModel) taskBg else Color.Transparent,
                 ),
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                 maxLines = 4,
             )
 
@@ -2496,7 +2500,7 @@ private fun SendMessageDialog(
                         modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colors.accent,
                             unfocusedBorderColor = colors.inputBorder,
@@ -2520,7 +2524,7 @@ private fun SendMessageDialog(
                         modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colors.accent,
                             unfocusedBorderColor = colors.inputBorder,

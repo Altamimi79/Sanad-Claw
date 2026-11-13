@@ -178,7 +178,21 @@ class ComposeChatActivity : ComponentActivity() {
                     onSurfaceVariant = composeColors.textSecondary,
                 )
             }
-            androidx.compose.material3.MaterialTheme(colorScheme = m3Colors, typography = PokeclawTypography) {
+            // Font family is fixed to the bundled Naskh face; only text size is user-selectable.
+            val textFamily = TextAppearance.Family.NASKH
+            val textScale = TextAppearance.scaleFor(KVUtils.getTextSizeKey())
+            val baseDensity = androidx.compose.ui.platform.LocalDensity.current
+            androidx.compose.material3.MaterialTheme(
+                colorScheme = m3Colors,
+                typography = pokeclawTypography(textFamily),
+            ) {
+            // Applies the text-size scale to every sp value, including hard-coded ones.
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(
+                    density = baseDensity.density,
+                    fontScale = baseDensity.fontScale * textScale,
+                ),
+            ) {
             ChatScreen(
                 messages = _messages.toList(),
                 modelStatus = _modelStatus.value,
@@ -236,6 +250,7 @@ class ComposeChatActivity : ComponentActivity() {
                 onSelectCloudModel = { providerName, modelId -> selectCloudModel(providerName, modelId) },
                 colors = composeColors,
             )
+            }
             }
         }
 

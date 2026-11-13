@@ -282,3 +282,23 @@ Still open for item 5 and 8: wire preview gate into executeTask and approval scr
 - 2026-11-13 (plan preview UI): Settings > Tools row '?????? ????? ??? ???????' added (EN+AR), default off. Verified on device: row visible, toggles ????? <-> ?????, persisted to MMKV (KEY_PLAN_PREVIEW_BEFORE_RUN). Left disabled. Unit tests: 302 pass. Build: SanadClaw v1.0.3-dev-3 versionCode 104.
 
 - 2026-11-13 (plan preview device test): FIXED NetworkOnMainThreadException by moving the plan gate onto the background executor. Device-verified: planner returns steps off the UI thread; DENY -> BLOCKED_DENIED, task not started; ALLOW (real tap) -> RUN, task completed. One earlier run (Tokyo) reached RUN without an observed tap; not explained from logs, needs investigation. Unit tests: 302 pass.
+
+## Release 1.0.3-dev-4 (versionCode 105), 2026-11-13
+
+Changes since 1.0.3-dev-3:
+- Plan preview: gate runs on background executor (fixed NetworkOnMainThreadException). Device-verified: deny blocks, allow (real tap) runs.
+- Plan preview setting row in Settings > Tools (default off).
+- Scheduled routines core: store, exact-alarm scheduler, reminder-only receiver (never executes unattended), boot re-arm. No creation UI yet.
+- Voice commands and plan approval reuse SafetyCoordinator.
+- Text size setting (normal / slightly larger / larger / largest) applied via density scale to all sp text. Font family choice was removed after review: only Naskh is bundled; system and monospace looked too similar in Arabic to justify a choice.
+- Message bubbles and input now take font family from theme typography (previously hard-coded).
+
+Tests: 310 pass, 0 fail.
+Device: HONOR MBH-N49, versionCode 105 installed, launches with no fatal errors.
+
+Known open items:
+- Routine creation UI not built; alarm delivery not device-verified.
+- QA not run: QV1-QV9 (voice), IJ/SD (hostile screens, SMS), QP3-QP8, QP1a (TalkBack), QL2 (Arabic action log labels on real entries).
+- One earlier plan-preview run (Tokyo) reached RUN without an observed tap; unexplained from logs.
+- Rotate the OpenRouter key that appeared in pre-fix debug logs.
+- Release is debug-signed; no fork signing key.

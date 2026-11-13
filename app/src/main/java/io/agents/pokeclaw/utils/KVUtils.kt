@@ -454,6 +454,12 @@ object KVUtils {
     fun isVoiceAutoSendEnabled(): Boolean = getBoolean(KEY_VOICE_AUTO_SEND, false)
     fun setVoiceAutoSendEnabled(enabled: Boolean) = putBoolean(KEY_VOICE_AUTO_SEND, enabled)
 
+    // ==================== Text appearance ====================
+    private const val KEY_TEXT_SIZE = "KEY_TEXT_SIZE"
+    /** Stored key for the text size; see TextAppearance.Size. */
+    fun getTextSizeKey(): String = getString(KEY_TEXT_SIZE, "normal")
+    fun setTextSizeKey(key: String) = putString(KEY_TEXT_SIZE, key)
+
     // ==================== Plan preview (roadmap item 5) ====================
     private const val KEY_PLAN_PREVIEW = "KEY_PLAN_PREVIEW_BEFORE_RUN"
     /** When true, a task shows a plan and waits for approval before running; default false. */

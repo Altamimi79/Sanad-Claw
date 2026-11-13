@@ -546,6 +546,44 @@ class SettingsActivity : BaseActivity() {
             )
         }
 
+        // Text size (applied when the chat screen starts).
+        val sizeLabels = listOf(
+            getString(R.string.text_size_normal) to "normal",
+            getString(R.string.text_size_slightly_larger) to "slightly_larger",
+            getString(R.string.text_size_larger) to "larger",
+            getString(R.string.text_size_largest) to "largest",
+        )
+        fun showChoice(titleRes: Int, options: List<Pair<String, String>>, current: String, onPick: (String) -> Unit) {
+            val labels = options.map { it.first }.toTypedArray()
+            val checked = options.indexOfFirst { it.second == current }.coerceAtLeast(0)
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(titleRes)
+                .setSingleChoiceItems(labels, checked) { dialog, which ->
+                    onPick(options[which].second)
+                    Toast.makeText(this, R.string.text_appearance_applied, Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        // Unknown or missing stored keys fall back to the first option, never a crash.
+        fun labelFor(options: List<Pair<String, String>>, key: String): String =
+            (options.firstOrNull { it.second == key } ?: options.first()).first
+
+        var sizeItem: MenuItem? = null
+        sizeItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_zoom,
+            title = getString(R.string.text_size_title),
+            onClick = {
+                showChoice(R.string.text_size_title, sizeLabels, KVUtils.getTextSizeKey()) { key ->
+                    KVUtils.setTextSizeKey(key)
+                    sizeItem?.setTrailingText(labelFor(sizeLabels, key))
+                }
+            },
+        ).apply {
+            setTrailingText(labelFor(sizeLabels, KVUtils.getTextSizeKey()))
+        }
+
         // Plan preview (roadmap item 5) — off by default; a task then waits for plan approval.
         var planPreviewItem: MenuItem? = null
         planPreviewItem = toolsGroup.addMenuItem(

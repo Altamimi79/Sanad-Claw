@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">Sanad Claw</string>
 
     <!-- Common -->
@@ -352,6 +352,12 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">Confirm sensitive action</string>
     <string name="safety_confirm_allow">Allow</string>
+    <string name="text_size_title">Text size</string>
+    <string name="text_size_normal">Normal</string>
+    <string name="text_size_slightly_larger">Slightly larger</string>
+    <string name="text_size_larger">Larger</string>
+    <string name="text_size_largest">Largest</string>
+    <string name="text_appearance_applied">Restart the chat to apply the change</string>
     <string name="plan_preview_title">Review plan before running</string>
     <string name="plan_preview_enabled_toast">Tasks will show a plan for approval first</string>
     <string name="plan_preview_disabled_toast">Tasks will run without a plan preview</string>
