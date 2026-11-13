@@ -46,6 +46,10 @@ android {
                 storePassword = readSigningValue("KEYSTORE_PASSWORD")
                 keyAlias = readSigningValue("KEY_ALIAS")
                 keyPassword = readSigningValue("KEY_PASSWORD")
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
             }
         }
     }
