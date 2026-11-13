@@ -276,3 +276,5 @@ Unit tests: 288 pass, 0 fail.
 Still open for item 5 and 8: wire preview gate into executeTask and approval screen (5); persist routines, schedule with AlarmManager, route execution through SafetyGate and confirmation, add UI (8). Both require device verification.
 
 - 2026-11-13 (session 3, follow-up): item 5 gate setting added: KVUtils.isPlanPreviewEnabled (KEY_PLAN_PREVIEW_BEFORE_RUN, default false) + TaskPlanPreview.requiresPreview. Default behaviour unchanged. Unit tests: 289 pass. NOT yet wired: planner LLM call before executeTask, approval UI. Device verification pending.
+
+- 2026-11-13 (item 8 core): routine store (routine/RoutineStore, KV JSON, malformed entries skipped), exact-alarm scheduler (routine/RoutineScheduler, setExactAndAllowWhileIdle), non-exported RoutineAlarmReceiver that posts a reminder and NEVER executes the prompt (execution stays behind chat + safety gate), BootReceiver re-arms alarms. Unit tests: 302 pass. NOT done: routine creation/edit UI, device verification of alarms, Android 14+ exact-alarm permission prompt.

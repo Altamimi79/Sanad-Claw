@@ -120,6 +120,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- Routine reminders (roadmap item 8): internal alarms only, never exported. -->
+        <receiver
+            android:name=".routine.RoutineAlarmReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".automation.ExternalAutomationReceiver"
             android:exported="true">
