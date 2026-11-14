@@ -2,6 +2,23 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.4] — unreleased
+
+### Changed
+- **Default language is Arabic.** `AppLocale` now resolves to Arabic unless English was explicitly chosen in Settings (tracked by a new `KEY_APP_LANGUAGE_CHOSEN` flag). Users who never picked a language in Settings see Arabic after updating. Users who picked English in Settings keep English. Note: users on earlier builds who had English only because of the old update reset are moved to Arabic once; this cannot be distinguished from an explicit choice made on those builds and is an accepted trade-off.
+- **Language no longer resets on app update.** `applyUpdateLanguageReset` only tracks the versionCode (it never writes the language key); a saved English stays English and a saved Arabic stays Arabic across updates.
+- New pure-logic unit tests (`AppLocaleLogicTest`) pin the Arabic-first default and the no-reset rule; they fail against the old behavior by design. No new test dependencies (no Robolectric in this project).
+
+### Fixed / Cleanup
+- RTL: `ic_arrow_right` and `ic_back` now use `android:autoMirrored="true"` so settings-row chevrons and toolbar back arrows point in the reading direction in Arabic.
+- Removed dead drawables `bg_bubble_user.xml` / `bg_bubble_assistant.xml` (zero references repo-wide; the live Compose chat already uses RTL-correct `RoundedCornerShape` start/end corners).
+- Accessibility: raised tertiary text alpha — night `#52FFFFFF → #8AFFFFFF` (≈6:1 on dark backgrounds) and light `#61000000 → #99000000` (≈5.7:1), meeting WCAG AA for small text on Views pages.
+
+### Verified
+- 347 unit tests / 60 classes / 0 failures; `assembleDebug` and `assembleRelease` green (no resource-merger errors after the drawable removal).
+- Old-behavior proof: the new `AppLocaleLogicTest` run against the pre-change code in a throwaway worktree fails exactly on the migration cases (`expected ar but was en`, 4/12 failures), proving it catches the old bug.
+- Device (HONOR MBH-N49): LN4 PASS — real upgrade from official 1.0.3 carrying implicit `en` switched to Arabic RTL with data preserved; QP9 PASS — RTL chevrons/back arrow and night-mode tertiary readability; explicit English/Arabic choices persist across restarts (cross-version leg pending the 1.0.4 versionCode bump). LN1 skipped on device to protect user data (same path covered by LN4 + unit tests).
+
 ## [1.0.3] — 2026-11-14
 
 First stable release of the 1.0.3 line. Functionally identical to `1.0.3-dev-11` (code 112), published as versionCode 113 / versionName `1.0.3` without a pre-release suffix. The dev-11 feature list below is the content of this release.

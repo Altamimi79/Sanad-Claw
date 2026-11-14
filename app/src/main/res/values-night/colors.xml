@@ -4,7 +4,8 @@
     <!-- ==================== Text ==================== -->
     <color name="colorTextPrimary">#EBFFFFFF</color>
     <color name="colorTextSecondary">#A3FFFFFF</color>
-    <color name="colorTextTertiary">#52FFFFFF</color>
+    <!-- #8A (≈54%) keeps tertiary text ≥5:1 on colorBgPrimary/Tertiary (WCAG AA small text). -->
+    <color name="colorTextTertiary">#8AFFFFFF</color>
     <color name="colorTextDisabled">#33FFFFFF</color>
     <color name="colorTextInverse">#FF000000</color>
     <color name="colorTextFixedWhitePrimary">#E6FFFFFF</color>

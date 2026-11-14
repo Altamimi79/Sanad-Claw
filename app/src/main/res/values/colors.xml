@@ -3,7 +3,8 @@
     <!-- Text -->
     <color name="colorTextPrimary">#F5000000</color>
     <color name="colorTextSecondary">#AD000000</color>
-    <color name="colorTextTertiary">#61000000</color>
+    <!-- #99 (60%) keeps tertiary text ≥4.5:1 on light backgrounds (WCAG AA small text). -->
+    <color name="colorTextTertiary">#99000000</color>
     <color name="colorTextDisabled">#33000000</color>
     <color name="colorTextInverse">#FFFFFFFF</color>
     <color name="colorTextFixedWhitePrimary">#E6FFFFFF</color>
