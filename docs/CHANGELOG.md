@@ -2,6 +2,25 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3] — 2026-11-14
+
+First stable release of the 1.0.3 line. Functionally identical to `1.0.3-dev-11` (code 112), published as versionCode 113 / versionName `1.0.3` without a pre-release suffix. The dev-11 feature list below is the content of this release.
+
+### Changed
+- Version metadata: `versionCode` 113, `versionName` "1.0.3" (stable channel; no `-dev` suffix).
+- CI: the Firebase Test Lab workflow now skips its build/FTL jobs with a notice when `GCP_PROJECT_ID`/`GCP_SA_KEY_JSON` are not configured, so an optional real-device smoke never turns a release run red. The Release workflow is unchanged.
+- QA checklist: QP4 (UNKNOWN-category confirmation) removed as unreachable — no tool or parameter path returns `RiskKind.UNKNOWN`. The fail-safe rule stays in code and unit tests; the decision is recorded in `docs/MEMORY.md`.
+
+### Known Limitations
+- **Voice input needs human verification.** QV1–QV9 could not be executed by automation (nothing can speak into the mic), so the voice flows still require a person on device.
+- **QP7/QP8 are partial.** No published artifact with the pre-migration single toggle exists, so the migration notice is covered by unit tests (`SafetyPermissionsMigrationTest`) only, not by a device upgrade.
+- **TalkBack is partial.** QP1/QP1a confirm the bilingual state text, but TalkBack speech was not exercised.
+- Known limitations carried over from dev-11 (see its section) are unchanged.
+
+### Verified
+- 335 unit tests / 59 classes / 0 failures; `lintVitalRelease` passes.
+- Signed release APK installed over dev-11 with the same certificate; app data preserved.
+
 ## [1.0.3-dev-11] — 2026-11-14
 
 ### Added

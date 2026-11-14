@@ -11,12 +11,17 @@ name: Firebase Test Lab — real device smoke
 # - release tag (vX.Y.Z): full matrix on signed release APK
 # - workflow_dispatch: manual run, debug APK
 #
-# Requires GitHub Actions secrets (NOT installed yet as of 2026-05-26):
+# Optional GitHub Actions secrets (as of 2026-11-14, not configured):
 #   GCP_PROJECT_ID            - the Google Cloud project that has Firebase
 #                               Test Lab API enabled
 #   GCP_SA_KEY_JSON           - the JSON service-account key (base64 or raw)
 #                               with the role `roles/cloudtestservice.testAdmin`
 #                               and `roles/firebase.testLabAdmin`
+#
+# When either secret is missing the workflow skips itself with a notice
+# instead of failing: the guard job always runs and stays green, and the
+# build/FTL jobs are skipped. This keeps the Release workflow and CI green
+# while GCP credentials are unavailable.
 #
 # Setup playbook: docs/OEM_COVERAGE_TIERS.md → T2 section.
 
@@ -35,8 +40,34 @@ permissions:
   contents: read
 
 jobs:
+  guard:
+    name: Check GCP secrets
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - name: Detect GCP secrets
+        id: check
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_SA_KEY_JSON: ${{ secrets.GCP_SA_KEY_JSON }}
+        run: |
+          if [ -z "$GCP_PROJECT_ID" ] || [ -z "$GCP_SA_KEY_JSON" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "### Firebase Test Lab skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "GCP_PROJECT_ID and/or GCP_SA_KEY_JSON are not configured, so the real-device smoke matrix was skipped instead of failing the run." >> "$GITHUB_STEP_SUMMARY"
+            echo "To enable it, add both secrets (see docs/OEM_COVERAGE_TIERS.md T2)." >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice::Firebase Test Lab skipped — GCP_PROJECT_ID and/or GCP_SA_KEY_JSON secret not configured."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "GCP secrets present; Firebase Test Lab will run."
+          fi
+
   build-apk:
     name: Build debug APK
+    needs: guard
+    if: needs.guard.outputs.present == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,14 +104,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
-      - name: Refuse to run without GCP secrets
-        run: |
-          if [ -z "${{ secrets.GCP_PROJECT_ID }}" ] || [ -z "${{ secrets.GCP_SA_KEY_JSON }}" ]; then
-            echo "::error::Missing GCP_PROJECT_ID or GCP_SA_KEY_JSON repo secret. See docs/OEM_COVERAGE_TIERS.md T2 for setup."
-            exit 1
-          fi
-          echo "Secrets present, proceeding."
 
       - name: Download APK artifact
         uses: actions/download-artifact@v4

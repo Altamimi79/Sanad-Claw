@@ -538,7 +538,7 @@ Status: ~85%. Sidebar/memory/skills work is done and device-verified; most manua
 ### Manual QA executed on HONOR (debug APK re-signed with the release key so it installs over dev-10 and keeps data)
 - PASS: IJ1, IJ2, IJ3, IJ4, IJ5, IJ6; SD1, SD2 (after fix), SD3, SD4, SD5; QP2, QP3, QP5, QP6.
 - PARTIAL: QP1/QP1a (English rows + bilingual state text; Arabic RTL and TalkBack not exercised).
-- BLOCKED: QP4 — no current tool or parameter path returns `RiskKind.UNKNOWN`, so the rule is unreachable and has no device evidence. Decide whether to remove the case or introduce an explicit unknown-risk tool path.
+- QP4 removed 2026-11-14 (stable 1.0.3): no current tool or parameter path returns `RiskKind.UNKNOWN`, so the case is unreachable and cannot be executed on device. Decision: keep the fail-safe rule in code (`SafetyGate`/`SafetySettings` treat null/UNKNOWN as "confirmation required", covered by unit tests) and drop the manual case from `QA_CHECKLIST.md`; no unknown-risk tool path was introduced because that would be a feature change outside the stable-release scope.
 - NOT RUN: QP7/QP8 — every published release already contains the migration code; no single-toggle artifact exists. Unit tests cover migration.
 - NOT EXECUTED: QV1-QV9 — device has recognizers but automation cannot speak into the mic. Needs a person; this is the last stable-release blocker.
 - Evidence lives in QA_CHECKLIST.md rows.
