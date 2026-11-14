@@ -18,9 +18,16 @@ First stable release of the 1.0.4 line (versionCode 114, versionName "1.0.4", st
 - Accessibility: raised tertiary text alpha — night `#52FFFFFF → #8AFFFFFF` (≈6:1 on dark backgrounds) and light `#61000000 → #99000000` (≈5.7:1), meeting WCAG AA for small text on Views pages.
 
 ### Verified
-- 347 unit tests / 60 classes / 0 failures; `assembleDebug` and `assembleRelease` green (no resource-merger errors after the drawable removal).
+- 347 unit tests / 60 classes / 0 failures; `lintVitalRelease` green; `assembleDebug` and `assembleRelease` green (no resource-merger errors after the drawable removal).
 - Old-behavior proof: the new `AppLocaleLogicTest` run against the pre-change code in a throwaway worktree fails exactly on the migration cases (`expected ar but was en`, 4/12 failures), proving it catches the old bug.
-- Device (HONOR MBH-N49): LN4 PASS — real upgrade from official 1.0.3 carrying implicit `en` switched to Arabic RTL with data preserved; QP9 PASS — RTL chevrons/back arrow and night-mode tertiary readability; explicit English/Arabic choices persist across restarts (cross-version leg pending the 1.0.4 versionCode bump). LN1 skipped on device to protect user data (same path covered by LN4 + unit tests).
+- Device (HONOR MBH-N49, build 113): LN4 PASS — real upgrade from official 1.0.3 carrying implicit `en` switched to Arabic RTL with data preserved; QP9 PASS — RTL chevrons/back arrow and night-mode tertiary readability; explicit English/Arabic choices persist across restarts. LN1 skipped on device to protect user data (same path covered by LN4 + unit tests).
+- Local release APK (`SanadClaw_v1.0.4_20261114_142017.apk`): versionCode 114 / versionName 1.0.4, release certificate (SHA-256 `7de78e…cf6b`), APK SHA-256 `22C2631D795C5225D8F091DF276094656895D035595DCC6D775AD84FFCF2AAAD`.
+- CI Release workflow (tag `v1.0.4`) green; published asset `SanadClaw_v1.0.4_20261114_103549.apk` SHA-256 `a01e371a9bb113cc90499f67d84beddcc3f0f909bc684ec2a4831c32140e6baf`; Firebase Test Lab self-skipped green via the guard.
+
+### Known Limitations
+- **Voice input needs human verification** (QV1–QV9).
+- **LN2/LN3 need the real 113→114 device upgrade re-run** — the HONOR disconnected during release; restart-level persistence already PASS.
+- **cla-check on PRs** fails from a pre-existing upstream CLA-action bug (non-required, does not affect releases).
 
 ## [1.0.3] — 2026-11-14
 

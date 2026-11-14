@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-14 (v1.0.3 stable published; 1.0.4 prep MERGED into main via PR #2 — Arabic-first language fix + UI cleanup; version still 113/1.0.3 until the release task)
+Last updated: 2026-11-14 (v1.0.3 and v1.0.4 stable both published from main; 1.0.4 adds Arabic-first language with explicit-choice migration + RTL/contrast cleanup)
 
 ## Project Identity
 
@@ -574,3 +574,10 @@ Commits: `8f63d77` fix(ui) · `2eae248` feat(i18n) Arabic-first default + no res
 - **Device QA on HONOR (final build `SanadClaw_v1.0.3_20261114_131223.apk`, SHA-256 `EFFE4DF9802909F230F7AAC6C1886FE2C0639CC422BE998933FF30A4E98A7162`, installed -r over official 1.0.3, data preserved):** LN4 PASS — the device really carried implicit `en` from 1.0.3 and flipped to Arabic RTL on upgrade; QP9 PASS — chevrons/back arrow mirrored in Arabic, night-mode meta text readable (system night toggled via `cmd uimode night`); explicit EN then AR choices persist across force-stop/cold restart; final device state: explicit Arabic. LN1 skipped deliberately (`pm clear` would destroy QA data; same path covered by LN4 + unit tests). LN2/LN3 PARTIAL — cross-version persistence re-testable only after the versionCode bump.
 - **PR #2 CI (2026-11-14):** Build debug APK ✅ (2m25s), standalone `build` ✅ (1m54s), emulator smoke API 31/33/34/35 ✅ — **API 29 leg flaky**: hit its 30-min `timeout-minutes` on the first attempt (cancelled) and was still hung after a `--failed` rerun; the identical matrix passed in PR #1 and on the v1.0.3 tag run, so this is runner/emulator flakiness, not a code regression. `cla-check` ❌ is the known upstream CLA-action bug. PR is MERGEABLE (branch protection absent; no required checks).
 - **Next for 1.0.4:** version bump (114 / `1.0.4` or `1.0.4-dev-12`) in a release task → signed build → tag → Release workflow; re-run LN2/LN3 legs on that update; later: cla-check fix, color-token unification (Views vs ThemeManager duplication is real), Arabic UI font decision.
+
+### v1.0.4 stable published (2026-11-14)
+- Branch `release/1.0.4` → **PR #3 merged** into `main` (merge commit `a232e7a`), tag **v1.0.4** pushed. GitHub Release: https://github.com/Altamimi79/Sanad-Claw/releases/tag/v1.0.4 — **prerelease=false**; assets: `SanadClaw_v1.0.4_20261114_103549.apk` (SHA-256 `a01e371a9bb113cc90499f67d84beddcc3f0f909bc684ec2a4831c32140e6baf`) + `SHA256SUMS.txt`.
+- CI: Release APK workflow run `43585978002` **success** (6m28s); Firebase Test Lab `43585978047` success (7s, guard skip). PR #3 checks: build ✅, emulator API 31/33/34/35 ✅; API 29 leg flaky again (runner), cla-check known upstream bug.
+- Version metadata: **versionCode 114 / versionName "1.0.4"**. Local verified APK: `SanadClaw_v1.0.4_20261114_142017.apk`, SHA-256 `22C2631D795C5225D8F091DF276094656895D035595DCC6D775AD84FFCF2AAAD`, aapt2-confirmed 114/1.0.4, release cert `7de78e…cf6b`. Tests 347/0, lintVitalRelease green.
+- **Device:** HONOR disconnected mid-release, so the real 113→114 upgrade (LN2/LN3) was NOT executed — re-run `adb install -r` of the 114 APK when it reconnects; restart-level persistence of explicit EN/AR already PASS on build 113.
+- Next: LN2/LN3 device re-run, cla-check fix, color-token unification, Arabic UI font decision, voice QA (QV1–QV9).
