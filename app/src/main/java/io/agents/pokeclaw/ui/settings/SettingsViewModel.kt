@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.agents.pokeclaw.ClawApplication
 import io.agents.pokeclaw.R
+import io.agents.pokeclaw.agent.ModelDisplayNames
 import io.agents.pokeclaw.agent.llm.ActiveModelMode
 import io.agents.pokeclaw.agent.llm.ModelConfigRepository
 import io.agents.pokeclaw.channel.ChannelManager
@@ -68,7 +69,7 @@ class SettingsViewModel : ViewModel() {
         } else {
             val cloudModel = config.activeCloud.modelName
             if (cloudModel.isNotEmpty()) {
-                "$cloudModel · Cloud"
+                ModelDisplayNames.forModelId(cloudModel)
             } else {
                 app.getString(R.string.common_unconfigured)
             }

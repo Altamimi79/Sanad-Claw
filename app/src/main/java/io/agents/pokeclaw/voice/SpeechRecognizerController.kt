@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -53,6 +54,7 @@ class SpeechRecognizerController(
         private const val TAG = "VoiceInput"
         const val DEFAULT_LANGUAGE = "ar-SA"
         const val DEFAULT_MAX_DURATION_MS = 120_000L
+        private const val RESTART_DELAY_MS = 150L
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -61,6 +63,10 @@ class SpeechRecognizerController(
     private var listening = false
     private var finalDelivered = false
     private var timedOut = false
+    private var stoppedByUser = false
+    private var segments = 0
+    private var silentRetries = 0
+    private var startedAt = 0L
 
     private val timeoutRunnable = Runnable {
         if (listening && !finalDelivered) {
@@ -90,7 +96,24 @@ class SpeechRecognizerController(
         assembler.reset()
         finalDelivered = false
         timedOut = false
+        stoppedByUser = false
+        segments = 0
+        silentRetries = 0
+        startedAt = SystemClock.elapsedRealtime()
 
+        if (!openEngine()) return false
+        listener.onListening()
+        mainHandler.postDelayed(timeoutRunnable, maxDurationMs)
+        XLog.i(TAG, "start: listening language=$languageTag (continuous dictation)")
+        return true
+    }
+
+    /**
+     * Opens a fresh engine for one segment. A new instance per segment avoids the
+     * ERROR_CLIENT callback that reusing one after cancel() would deliver.
+     */
+    private fun openEngine(): Boolean {
+        releaseRecognizer()
         val created = try {
             SpeechRecognizer.createSpeechRecognizer(context)
         } catch (e: Exception) {
@@ -100,36 +123,33 @@ class SpeechRecognizerController(
         if (created == null) return false
         recognizer = created
         created.setRecognitionListener(recognitionListener)
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, languageTag)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
-            putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-        }
-
         return try {
-            created.startListening(intent)
+            created.startListening(buildIntent())
             listening = true
-            listener.onListening()
-            mainHandler.postDelayed(timeoutRunnable, maxDurationMs)
-            XLog.i(TAG, "start: listening language=$languageTag")
             true
         } catch (e: Exception) {
             XLog.e(TAG, "startListening failed", e)
-            release()
+            releaseRecognizer()
             false
         }
+    }
+
+    private fun buildIntent(): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, languageTag)
+        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 4000L)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
+        putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
     }
 
     /** Graceful stop — the engine may still deliver a final result. */
     fun stop() {
         if (!listening || finalDelivered) return
+        stoppedByUser = true
         XLog.d(TAG, "stop requested")
         runCatching { recognizer?.stopListening() }
     }
@@ -147,8 +167,12 @@ class SpeechRecognizerController(
     }
 
     private fun release() {
-        listening = false
         mainHandler.removeCallbacks(timeoutRunnable)
+        releaseRecognizer()
+    }
+
+    private fun releaseRecognizer() {
+        listening = false
         val current = recognizer
         recognizer = null
         if (current != null) {
@@ -198,7 +222,6 @@ class SpeechRecognizerController(
 
         override fun onError(error: Int) {
             if (finalDelivered) return
-            mainHandler.removeCallbacks(timeoutRunnable)
             val fallback = assembler.current()
             if (timedOut && fallback.isNotEmpty()) {
                 finalDelivered = true
@@ -207,11 +230,37 @@ class SpeechRecognizerController(
                 release()
                 return
             }
-            finalDelivered = true
             val mapped = mapError(error)
-            XLog.w(TAG, "onError code=$error mapped=$mapped partialLen=${fallback.length}")
-            listener.onError(mapped)
-            release()
+            val elapsed = SystemClock.elapsedRealtime() - startedAt
+            when (VoiceSessionPolicy.decideOnError(mapped, fallback.isNotEmpty(), silentRetries, elapsed)) {
+                VoiceSessionPolicy.OnError.DELIVER -> {
+                    finalDelivered = true
+                    XLog.i(TAG, "engine ended with $mapped after ${fallback.length} chars — delivering transcript")
+                    listener.onFinalText(fallback)
+                    release()
+                }
+                VoiceSessionPolicy.OnError.RETRY -> {
+                    silentRetries++
+                    XLog.d(TAG, "transient $mapped before speech — silent retry $silentRetries")
+                    mainHandler.postDelayed({
+                        if (!finalDelivered) {
+                            if (openEngine()) {
+                                listener.onListening()
+                            } else {
+                                finalDelivered = true
+                                listener.onError(mapped)
+                                release()
+                            }
+                        }
+                    }, RESTART_DELAY_MS)
+                }
+                VoiceSessionPolicy.OnError.FAIL -> {
+                    finalDelivered = true
+                    XLog.w(TAG, "onError code=$error mapped=$mapped partialLen=${fallback.length}")
+                    listener.onError(mapped)
+                    release()
+                }
+            }
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
@@ -226,21 +275,61 @@ class SpeechRecognizerController(
 
         override fun onResults(results: Bundle?) {
             if (finalDelivered) return
-            finalDelivered = true
-            listening = false
             mainHandler.removeCallbacks(timeoutRunnable)
+            segments++
             val best = results
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()
             assembler.onFinal(best)
-            val text = assembler.current()
-            if (text.isBlank()) {
+            val accumulated = assembler.current()
+            val elapsed = SystemClock.elapsedRealtime() - startedAt
+            if (accumulated.isBlank()) {
+                val retry = VoiceSessionPolicy.decideOnError(VoiceError.NO_MATCH, false, silentRetries, elapsed) ==
+                    VoiceSessionPolicy.OnError.RETRY
+                if (retry) {
+                    silentRetries++
+                    XLog.d(TAG, "empty result — silent retry $silentRetries")
+                    mainHandler.postDelayed({
+                        if (!finalDelivered) {
+                            if (openEngine()) {
+                                listener.onListening()
+                            } else {
+                                finalDelivered = true
+                                listener.onError(VoiceError.NO_MATCH)
+                                release()
+                            }
+                        }
+                    }, RESTART_DELAY_MS)
+                    return
+                }
+                finalDelivered = true
                 XLog.w(TAG, "onResults but empty transcript")
                 listener.onError(VoiceError.NO_MATCH)
-            } else {
-                XLog.i(TAG, "onResults transcript=${text.length} chars")
-                listener.onFinalText(text)
+                release()
+                return
             }
+            val keepListening = VoiceSessionPolicy.decideOnResult(stoppedByUser, segments, elapsed, maxDurationMs) ==
+                VoiceSessionPolicy.OnResult.CONTINUE
+            if (keepListening) {
+                XLog.i(TAG, "segment $segments ended; still listening (${accumulated.length} chars)")
+                listener.onPartialText(accumulated)
+                mainHandler.postDelayed({
+                    if (!finalDelivered) {
+                        if (openEngine()) {
+                            listener.onListening()
+                        } else {
+                            finalDelivered = true
+                            listener.onFinalText(accumulated)
+                            release()
+                        }
+                    }
+                }, RESTART_DELAY_MS)
+                return
+            }
+            finalDelivered = true
+            listening = false
+            XLog.i(TAG, "final transcript=${accumulated.length} chars segments=$segments")
+            listener.onFinalText(accumulated)
             release()
         }
 

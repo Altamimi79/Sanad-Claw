@@ -539,7 +539,6 @@
     <string name="llm_on_device">On-device</string>
     <string name="llm_status_missing_file">● Missing file</string>
     <string name="llm_this_phone_reports">This phone reports %1$dGB</string>
-    <string name="llm_cloud_suffix">Cloud</string>
     <string name="llm_no_default_cloud_model">No default cloud model</string>
     <string name="llm_downloaded_done">Downloaded!</string>
     <string name="msg_actions_title">Message</string>
