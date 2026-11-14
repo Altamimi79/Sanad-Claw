@@ -2,9 +2,12 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
-## [1.0.4] — unreleased
+## [1.0.4] — 2026-11-14
+
+First stable release of the 1.0.4 line (versionCode 114, versionName "1.0.4", stable channel).
 
 ### Changed
+- Version metadata: `versionCode` 114, `versionName` "1.0.4" (stable channel; no `-dev` suffix).
 - **Default language is Arabic.** `AppLocale` now resolves to Arabic unless English was explicitly chosen in Settings (tracked by a new `KEY_APP_LANGUAGE_CHOSEN` flag). Users who never picked a language in Settings see Arabic after updating. Users who picked English in Settings keep English. Note: users on earlier builds who had English only because of the old update reset are moved to Arabic once; this cannot be distinguished from an explicit choice made on those builds and is an accepted trade-off.
 - **Language no longer resets on app update.** `applyUpdateLanguageReset` only tracks the versionCode (it never writes the language key); a saved English stays English and a saved Arabic stays Arabic across updates.
 - New pure-logic unit tests (`AppLocaleLogicTest`) pin the Arabic-first default and the no-reset rule; they fail against the old behavior by design. No new test dependencies (no Robolectric in this project).
