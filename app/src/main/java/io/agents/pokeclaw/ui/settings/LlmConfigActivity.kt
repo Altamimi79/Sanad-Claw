@@ -25,6 +25,7 @@ import io.agents.pokeclaw.ClawApplication
 import io.agents.pokeclaw.R
 import io.agents.pokeclaw.agent.CloudModel
 import io.agents.pokeclaw.agent.CloudProvider
+import io.agents.pokeclaw.agent.ModelDisplayNames
 import io.agents.pokeclaw.agent.ModelPricing
 import io.agents.pokeclaw.agent.llm.ActiveModelMode
 import io.agents.pokeclaw.agent.llm.CloudConnectionTester
@@ -130,9 +131,9 @@ class LlmConfigActivity : BaseActivity() {
         } else {
             val cloudModel = resolvedConfig.activeCloud.modelName
             if (cloudModel.isNotEmpty()) {
-                activeModelName.text = cloudModel
+                activeModelName.text = ModelDisplayNames.forModelId(cloudModel)
                 val providerName = resolvedConfig.activeCloud.provider.displayName
-                activeModelMeta.text = "$providerName · " + getString(R.string.llm_cloud_suffix)
+                activeModelMeta.text = providerName
                 activeModelStatus.text = getString(R.string.llm_status_connected)
                 activeModelStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
             } else {
@@ -156,8 +157,8 @@ class LlmConfigActivity : BaseActivity() {
         )
 
         if (resolvedConfig.defaultCloud.isConfigured) {
-            defaultCloudName.text = resolvedConfig.defaultCloud.modelName
-            defaultCloudMeta.text = "${resolvedConfig.defaultCloud.provider.displayName} · " + getString(R.string.llm_cloud_suffix)
+            defaultCloudName.text = ModelDisplayNames.forModelId(resolvedConfig.defaultCloud.modelName)
+            defaultCloudMeta.text = resolvedConfig.defaultCloud.provider.displayName
             defaultCloudStatus.text = getString(R.string.status_ready)
             defaultCloudStatus.setTextColor(getColor(R.color.colorSuccessPrimary))
         } else {

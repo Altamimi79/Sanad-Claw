@@ -11,6 +11,7 @@ import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.UserMessage
 import io.agents.pokeclaw.R
+import io.agents.pokeclaw.agent.ModelDisplayNames
 import io.agents.pokeclaw.agent.ModelPricing
 import io.agents.pokeclaw.agent.llm.LlmClient
 import io.agents.pokeclaw.agent.llm.LlmSessionManager
@@ -96,11 +97,11 @@ class ChatSessionController(
                     if (suppressNextCloudSwitchMessage) {
                         suppressNextCloudSwitchMessage = false
                     } else {
-                        addSystem("Switched to ${cloudConfig.modelName}")
+                        addSystem("Switched to ${ModelDisplayNames.forModelId(cloudConfig.modelName)}")
                     }
                 }
                 isModelReady = true
-                uiState.modelStatus.value = "● ${cloudConfig.modelName} · Cloud"
+                uiState.modelStatus.value = ModelDisplayNames.forModelId(cloudConfig.modelName)
                 setButtonsEnabled(true)
                 XLog.i(TAG, "Cloud chat ready: ${cloudConfig.modelName} via ${cloudConfig.resolvedBaseUrl}")
             } else {
@@ -752,7 +753,7 @@ class ChatSessionController(
             loadModelIfReady()
             return
         }
-        uiState.modelStatus.value = "● ${cloud.modelName} · Cloud"
+        uiState.modelStatus.value = ModelDisplayNames.forModelId(cloud.modelName)
         setButtonsEnabled(true)
     }
 

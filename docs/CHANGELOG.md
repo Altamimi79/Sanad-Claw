@@ -2,6 +2,20 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.5] — 2026-11-14
+
+Model label and dictation release (versionCode 115, versionName "1.0.5").
+
+### Changed
+- **Model label**: the chat chip shows a human name (`Qwen 3.8 Flash-Next`) instead of the raw id, with no status dot and no `Cloud` suffix. Settings → Model uses the same name plus the provider name. Mapping lives in `agent/ModelDisplayNames`; request payloads keep the exact server id. `llm_cloud_suffix` removed from en/ar.
+
+### Fixed
+- **Voice dictation no longer cuts off**: the recognizer session continues across engine segments (up to 10 segments / 120 s), recognized text is delivered instead of an error when the engine ends after speech, and transient `NO_MATCH` / `SPEECH_TIMEOUT` before speech are retried silently twice within the first 20 s. OEM silence hints raised to 4 s / 3 s. Decisions are pure in `voice/VoiceSessionPolicy`.
+
+### Verified
+- 356 unit tests / 62 classes / 0 failures (`ModelDisplayNamesTest` 4, `VoiceSessionPolicyTest` 5); debug + signed release builds green.
+- Device (HONOR MBH-N49): chip reads `Qwen 3.8 Flash-Next` with no dot and no cloud suffix, selection survives force-stop. Dictation still needs a human speaker (VP1–VP3).
+
 ## [1.0.4] — 2026-11-14
 
 First stable release of the 1.0.4 line (versionCode 114, versionName "1.0.4", stable channel).

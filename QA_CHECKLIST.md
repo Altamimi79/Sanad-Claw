@@ -1857,3 +1857,14 @@ Unit level: SafetyPermissionsPolicyTest (7 tests) and SafetyPermissionsMigration
 Device rows above remain NOT EXECUTED on 2026-11-14: the device exposes recognition services, but automated QA cannot inject live Arabic/English speech into the mic, so the real recognizer → parser wiring cannot be exercised without a person speaking. This is the remaining stable-release blocker.
 
 Unit level: VoiceCommandParserTest (9), VoiceCommandPolicyTest (7), TimeoutPartialRoutingTest (3). Device rows above are the only evidence of mic wiring and real speech recognition.
+
+### v1.0.5 - model label + voice patience (2026-11-14)
+
+| ID | Case | How | Status |
+|---|---|---|---|
+| LP1 | Chat model chip shows the friendly name, no dot and no "Cloud" | Configure the local qwen model, select it from the model switcher, return to chat; the chip reads exactly Qwen 3.8 Flash-Next | PASS (HONOR, 2026-11-14) |
+| LP2 | Unknown model ids keep their raw id and no suffix | Select openrouter/free; the chip reads openrouter/free with no dot and no Cloud | PASS (HONOR, 2026-11-14) |
+| LP3 | Settings -> Model shows the friendly name | Open Settings -> Model with qwen active; the active model row reads Qwen 3.8 Flash-Next, meta line shows the provider name only | NOT EXECUTED |
+| VP1 | Pauses do not end dictation | Tap mic, speak a sentence, pause 2-3 s, continue speaking, tap mic to stop; both parts appear as one transcript | NOT EXECUTED (needs live speech) |
+| VP2 | Engine NO_MATCH before speech retries silently | Tap mic, stay silent about 6 s, then speak; no error toast during the first retries and the text is captured | NOT EXECUTED (needs live speech) |
+| VP3 | Recognized text is never lost when the engine ends | Speak and let the engine stop on its own; the text lands in the composer instead of an error toast | NOT EXECUTED (needs live speech) |
