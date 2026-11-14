@@ -12,14 +12,18 @@ import java.util.Locale
  * Stored in a tiny plain SharedPreferences file (not MMKV) because attachBaseContext
  * runs before KVUtils/MMKV initialization on every Context.
  *
- * Values: "ar" (default) or "en". English is used only when explicitly chosen;
- * unknown values fall back to "ar". An app update never changes the language —
- * [applyUpdateLanguageReset] only tracks the versionCode (see that function).
+ * Values: "ar" (default) or "en". A saved English is honored ONLY when the user
+ * explicitly chose a language in Settings — recorded by KEY_LANGUAGE_CHOSEN, which
+ * setLanguage() writes. Earlier builds wrote an implicit "en" on every update; that
+ * legacy value is ignored while the flag is absent, so those users land on Arabic once.
+ * An app update never changes the language — [applyUpdateLanguageReset] only tracks
+ * the versionCode (see that function).
  */
 object AppLocale {
 
     private const val PREFS_NAME = "pokeclaw_locale"
     private const val KEY_LANGUAGE = "KEY_APP_LANGUAGE"
+    private const val KEY_LANGUAGE_CHOSEN = "KEY_APP_LANGUAGE_CHOSEN"
     private const val KEY_LAST_VERSION_CODE = "KEY_LAST_VERSION_CODE"
     const val LANGUAGE_ARABIC = "ar"
     const val LANGUAGE_ENGLISH = "en"
@@ -27,10 +31,10 @@ object AppLocale {
     fun getLanguage(context: Context): String {
         // NOTE: must not use context.applicationContext here — attachBaseContext runs
         // while the Application is still being attached, so applicationContext is null then.
-        val stored = context
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_LANGUAGE, LANGUAGE_ARABIC)
-        return resolveLanguage(stored)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val stored = prefs.getString(KEY_LANGUAGE, null)
+        val chosen = prefs.getBoolean(KEY_LANGUAGE_CHOSEN, false)
+        return resolveLanguage(stored, chosen)
     }
 
     fun setLanguage(context: Context, language: String) {
@@ -39,6 +43,7 @@ object AppLocale {
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_LANGUAGE, normalized)
+            .putBoolean(KEY_LANGUAGE_CHOSEN, true)
             // commit(), not apply(): switchAppLanguage calls finishAffinity() right after,
             // and an async disk write can be lost when the OEM kills the process —
             // the relaunched app would then read the stale language and not switch.
@@ -80,12 +85,16 @@ object AppLocale {
 
 /**
  * Pure language resolution (no Android deps, unit-tested in AppLocaleLogicTest):
- * English only when explicitly stored; anything else — null (never chosen), "ar",
- * or an unknown value — resolves to Arabic. This is the single source of truth for
- * the Arabic-first default.
+ * Arabic is the default. A saved English is honored only when the user explicitly
+ * chose a language in Settings ([chosen] flag written by setLanguage). Legacy "en"
+ * values written implicitly by earlier builds' update reset are ignored while the
+ * flag is absent — those users move to Arabic once. Unknown/empty stored values
+ * always resolve to Arabic.
  */
-fun resolveLanguage(stored: String?): String =
-    if (stored == AppLocale.LANGUAGE_ENGLISH) AppLocale.LANGUAGE_ENGLISH else AppLocale.LANGUAGE_ARABIC
+fun resolveLanguage(stored: String?, chosen: Boolean): String {
+    if (!chosen) return AppLocale.LANGUAGE_ARABIC
+    return if (stored == AppLocale.LANGUAGE_ENGLISH) AppLocale.LANGUAGE_ENGLISH else AppLocale.LANGUAGE_ARABIC
+}
 
 /**
  * Pure version-tracking decision (unit-tested): true when the stored versionCode

@@ -17,37 +17,47 @@ import org.junit.Test
  */
 class AppLocaleLogicTest {
 
-    // --- resolveLanguage: Arabic is the default, English only when explicitly chosen ---
+    // --- resolveLanguage: Arabic default; saved English honored ONLY with explicit choice ---
 
     @Test
-    fun neverChosen_resolvesToArabic() {
-        // Old behavior returned "en" here — this test fails on it by design.
-        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage(null))
+    fun neverChosen_noValue_resolvesToArabic() {
+        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage(null, false))
     }
 
     @Test
-    fun explicitEnglish_isEnglish() {
-        assertEquals(AppLocale.LANGUAGE_ENGLISH, resolveLanguage("en"))
+    fun legacyImplicitEnglish_withoutChoice_resolvesToArabic() {
+        // The migration case: earlier builds wrote KEY_LANGUAGE="en" on every update.
+        // Without the explicit-choice flag that legacy value MUST NOT keep the user in English.
+        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("en", false))
     }
 
     @Test
-    fun explicitArabic_isArabic() {
-        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("ar"))
+    fun storedArabic_withoutChoice_resolvesToArabic() {
+        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("ar", false))
     }
 
     @Test
-    fun unknownValues_fallBackToArabic() {
-        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage(""))
-        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("fr"))
-        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("EN"))
+    fun explicitEnglishChoice_isHonored() {
+        assertEquals(AppLocale.LANGUAGE_ENGLISH, resolveLanguage("en", true))
+    }
+
+    @Test
+    fun explicitArabicChoice_isHonored() {
+        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("ar", true))
+    }
+
+    @Test
+    fun chosenWithGarbage_fallsBackToArabic() {
+        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("garbage", true))
+        assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage("", true))
     }
 
     @Test
     fun setLanguageRoundTrip_isStable() {
-        // setLanguage normalizes user choices to exactly "ar"/"en"; resolving those
-        // values must return them unchanged (round-trip stability).
+        // setLanguage normalizes user choices to exactly "ar"/"en" and sets the chosen flag;
+        // resolving those values with chosen=true must return them unchanged.
         for (stored in listOf(AppLocale.LANGUAGE_ARABIC, AppLocale.LANGUAGE_ENGLISH)) {
-            assertEquals(stored, resolveLanguage(resolveLanguage(stored)))
+            assertEquals(stored, resolveLanguage(resolveLanguage(stored, true), true))
         }
     }
 
@@ -56,8 +66,8 @@ class AppLocaleLogicTest {
         // An update never rewrites the language: whatever was stored keeps resolving
         // to itself regardless of versionCode movement. Old code forced "en" on update,
         // which would break the saved-"ar" expectation below.
-        val savedEnglish = resolveLanguage("en")
-        val savedArabic = resolveLanguage("ar")
+        val savedEnglish = resolveLanguage("en", true)
+        val savedArabic = resolveLanguage("ar", true)
         assertTrue(shouldRecordVersionOnly(112, 113)) // update path runs
         assertEquals(AppLocale.LANGUAGE_ENGLISH, savedEnglish)
         assertEquals(AppLocale.LANGUAGE_ARABIC, savedArabic)
@@ -78,5 +88,18 @@ class AppLocaleLogicTest {
     @Test
     fun sameVersion_isNoOp() {
         assertFalse(shouldRecordVersionOnly(113, 113))
+    }
+
+    @Test
+    fun versionDecisionNeverImpliesALanguage() {
+        // The version-tracking decision is orthogonal to language: for every code pair,
+        // whatever the user's stored value + chosen flag resolve to must stay identical
+        // before and after the version bookkeeping runs.
+        for (pair in listOf(Pair(0, 113), Pair(112, 113), Pair(113, 113))) {
+            val before = resolveLanguage("en", true)
+            shouldRecordVersionOnly(pair.first, pair.second) // decision only, no prefs here
+            assertEquals(before, resolveLanguage("en", true))
+            assertEquals(AppLocale.LANGUAGE_ARABIC, resolveLanguage(null, false))
+        }
     }
 }
