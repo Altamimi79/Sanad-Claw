@@ -309,6 +309,11 @@ class ChatSessionController(
     }
 
     fun sendChat(text: String) {
+        // Decision 2: a message while a task is paused for a redacted value is that value.
+        if (io.agents.pokeclaw.safety.PausedTaskState.shared.offerMessage(text)) {
+            XLog.i("ChatSessionController", "sendChat: user message accepted as paused-task value (content not logged)")
+            return
+        }
         addUser(text)
         uiState.isAwaitingReply.value = true
         uiState.messages.add(ChatMessage(ChatMessage.Role.ASSISTANT, "..."))

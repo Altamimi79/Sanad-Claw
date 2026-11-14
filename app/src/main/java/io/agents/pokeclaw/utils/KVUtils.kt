@@ -400,13 +400,44 @@ object KVUtils {
         getLlmApiKey().isNotEmpty() || getLlmBaseUrl().isNotEmpty() || getLocalModelPath().isNotEmpty()
 
     // ==================== Safety (Phase 4) ====================
+    /** Legacy single switch (Phase 4). Read only for migration, then removed. */
     private const val KEY_SAFETY_CONFIRM_RISKY = "KEY_SAFETY_CONFIRM_RISKY"
+    private const val KEY_SAFETY_CONFIRM_SEND_MESSAGE = "KEY_SAFETY_CONFIRM_SEND_MESSAGE"
+    private const val KEY_SAFETY_CONFIRM_SEND_FILE = "KEY_SAFETY_CONFIRM_SEND_FILE"
+    private const val KEY_SAFETY_CONFIRM_CALL = "KEY_SAFETY_CONFIRM_CALL"
+    private const val KEY_SAFETY_CONFIRM_DELETE = "KEY_SAFETY_CONFIRM_DELETE"
+    private const val KEY_SAFETY_CONFIRM_PAYMENT = "KEY_SAFETY_CONFIRM_PAYMENT"
+    private const val KEY_SAFETY_CONFIRM_INSTALL = "KEY_SAFETY_CONFIRM_INSTALL"
+    private const val KEY_SAFETY_CONFIRM_PUBLISH = "KEY_SAFETY_CONFIRM_PUBLISH"
+    /** One-time flag: true once the migration notice has been shown (or is not needed). */
+    private const val KEY_MIGRATION_NOTICE_SHOWN = "KEY_SAFETY_PERMISSIONS_MIGRATION_NOTICE_SHOWN"
     private const val KEY_SAFETY_TASK_TIMEOUT_SEC = "KEY_SAFETY_TASK_TIMEOUT_SEC"
     private const val KEY_SAFETY_BLOCKLIST = "KEY_SAFETY_BLOCKLIST"
     private const val KEY_SAFETY_ACTION_LOG = "KEY_SAFETY_ACTION_LOG_ENABLED"
 
-    fun isSafetyConfirmRiskyEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_RISKY, true)
-    fun setSafetyConfirmRiskyEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_RISKY, enabled)
+    /** Per-category confirmation switches. Default true (fail-safe). */
+    fun isSafetyConfirmSendMessageEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_SEND_MESSAGE, true)
+    fun setSafetyConfirmSendMessageEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_SEND_MESSAGE, enabled)
+    fun isSafetyConfirmSendFileEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_SEND_FILE, true)
+    fun setSafetyConfirmSendFileEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_SEND_FILE, enabled)
+    fun isSafetyConfirmCallEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_CALL, true)
+    fun setSafetyConfirmCallEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_CALL, enabled)
+    fun isSafetyConfirmDeleteEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_DELETE, true)
+    fun setSafetyConfirmDeleteEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_DELETE, enabled)
+    fun isSafetyConfirmPaymentEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_PAYMENT, true)
+    fun setSafetyConfirmPaymentEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_PAYMENT, enabled)
+    fun isSafetyConfirmInstallEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_INSTALL, true)
+    fun setSafetyConfirmInstallEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_INSTALL, enabled)
+    fun isSafetyConfirmPublishEnabled(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_PUBLISH, true)
+    fun setSafetyConfirmPublishEnabled(enabled: Boolean) = putBoolean(KEY_SAFETY_CONFIRM_PUBLISH, enabled)
+
+    /** Raw accessors for the one-time migration in SafetySettings (logic lives there, unit-tested). */
+    fun hasLegacySafetyConfirmRisky(): Boolean = contains(KEY_SAFETY_CONFIRM_RISKY)
+    fun getLegacySafetyConfirmRisky(): Boolean = getBoolean(KEY_SAFETY_CONFIRM_RISKY, true)
+    fun removeLegacySafetyConfirmRisky() = remove(KEY_SAFETY_CONFIRM_RISKY)
+    fun hasMigrationNoticeFlag(): Boolean = contains(KEY_MIGRATION_NOTICE_SHOWN)
+    fun getMigrationNoticeShown(): Boolean = getBoolean(KEY_MIGRATION_NOTICE_SHOWN, true)
+    fun setMigrationNoticeShown(shown: Boolean) = putBoolean(KEY_MIGRATION_NOTICE_SHOWN, shown)
 
     fun getSafetyTaskTimeoutSec(): Int = getInt(KEY_SAFETY_TASK_TIMEOUT_SEC, 180)
     fun setSafetyTaskTimeoutSec(seconds: Int) = putInt(KEY_SAFETY_TASK_TIMEOUT_SEC, seconds)
@@ -422,6 +453,34 @@ object KVUtils {
     /** When true, a finished dictation is sent immediately; default false = user edits first. */
     fun isVoiceAutoSendEnabled(): Boolean = getBoolean(KEY_VOICE_AUTO_SEND, false)
     fun setVoiceAutoSendEnabled(enabled: Boolean) = putBoolean(KEY_VOICE_AUTO_SEND, enabled)
+
+    // ==================== Text appearance ====================
+    private const val KEY_TEXT_SIZE = "KEY_TEXT_SIZE"
+    /** Stored key for the text size; see TextAppearance.Size. */
+    fun getTextSizeKey(): String = getString(KEY_TEXT_SIZE, "normal")
+    fun setTextSizeKey(key: String) = putString(KEY_TEXT_SIZE, key)
+
+    // ==================== Plan preview (roadmap item 5) ====================
+    private const val KEY_PLAN_PREVIEW = "KEY_PLAN_PREVIEW_BEFORE_RUN"
+    /** When true, a task shows a plan and waits for approval before running; default false. */
+    fun isPlanPreviewEnabled(): Boolean = getBoolean(KEY_PLAN_PREVIEW, false)
+    fun setPlanPreviewEnabled(enabled: Boolean) = putBoolean(KEY_PLAN_PREVIEW, enabled)
+
+    // ==================== Update channel ====================
+    private const val KEY_UPDATE_CHANNEL = "KEY_UPDATE_CHANNEL"
+    const val UPDATE_CHANNEL_STABLE = "stable"
+    const val UPDATE_CHANNEL_BETA = "beta"
+
+    /**
+     * "stable" = only stable releases; "beta" = include pre-releases.
+     * Defaults to beta on dev/rc builds so they can see newer pre-releases.
+     */
+    fun getUpdateChannel(): String = getString(
+        KEY_UPDATE_CHANNEL,
+        if (io.agents.pokeclaw.BuildConfig.VERSION_NAME.contains("-")) UPDATE_CHANNEL_BETA else UPDATE_CHANNEL_STABLE
+    )
+
+    fun setUpdateChannel(channel: String) = putString(KEY_UPDATE_CHANNEL, channel)
 
     // ==================== Global Prompt (#45) ====================
     // User-defined persistent instructions prepended to every system prompt.

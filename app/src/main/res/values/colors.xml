@@ -52,14 +52,14 @@
     <color name="colorOverlayLabel">#AD000000</color>
 
     <!-- Brand -->
-    <color name="colorBrandPrimary">#FF5856D6</color>
+    <color name="colorBrandPrimary">#FFE8845A</color>
     <color name="colorBrandOnPrimary">#FFFFFFFF</color>
-    <color name="colorBrandContainer">#FFF7F7FF</color>
-    <color name="colorBrandOnContainer">#FF2F2D84</color>
-    <color name="colorBrandFixedOnContainer">#FF2F2D84</color>
-    <color name="colorBrandVariant">#FF7E7DB2</color>
-    <color name="colorBrandOnVariant">#FFE5E4FF</color>
-    <color name="colorBrandLowButtonBg">#FFE5E4FF</color>
+    <color name="colorBrandContainer">#FFFDF0EA</color>
+    <color name="colorBrandOnContainer">#FF6B2A12</color>
+    <color name="colorBrandFixedOnContainer">#FF6B2A12</color>
+    <color name="colorBrandVariant">#FFF2A37F</color>
+    <color name="colorBrandOnVariant">#FF4A1D0B</color>
+    <color name="colorBrandLowButtonBg">#FFFBE3D7</color>
 
     <!-- Error -->
     <color name="colorErrorPrimary">#FFF6685D</color>

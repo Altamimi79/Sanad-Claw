@@ -7,17 +7,19 @@ import android.content.Context
 import java.util.Locale
 
 /**
- * App language resolution for the Sanad fork: Arabic is the default UI language.
+ * App language resolution for the Sanad fork: English is the default UI language.
  *
  * Stored in a tiny plain SharedPreferences file (not MMKV) because attachBaseContext
  * runs before KVUtils/MMKV initialization on every Context.
  *
- * Values: "ar" (default) or "en". Unknown values fall back to "ar".
+ * Values: "en" (default) or "ar". Unknown values fall back to "en".
+ * On an app update the language is reset to English (see [applyUpdateLanguageReset]).
  */
 object AppLocale {
 
     private const val PREFS_NAME = "pokeclaw_locale"
     private const val KEY_LANGUAGE = "KEY_APP_LANGUAGE"
+    private const val KEY_LAST_VERSION_CODE = "KEY_LAST_VERSION_CODE"
     const val LANGUAGE_ARABIC = "ar"
     const val LANGUAGE_ENGLISH = "en"
 
@@ -26,12 +28,12 @@ object AppLocale {
         // while the Application is still being attached, so applicationContext is null then.
         val stored = context
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_LANGUAGE, LANGUAGE_ARABIC)
-        return if (stored == LANGUAGE_ENGLISH) LANGUAGE_ENGLISH else LANGUAGE_ARABIC
+            .getString(KEY_LANGUAGE, LANGUAGE_ENGLISH)
+        return if (stored == LANGUAGE_ARABIC) LANGUAGE_ARABIC else LANGUAGE_ENGLISH
     }
 
     fun setLanguage(context: Context, language: String) {
-        val normalized = if (language == LANGUAGE_ENGLISH) LANGUAGE_ENGLISH else LANGUAGE_ARABIC
+        val normalized = if (language == LANGUAGE_ARABIC) LANGUAGE_ARABIC else LANGUAGE_ENGLISH
         context
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
@@ -40,6 +42,30 @@ object AppLocale {
             // and an async disk write can be lost when the OEM kills the process —
             // the relaunched app would then read the stale language and not switch.
             .commit()
+    }
+
+    /**
+     * Reset the UI language to English when the app was updated (versionCode changed).
+     * Called from attachBaseContext before the locale is applied, so the first launch
+     * after an update already renders in English. First install just records the code.
+     */
+    fun applyUpdateLanguageReset(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val currentCode = try {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+        } catch (e: Exception) {
+            return
+        }
+        val lastCode = prefs.getInt(KEY_LAST_VERSION_CODE, 0)
+        if (lastCode == 0) {
+            prefs.edit().putInt(KEY_LAST_VERSION_CODE, currentCode).commit()
+        } else if (lastCode != currentCode) {
+            prefs.edit()
+                .putString(KEY_LANGUAGE, LANGUAGE_ENGLISH)
+                .putInt(KEY_LAST_VERSION_CODE, currentCode)
+                .commit()
+        }
     }
 
     fun locale(context: Context): Locale =

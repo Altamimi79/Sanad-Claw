@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">Sanad Claw</string>
 
     <!-- Common -->
@@ -81,6 +81,9 @@
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">Menu</string>
     <string name="cd_settings">Settings</string>
+    <string name="cd_toggle_theme">Toggle light/dark theme</string>
+    <string name="cd_attach">Attach image or file</string>
+    <string name="chat_placeholder_unified">Ask Sanad</string>
     <string name="cd_switch_model">Switch model</string>
     <string name="cd_toggle">Toggle</string>
     <string name="action_rename">Rename</string>
@@ -91,6 +94,23 @@
     <string name="action_stop">Stop</string>
     <string name="action_stop_all">Stop All</string>
     <string name="chat_delete_confirm_title">Delete conversation?</string>
+    <string name="action_done">Done</string>
+    <string name="chat_select">Select</string>
+    <string name="chat_select_all">Select all</string>
+    <string name="chat_clear_selection">Clear selection</string>
+    <string name="chat_selected_count">%1$d selected</string>
+    <string name="chat_archive">Archive</string>
+    <string name="chat_unarchive">Unarchive</string>
+    <string name="chat_archived">Archived (%1$d)</string>
+    <string name="chat_bulk_delete_confirm_title">Delete %1$d conversations?</string>
+    <string name="chat_bulk_delete_confirm_body">This permanently removes the selected conversations and cannot be undone.</string>
+    <string name="memory_title">Memory</string>
+    <string name="memory_hint">Sanad sends these saved facts with every request. Keep them short and never store passwords, keys, or card numbers.</string>
+    <string name="memory_add_hint">Something Sanad should remember</string>
+    <string name="memory_add">Add</string>
+    <string name="memory_empty">No saved memories yet</string>
+    <string name="memory_delete">Delete memory</string>
+    <string name="skills_panel_empty">No skills available</string>
     <string name="skill_monitor_messages">Monitor Messages</string>
     <string name="skill_send_message">Send Message</string>
     <string name="send_example_hint">e.g. Mom, +1 555 123 4567</string>
@@ -99,6 +119,10 @@
     <string name="send_placeholder_message">message</string>
     <string name="send_word_to">to </string>
     <string name="send_placeholder_name">name</string>
+    <string name="send_word_on"> on </string>
+    <string name="send_example_phrase">\"send hi to Mom on WhatsApp\"</string>
+    <string name="skill_send_message_desc">Send a message to someone via any messaging app</string>
+    <string name="skills_experimental_badge">Experimental — more workflows coming soon</string>
     <string name="quick_task_templates">Quick Task Templates</string>
     <string name="background_badge">BACKGROUND</string>
     <string name="monitor_auto_reply_title">Monitor &amp; Auto-Reply</string>
@@ -145,6 +169,34 @@
     <string name="report_bug_title">Report a Bug</string>
     <string name="share_debug_report_title">Share Debug Report</string>
     <string name="built_by_title">Built by</string>
+    <string name="about_app_name">Sanad Claw</string>
+    <string name="about_version_label">Version</string>
+    <string name="about_check_update">Check for updates</string>
+    <string name="about_update_channel">Update channel</string>
+    <string name="update_channel_stable">Stable</string>
+    <string name="update_channel_beta">Beta</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_message">New version: v%1$s\n\nWhat\'s changed:\n%2$s\n\nDo you want to update now?</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Later</string>
+    <string name="update_ignore">Ignore this version</string>
+    <string name="update_up_to_date_title">No update available</string>
+    <string name="update_up_to_date_message">You are running the latest version (v%1$s).</string>
+    <string name="update_failed_title">Update check failed</string>
+    <string name="update_ok">OK</string>
+    <string name="update_no_notes">No release notes were provided.</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_download_failed">Could not download the update. Try again from the release page.</string>
+    <string name="update_debug_note">This build is debuggable. If Android blocks the install, uninstall the old debug build first, then install the new APK.</string>
+    <string name="about_check_update_hint">Checks GitHub now. Shows the new version and what changed. Nothing is downloaded automatically.</string>
+    <string name="about_github">GitHub repository</string>
+    <string name="about_github_hint">Source code, releases and documentation</string>
+    <string name="about_report_issue">Report an issue</string>
+    <string name="about_report_issue_hint">Open a GitHub issue; attach the debug report ZIP</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_base_fork">Based on PokeClaw (Apache-2.0)</string>
+    <string name="about_no_browser">No app available to open this link</string>
+    <string name="about_bug_title_prefix">[Bug]</string>
     <string name="max_tokens_per_task">Max tokens per task</string>
     <string name="blank_no_cost_cap">Blank = no cost cap</string>
     <string name="enable_external_automation_question">Enable External Automation?</string>
@@ -180,8 +232,13 @@
     <string name="wechat_media_voice">voice</string>
     <string name="wechat_media_unknown">media</string>
     <string name="channel_config_saved">Configuration saved</string>
-    <string name="channel_config_lan_hint">💡 Enable \"LAN Config\" in Settings to configure via browser</string>
-    <string name="channel_config_lan_hint_running">💡 Open %s in your browser to configure</string>
+    <string name="pause_need_value_message">Paused: this step needs a value that was hidden for privacy. Reply with that value in the chat within 45 seconds. It is used once and not stored.</string>
+    <string name="pause_timeout_message">Cancelled: no value was received within 45 seconds, so the task was stopped. Please start it again.</string>
+    <string name="pause_value_received">Value received. Continuing the task.</string>
+    <string name="injection_confirm_message">The screen or a message contains text that looks like an instruction. Allow the action \"%s\" anyway?</string>
+    <string name="injection_blocked_message">Blocked: a sensitive action was requested from suspicious on-screen text and was not confirmed.</string>
+    <string name="channel_config_lan_hint">💡 Enable \"Config Server\" in Settings to configure from a browser on this phone</string>
+    <string name="channel_config_lan_hint_running">💡 Open %s in a browser on this phone to configure (not reachable from other devices)</string>
     <string name="channel_config_lan_copied">Address copied</string>
 
     <!-- LLM Config -->
@@ -303,6 +360,8 @@
     <string name="voice_input_prompt">Speak now…</string>
     <string name="voice_input_unavailable">Speech recognition not available on this device</string>
     <string name="voice_input_error">Voice input failed. Try again.</string>
+    <string name="voice_command_no_pending">No action is pending confirmation.</string>
+    <string name="voice_command_no_task">No task is running to stop.</string>
 
     <!-- Voice Input (Phase 3: in-app Arabic dictation) -->
     <string name="voice_recording_status">Listening…</string>
@@ -333,6 +392,17 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">Confirm sensitive action</string>
     <string name="safety_confirm_allow">Allow</string>
+    <string name="text_size_title">Text size</string>
+    <string name="text_size_normal">Normal</string>
+    <string name="text_size_slightly_larger">Slightly larger</string>
+    <string name="text_size_larger">Larger</string>
+    <string name="text_size_largest">Largest</string>
+    <string name="text_appearance_applied">Restart the chat to apply the change</string>
+    <string name="plan_preview_title">Review plan before running</string>
+    <string name="plan_preview_enabled_toast">Tasks will show a plan for approval first</string>
+    <string name="plan_preview_disabled_toast">Tasks will run without a plan preview</string>
+    <string name="plan_preview_prompt">Review this plan. Run it?</string>
+    <string name="plan_preview_denied">Plan not approved. The task was not started.</string>
     <string name="safety_confirm_deny">Deny</string>
     <string name="safety_confirm_message">The agent wants to perform a sensitive action (%1$s) via %2$s. Do you allow it?</string>
     <string name="safety_action_denied">Action denied by the user. The task was stopped.</string>
@@ -348,6 +418,9 @@
     <string name="safety_action_log_empty">No actions recorded yet.</string>
     <string name="safety_action_log_clear">Clear log</string>
     <string name="safety_action_log_cleared">Action log cleared</string>
+    <string name="safety_action_log_export">Export log (redacted)</string>
+    <string name="safety_action_log_exported">Action log exported</string>
+    <string name="safety_action_log_export_failed">Could not export the action log</string>
     <string name="safety_seconds_format">%d s</string>
     <string name="risk_send_message">sending a message</string>
     <string name="risk_send_file">sending a file</string>
@@ -357,6 +430,18 @@
     <string name="risk_install">installing an app</string>
     <string name="risk_publish">publishing content</string>
     <string name="risk_generic">a sensitive action</string>
+    <string name="safety_row_state_on">Enabled / مفعّل</string>
+    <string name="safety_row_state_off">Disabled / موقوف</string>
+    <string name="safety_row_desc_format">%1$s: %2$s</string>
+    <string name="safety_confirm_send_message">Confirm sending messages</string>
+    <string name="safety_confirm_send_file">Confirm sending files</string>
+    <string name="safety_confirm_call">Confirm phone calls</string>
+    <string name="safety_confirm_delete">Confirm deleting data</string>
+    <string name="safety_confirm_payment">Confirm payments and transfers</string>
+    <string name="safety_confirm_install">Confirm installing apps</string>
+    <string name="safety_confirm_publish">Confirm publishing content</string>
+    <string name="safety_migration_title">Confirmations re-enabled</string>
+    <string name="safety_migration_message">Confirmations were re-enabled for all sensitive action categories after this update. Each category can be changed in Settings &gt; Tools. Blocked apps are always blocked.</string>
     <string name="safety_retry_notice">Retrying a transient tool failure (%1$d/%2$d)</string>
     <string name="safety_blocklist_hint">bank, wallet, password…</string>
     <string name="safety_blocklist_count">%d apps</string>
@@ -379,7 +464,7 @@
 
     <!-- Chat UI (phase 2) -->
     <string name="chat_tab_chat">Chat</string>
-    <string name="chat_tab_task">Task</string>
+    <string name="chat_tab_task">Agent</string>
     <string name="chat_placeholder_chat">Chat with local AI…</string>
     <string name="chat_placeholder_task">Describe a phone task…</string>
     <string name="chat_placeholder_cloud">Chat or give a task…</string>
@@ -457,4 +542,22 @@
     <string name="llm_cloud_suffix">Cloud</string>
     <string name="llm_no_default_cloud_model">No default cloud model</string>
     <string name="llm_downloaded_done">Downloaded!</string>
+    <string name="msg_actions_title">Message</string>
+    <string name="routines_title">Routines</string>
+    <string name="routines_empty">No routines yet. Add one to get a reminder at a set time.</string>
+    <string name="routines_add">Add routine</string>
+    <string name="routines_enable">Enable</string>
+    <string name="routines_disable">Disable</string>
+    <string name="routines_delete">Delete</string>
+    <string name="routines_save">Save</string>
+    <string name="routines_field_name">Name</string>
+    <string name="routines_field_prompt">What should the reminder say?</string>
+    <string name="routines_field_time">Time (HH:mm, 24-hour)</string>
+    <string name="routines_error_missing">Enter a name and a prompt.</string>
+    <string name="routines_error_time">Enter a valid time like 08:30.</string>
+    <string name="routines_error_days">Select at least one day.</string>
+    <string name="routines_saved">Routine saved.</string>
+    <string name="msg_action_copy">Copy text</string>
+    <string name="msg_action_delete">Delete message</string>
+    <string name="msg_action_cancel">Cancel</string>
 </resources>

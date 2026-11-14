@@ -127,11 +127,13 @@ object AppCapabilityCoordinator {
         lastDisconnectedAt: Long,
     ): ServiceBindingState {
         if (!enabled) return ServiceBindingState.DISABLED
-        if (pendingRepair) return ServiceBindingState.CONNECTING
 
         val now = System.currentTimeMillis()
         val lastHealthyAt = maxOf(lastConnectedAt, lastHeartbeatAt)
 
+        // A live binding always wins over a stale "waiting for the user to return from
+        // Settings" flag. Otherwise re-enabling accessibility leaves the app stuck on
+        // "Connecting" for up to the pending-repair window even though the service is up.
         if (running) {
             if (lastInterruptedAt > lastHealthyAt) {
                 return if (now - lastInterruptedAt <= ACCESSIBILITY_INTERRUPT_GRACE_MS) {
@@ -142,6 +144,8 @@ object AppCapabilityCoordinator {
             }
             return ServiceBindingState.READY
         }
+
+        if (pendingRepair) return ServiceBindingState.CONNECTING
 
         // Process-young grace: after any process restart (manual force-stop, OS task-kill on
         // aggressive OEMs like Xiaomi/Samsung), the AccessibilityService singleton is null and

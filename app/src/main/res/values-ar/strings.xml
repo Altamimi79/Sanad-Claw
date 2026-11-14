@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">سند كلو</string>
 
@@ -82,6 +82,9 @@
     <!-- UI literals previously hardcoded (Arabic default fork) -->
     <string name="cd_menu">القائمة</string>
     <string name="cd_settings">الإعدادات</string>
+    <string name="cd_toggle_theme">تبديل الوضع الليلي والنهاري</string>
+    <string name="cd_attach">إرفاق صورة أو ملف</string>
+    <string name="chat_placeholder_unified">اسأل سند</string>
     <string name="cd_switch_model">تبديل النموذج</string>
     <string name="cd_toggle">تبديل</string>
     <string name="action_rename">إعادة تسمية</string>
@@ -92,6 +95,23 @@
     <string name="action_stop">إيقاف</string>
     <string name="action_stop_all">إيقاف الكل</string>
     <string name="chat_delete_confirm_title">حذف المحادثة؟</string>
+    <string name="action_done">تم</string>
+    <string name="chat_select">تحديد</string>
+    <string name="chat_select_all">تحديد الكل</string>
+    <string name="chat_clear_selection">إلغاء التحديد</string>
+    <string name="chat_selected_count">تم تحديد %1$d</string>
+    <string name="chat_archive">أرشفة</string>
+    <string name="chat_unarchive">إخراج من الأرشيف</string>
+    <string name="chat_archived">الأرشيف (%1$d)</string>
+    <string name="chat_bulk_delete_confirm_title">حذف %1$d محادثات؟</string>
+    <string name="chat_bulk_delete_confirm_body">سيؤدي هذا إلى حذف المحادثات المحددة نهائيًا ولا يمكن التراجع عنه.</string>
+    <string name="memory_title">الذاكرة</string>
+    <string name="memory_hint">يرسل سند هذه المعلومات المحفوظة مع كل طلب. اجعلها قصيرة ولا تحفظ فيها كلمات المرور أو المفاتيح أو أرقام البطاقات.</string>
+    <string name="memory_add_hint">شيء تريد أن يتذكره سند</string>
+    <string name="memory_add">إضافة</string>
+    <string name="memory_empty">لا توجد ذكريات محفوظة بعد</string>
+    <string name="memory_delete">حذف الذكرى</string>
+    <string name="skills_panel_empty">لا توجد مهارات متاحة</string>
     <string name="skill_monitor_messages">مراقبة الرسائل</string>
     <string name="skill_send_message">إرسال رسالة</string>
     <string name="send_example_hint">مثال: الوالدة، ‎+1 555 123 4567</string>
@@ -100,6 +120,10 @@
     <string name="send_placeholder_message">الرسالة</string>
     <string name="send_word_to">إلى </string>
     <string name="send_placeholder_name">الاسم</string>
+    <string name="send_word_on"> على </string>
+    <string name="send_example_phrase">\"أرسل مرحبًا إلى أمي على واتساب\"</string>
+    <string name="skill_send_message_desc">أرسل رسالة إلى أي شخص عبر أي تطبيق مراسلة</string>
+    <string name="skills_experimental_badge">تجريبي — المزيد من سير العمل قريبًا</string>
     <string name="quick_task_templates">مهام سريعة جاهزة</string>
     <string name="background_badge">في الخلفية</string>
     <string name="monitor_auto_reply_title">المراقبة والرد التلقائي</string>
@@ -146,6 +170,34 @@
     <string name="report_bug_title">الإبلاغ عن خطأ</string>
     <string name="share_debug_report_title">مشاركة تقرير التشخيص</string>
     <string name="built_by_title">طوَّره</string>
+    <string name="about_app_name">سند كلو</string>
+    <string name="about_version_label">الإصدار</string>
+    <string name="about_check_update">التحقق من التحديثات</string>
+    <string name="about_update_channel">قناة التحديث</string>
+    <string name="update_channel_stable">رسمي</string>
+    <string name="update_channel_beta">تجريبي</string>
+    <string name="update_available_title">تحديث متاح</string>
+    <string name="update_available_message">إصدار جديد: v%1$s\n\nما الجديد:\n%2$s\n\nهل تريد التحديث الآن؟</string>
+    <string name="update_now">تحديث</string>
+    <string name="update_later">لاحقًا</string>
+    <string name="update_ignore">تجاهل هذا الإصدار</string>
+    <string name="update_up_to_date_title">لا يوجد تحديث</string>
+    <string name="update_up_to_date_message">أنت على أحدث إصدار (v%1$s).</string>
+    <string name="update_failed_title">فشل فحص التحديث</string>
+    <string name="update_ok">حسنًا</string>
+    <string name="update_no_notes">لا توجد ملاحظات إصدار.</string>
+    <string name="update_downloading">جارٍ تنزيل التحديث…</string>
+    <string name="update_download_failed">تعذّر تنزيل التحديث. حاول من صفحة الإصدار.</string>
+    <string name="update_debug_note">هذه نسخة تجريبية. إذا منع أندرويد التثبيت، أزل النسخة القديمة ثم ثبّت الـ APK الجديد.</string>
+    <string name="about_check_update_hint">يفحص GitHub الآن ويعرض الإصدار الجديد وما تغيّر. لا يتم التنزيل تلقائياً.</string>
+    <string name="about_github">مستودع GitHub</string>
+    <string name="about_github_hint">الكود المصدري والإصدارات والتوثيق</string>
+    <string name="about_report_issue">الإبلاغ عن مشكلة</string>
+    <string name="about_report_issue_hint">افتح بلاغاً على GitHub وأرفق ملف تقرير التشخيص</string>
+    <string name="about_developer">المطوّر</string>
+    <string name="about_base_fork">مبني على PokeClaw (Apache-2.0)</string>
+    <string name="about_no_browser">لا يوجد تطبيق لفتح هذا الرابط</string>
+    <string name="about_bug_title_prefix">[خطأ]</string>
     <string name="max_tokens_per_task">الحد الأقصى للرموز لكل مهمة</string>
     <string name="blank_no_cost_cap">فارغ = بدون حد للتكلفة</string>
     <string name="enable_external_automation_question">هل تريد تفعيل الأتمتة الخارجية؟</string>
@@ -181,8 +233,13 @@
     <string name="wechat_media_voice">صوت</string>
     <string name="wechat_media_unknown">وسيط</string>
     <string name="channel_config_saved">تم حفظ الإعدادات</string>
-    <string name="channel_config_lan_hint">💡 فعّل «إعداد الشبكة المحلية» في الإعدادات للتحكم عبر المتصفح</string>
-    <string name="channel_config_lan_hint_running">💡 افتح %s في المتصفح للإعداد</string>
+    <string name="pause_need_value_message">متوقف مؤقتاً: هذه الخطوة تحتاج إلى قيمة أُخفيت لحماية الخصوصية. أرسل تلك القيمة في المحادثة خلال 45 ثانية. تُستخدم مرة واحدة ولا تُحفظ.</string>
+    <string name="pause_timeout_message">تم الإلغاء: لم تصل أي قيمة خلال 45 ثانية، فتوقفت المهمة. يرجى بدءها من جديد.</string>
+    <string name="pause_value_received">تم استلام القيمة. متابعة المهمة.</string>
+    <string name="injection_confirm_message">تحتوي الشاشة أو رسالة على نص يبدو كأمر. هل تسمح بالإجراء «%s» رغم ذلك؟</string>
+    <string name="injection_blocked_message">تم الحظر: طُلب إجراء حساس من نص مشبوه على الشاشة ولم يُؤكَّد.</string>
+    <string name="channel_config_lan_hint">💡 فعّل «خادم الإعداد» في الإعدادات للتحكم من متصفح على هذا الهاتف</string>
+    <string name="channel_config_lan_hint_running">💡 افتح %s في متصفح على هذا الهاتف للإعداد (غير متاح من أجهزة أخرى)</string>
     <string name="channel_config_lan_copied">تم نسخ العنوان</string>
 
     <!-- LLM Config -->
@@ -304,6 +361,8 @@
     <string name="voice_input_prompt">تحدث الآن…</string>
     <string name="voice_input_unavailable">التعرف على الكلام غير متوفر على هذا الجهاز</string>
     <string name="voice_input_error">فشل الإدخال الصوتي. حاول مجددًا.</string>
+    <string name="voice_command_no_pending">لا يوجد إجراء بانتظار التأكيد.</string>
+    <string name="voice_command_no_task">لا توجد مهمة قيد التشغيل لإيقافها.</string>
 
     <!-- Voice Input (Phase 3: in-app Arabic dictation) -->
     <string name="voice_recording_status">أستمع…</string>
@@ -334,6 +393,17 @@
     <!-- Safety (Phase 4) -->
     <string name="safety_confirm_title">تأكيد إجراء حسّاس</string>
     <string name="safety_confirm_allow">السماح</string>
+    <string name="text_size_title">حجم النص</string>
+    <string name="text_size_normal">عادي</string>
+    <string name="text_size_slightly_larger">كبير قليلاً</string>
+    <string name="text_size_larger">أكبر</string>
+    <string name="text_size_largest">الأكبر</string>
+    <string name="text_appearance_applied">أعد تشغيل المحادثة لتطبيق التغيير</string>
+    <string name="plan_preview_title">مراجعة الخطة قبل التنفيذ</string>
+    <string name="plan_preview_enabled_toast">ستعرض المهام خطة للموافقة أولاً</string>
+    <string name="plan_preview_disabled_toast">ستُنفَّذ المهام دون مراجعة الخطة</string>
+    <string name="plan_preview_prompt">راجع هذه الخطة. هل تنفّذها؟</string>
+    <string name="plan_preview_denied">لم تتم الموافقة على الخطة. لم تبدأ المهمة.</string>
     <string name="safety_confirm_deny">رفض</string>
     <string name="safety_confirm_message">يريد الوكيل تنفيذ إجراء حسّاس (%1$s) عبر %2$s. هل تسمح؟</string>
     <string name="safety_action_denied">تم رفض الإجراء. أُوقفت المهمة.</string>
@@ -349,6 +419,9 @@
     <string name="safety_action_log_empty">لا توجد إجراءات مسجلة بعد.</string>
     <string name="safety_action_log_clear">مسح السجل</string>
     <string name="safety_action_log_cleared">تم مسح السجل</string>
+    <string name="safety_action_log_export">تصدير السجل (مُنقّح)</string>
+    <string name="safety_action_log_exported">تم تصدير سجل الإجراءات</string>
+    <string name="safety_action_log_export_failed">تعذّر تصدير سجل الإجراءات</string>
     <string name="safety_seconds_format">%d ثانية</string>
     <string name="risk_send_message">إرسال رسالة</string>
     <string name="risk_send_file">إرسال ملف</string>
@@ -358,6 +431,18 @@
     <string name="risk_install">تثبيت تطبيق</string>
     <string name="risk_publish">نشر محتوى</string>
     <string name="risk_generic">إجراء حسّاس</string>
+    <string name="safety_row_state_on">مفعّل / Enabled</string>
+    <string name="safety_row_state_off">موقوف / Disabled</string>
+    <string name="safety_row_desc_format">%1$s: %2$s</string>
+    <string name="safety_confirm_send_message">تأكيد إرسال الرسائل</string>
+    <string name="safety_confirm_send_file">تأكيد إرسال الملفات</string>
+    <string name="safety_confirm_call">تأكيد المكالمات الهاتفية</string>
+    <string name="safety_confirm_delete">تأكيد حذف البيانات</string>
+    <string name="safety_confirm_payment">تأكيد المدفوعات والتحويلات</string>
+    <string name="safety_confirm_install">تأكيد تثبيت التطبيقات</string>
+    <string name="safety_confirm_publish">تأكيد نشر المحتوى</string>
+    <string name="safety_migration_title">تمت إعادة تفعيل التأكيد</string>
+    <string name="safety_migration_message">تمت إعادة تفعيل التأكيد لجميع فئات الإجراءات الحساسة بعد هذا التحديث. يمكنك تغيير كل فئة من الإعدادات &gt; الأدوات. التطبيقات المحظورة تبقى محظورة دائماً.</string>
     <string name="safety_retry_notice">إعادة محاولة إجراء مؤقت (%1$d/%2$d)</string>
     <string name="safety_blocklist_hint">bank، wallet، password…</string>
     <string name="safety_blocklist_count">%d تطبيق</string>
@@ -380,7 +465,7 @@
 
     <!-- Chat UI (phase 2) -->
     <string name="chat_tab_chat">دردشة</string>
-    <string name="chat_tab_task">مهمة</string>
+    <string name="chat_tab_task">الوكيل</string>
     <string name="chat_placeholder_chat">دردش مع الذكاء المحلي…</string>
     <string name="chat_placeholder_task">صف مهمة على الهاتف…</string>
     <string name="chat_placeholder_cloud">دردش أو اطلب مهمة…</string>
@@ -458,4 +543,22 @@
     <string name="llm_cloud_suffix">سحابي</string>
     <string name="llm_no_default_cloud_model">لا يوجد نموذج سحابي افتراضي</string>
     <string name="llm_downloaded_done">تم التحميل!</string>
+    <string name="msg_actions_title">الرسالة</string>
+    <string name="routines_title">الروتينات</string>
+    <string name="routines_empty">لا توجد روتينات بعد. أضف واحداً لتصلك تذكرة في وقت محدد.</string>
+    <string name="routines_add">إضافة روتين</string>
+    <string name="routines_enable">تفعيل</string>
+    <string name="routines_disable">تعطيل</string>
+    <string name="routines_delete">حذف</string>
+    <string name="routines_save">حفظ</string>
+    <string name="routines_field_name">الاسم</string>
+    <string name="routines_field_prompt">ماذا تريد أن تقول لك التذكرة؟</string>
+    <string name="routines_field_time">الوقت (HH:mm، بنظام 24 ساعة)</string>
+    <string name="routines_error_missing">أدخل الاسم والنص.</string>
+    <string name="routines_error_time">أدخل وقتاً صحيحاً مثل 08:30.</string>
+    <string name="routines_error_days">اختر يوماً واحداً على الأقل.</string>
+    <string name="routines_saved">تم حفظ الروتين.</string>
+    <string name="msg_action_copy">نسخ النص</string>
+    <string name="msg_action_delete">حذف الرسالة</string>
+    <string name="msg_action_cancel">إلغاء</string>
 </resources>

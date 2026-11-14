@@ -152,6 +152,84 @@ class DefaultAgentService : AgentService {
             return
         }
 
+        // Plan preview (roadmap item 5). Off by default: the task runs exactly as before.
+        // The gate runs on the background executor: it makes a network call and blocks
+        // waiting for approval, neither of which may happen on the UI thread.
+        if (io.agents.pokeclaw.safety.TaskPlanPreview.requiresPreview(
+                io.agents.pokeclaw.utils.KVUtils.isPlanPreviewEnabled(),
+            )
+        ) {
+            running.set(true)
+            cancelled.set(false)
+            taskFuture = executor?.submit {
+                try {
+                    if (awaitPlanApproval(userPrompt)) {
+                        running.set(false)
+                        startRun(userPrompt, callback)
+                    } else {
+                        XLog.i(TAG, "Plan preview: not approved, task not started")
+                        running.set(false)
+                        callback.onError(
+                            0,
+                            RuntimeException(ClawApplication.instance.getString(R.string.plan_preview_denied)),
+                            0,
+                        )
+                    }
+                } catch (e: Exception) {
+                    running.set(false)
+                    XLog.e(TAG, "Plan preview failed", e)
+                    callback.onError(0, e, 0)
+                }
+            }
+            return
+        }
+
+        startRun(userPrompt, callback)
+    }
+
+    /**
+     * Asks the model for a step plan, then blocks until the user approves it. Returns false
+     * (task must not run) when the plan is empty, the model call fails, the user denies, the
+     * request times out, or no confirmation UI is available.
+     */
+    private fun awaitPlanApproval(userPrompt: String): Boolean {
+        val steps = try {
+            val messages = listOf(
+                SystemMessage.from(io.agents.pokeclaw.safety.TaskPlanner.PLANNING_INSTRUCTION),
+                UserMessage.from(io.agents.pokeclaw.safety.TaskPlanner.buildUserMessage(userPrompt)),
+            )
+            val reply = llmClient.chat(messages, emptyList()).text
+            io.agents.pokeclaw.safety.TaskPlanner.parseSteps(reply)
+        } catch (e: Exception) {
+            XLog.e(TAG, "Plan preview: planner call failed", e)
+            return false
+        }
+
+        val plan = io.agents.pokeclaw.safety.TaskPlanPreview.buildPlan(steps) { text ->
+            io.agents.pokeclaw.safety.RiskClassifier.assessText("plan_step", text).requiresConfirmation
+        }
+        if (plan.isEmpty) {
+            XLog.w(TAG, "Plan preview: planner returned no steps")
+            return false
+        }
+
+        val body = plan.steps.joinToString("\n") { "${it.index}. ${it.text}" }
+        val message = ClawApplication.instance.getString(R.string.plan_preview_prompt) + "\n\n" + body
+        val approved = io.agents.pokeclaw.safety.SafetyCoordinator.requestConfirmation(
+            message = message,
+            risk = "plan",
+        )
+        val outcome = io.agents.pokeclaw.safety.TaskPlanPreview.gate(
+            plan,
+            if (approved) io.agents.pokeclaw.safety.TaskPlanPreview.Decision.APPROVE
+            else io.agents.pokeclaw.safety.TaskPlanPreview.Decision.DENY,
+        )
+        XLog.i(TAG, "Plan preview outcome=$outcome steps=${plan.steps.size}")
+        return outcome == io.agents.pokeclaw.safety.TaskPlanPreview.Outcome.RUN
+    }
+
+    /** Starts the agent loop. Unchanged from before the plan-preview gate. */
+    private fun startRun(userPrompt: String, callback: AgentCallback) {
         running.set(true)
         cancelled.set(false)
         var terminalCallback: (() -> Unit)? = null
@@ -210,6 +288,7 @@ class DefaultAgentService : AgentService {
                         XLog.w(TAG, "LlmClient close error after task", e)
                     }
                 }
+                io.agents.pokeclaw.safety.PausedTaskState.shared.clearAtTaskEnd()
                 running.set(false)
                 val terminal = terminalCallback
                 terminalCallback = null
@@ -472,10 +551,19 @@ class DefaultAgentService : AgentService {
             append(emailComposeGuard.buildPromptSection())
             append(directDeviceDataGuard.buildPromptSection())
             append(buildDeviceContext())
+            append("\n\n## Untrusted content rule\n")
+            append(io.agents.pokeclaw.safety.ScreenContentGuard.SYSTEM_RULE)
         }
 
         val messages = mutableListOf<ChatMessage>()
         messages.add(SystemMessage.from(fullSystemPrompt))
+        XLog.i(
+            TAG,
+            "System prompt built: ${fullSystemPrompt.length} chars, untrustedRule=" +
+                fullSystemPrompt.contains(io.agents.pokeclaw.safety.ScreenContentGuard.SYSTEM_RULE)
+        )
+        // Per-task injection taint: set once any untrusted text is flagged.
+        val screenGuard = io.agents.pokeclaw.safety.ScreenContentGuard()
 
         val promptForModel = if (parsedPrompt.hasChatHistory || parsedPrompt.hasBackgroundState) {
             buildString {
@@ -520,7 +608,17 @@ class DefaultAgentService : AgentService {
                     val screenResult = screenTool.execute(emptyMap())
                     if (screenResult.isSuccess && !screenResult.data.isNullOrBlank()) {
                         XLog.i(TAG, "runAgentLoop: pre-warm screen attached (${screenResult.data!!.length} chars)")
-                        "$promptForModel\n\nCurrent screen:\n${screenResult.data}"
+                        val wrappedScreen = screenGuard.wrap("screen", screenResult.data!!)
+                        if (wrappedScreen.flagged) {
+                            XLog.w(TAG, "runAgentLoop: pre-warm screen flagged as suspicious (reasons=${wrappedScreen.reasons})")
+                        }
+                        // Redact before the screen text reaches the cloud model. Tool results
+                        // are redacted later; this pre-warm path is separate and must do it too.
+                        val redactedPrewarm = io.agents.pokeclaw.safety.SensitiveDataRedactor.redact(wrappedScreen.text)
+                        if (redactedPrewarm.changed) {
+                            XLog.i(TAG, "runAgentLoop: pre-warm screen redacted kinds=${redactedPrewarm.kinds}")
+                        }
+                        "$promptForModel\n\nCurrent screen:\n${redactedPrewarm.text}"
                     } else promptForModel
                 } else promptForModel
             } catch (e: Exception) { promptForModel }
@@ -560,7 +658,9 @@ class DefaultAgentService : AgentService {
                 )
                 XLog.w(TAG, "Safety task timeout reached (${safetyTimeoutMs}ms) — stopping")
                 io.agents.pokeclaw.safety.ActionLog.record(
-                    userPrompt, "task", "none", "timeout", msg
+                    userPrompt, "task", "none", "timeout", msg,
+                    io.agents.pokeclaw.safety.ActionReason.TIMEOUT,
+                    io.agents.pokeclaw.safety.ActionResult.FAILED,
                 )
                 callback.onError(iterations, RuntimeException(msg), totalTokens)
                 return
@@ -743,7 +843,10 @@ class DefaultAgentService : AgentService {
                     callback.onToolCall(iterations, toolName, displayName, toolArgs)
                     callback.onToolResult(iterations, toolName, displayName, toolArgs, denied)
                     io.agents.pokeclaw.safety.SafetyGate.recordAction(
-                        userPrompt, toolName, safetyDecision.assessment.label, "blocked", safetyDecision.message
+                        userPrompt, toolName, safetyDecision.assessment.label, "blocked", safetyDecision.message,
+                        if (safetyDecision.blockedByApp) io.agents.pokeclaw.safety.ActionReason.BLOCKED_BY_APP
+                        else io.agents.pokeclaw.safety.ActionReason.SAFETY_DENIED,
+                        io.agents.pokeclaw.safety.ActionResult.DENIED,
                     )
                     messages.add(ToolExecutionResultMessage.from(toolRequest, GSON.toJson(denied)))
                     callback.onError(
@@ -754,12 +857,80 @@ class DefaultAgentService : AgentService {
                     return
                 }
 
+                // Injection guard: a sensitive action in a task whose context was flagged
+                // requires explicit user confirmation through the existing SafetyCoordinator.
+                val taintKind = io.agents.pokeclaw.safety.RiskClassifier.assess(toolName, params).kind
+                val taintDecision = screenGuard.decide(taintKind, confirmedByUser = false)
+                when (taintDecision) {
+                    io.agents.pokeclaw.safety.ScreenContentGuard.Decision.REQUIRE_CONFIRMATION -> {
+                        val approved = io.agents.pokeclaw.safety.SafetyCoordinator.requestConfirmation(
+                            ClawApplication.instance.getString(
+                                R.string.injection_confirm_message, toolName
+                            ),
+                            "injection_${taintKind?.name?.lowercase()}"
+                        )
+                        if (!approved) {
+                            XLog.w(TAG, "sensitive tool=$toolName blocked: tainted context, not confirmed")
+                            val denied = ToolResult.error(
+                                ClawApplication.instance.getString(R.string.injection_blocked_message)
+                            )
+                            callback.onToolCall(iterations, toolName, displayName, toolArgs)
+                            callback.onToolResult(iterations, toolName, displayName, toolArgs, denied)
+                            io.agents.pokeclaw.safety.SafetyGate.recordAction(
+                                userPrompt, toolName, "injection", "blocked", "tainted_context",
+                                io.agents.pokeclaw.safety.ActionReason.BLOCKED_BY_TAINT,
+                                io.agents.pokeclaw.safety.ActionResult.DENIED,
+                            )
+                            messages.add(ToolExecutionResultMessage.from(toolRequest, GSON.toJson(denied)))
+                            callback.onError(iterations, RuntimeException(denied.error ?: ""), totalTokens)
+                            return
+                        }
+                        XLog.i(TAG, "sensitive tool=$toolName allowed after explicit confirmation (tainted context)")
+                    }
+                    io.agents.pokeclaw.safety.ScreenContentGuard.Decision.ALLOW_WITH_WARNING ->
+                        XLog.w(TAG, "tainted context: non-sensitive tool=$toolName allowed with warning")
+                    else -> Unit
+                }
+
                 callback.onToolCall(iterations, toolName, displayName, toolArgs)
+                // Decision 2: a tool call whose parameters hold a redaction placeholder pauses the
+                // task until the user's next chat message supplies the value (45 s, else cancel).
+                // The value is substituted into this call only, never logged, never persisted.
+                val pausedState = io.agents.pokeclaw.safety.PausedTaskState.shared
+                var execParams: Map<String, Any> = params
+                // `finish` only summarizes the task; a placeholder in its summary must not
+                // pause the task and ask the user for a value (there is nothing to execute).
+                if (toolName != "finish" &&
+                    io.agents.pokeclaw.safety.PausedTaskState.hasPlaceholder(params)
+                ) {
+                    pausedState.pause(toolName, params)
+                    callback.onContent(iterations, ClawApplication.instance.getString(R.string.pause_need_value_message))
+                    XLog.i(TAG, "paused: tool=$toolName needs a user-supplied value (redacted)")
+                    if (!pausedState.awaitValue()) {
+                        pausedState.clearAtTaskEnd()
+                        XLog.w(TAG, "pause timed out: task cancelled")
+                        io.agents.pokeclaw.safety.SafetyGate.recordAction(
+                            userPrompt, toolName, "pause", "cancelled", "value_timeout",
+                            io.agents.pokeclaw.safety.ActionReason.TIMEOUT,
+                            io.agents.pokeclaw.safety.ActionResult.CANCELLED,
+                        )
+                        callback.onError(
+                            iterations,
+                            RuntimeException(ClawApplication.instance.getString(R.string.pause_timeout_message)),
+                            totalTokens
+                        )
+                        return
+                    }
+                    @Suppress("UNCHECKED_CAST")
+                    execParams = (pausedState.substitute(params) ?: params) as Map<String, Any>
+                    XLog.i(TAG, "resumed: value received for tool=$toolName (value not logged)")
+                }
+
                 directDeviceDataGuard.recordToolAttempt(toolName)
                 emailComposeGuard.recordToolAttempt(toolName)
 
                 var attempt = 1
-                var result = ToolRegistry.getInstance().executeTool(toolName, params)
+                var result = ToolRegistry.getInstance().executeTool(toolName, execParams)
                 while (!result.isSuccess && io.agents.pokeclaw.safety.RetryPolicy.shouldRetry(
                         attempt, toolName, result.error
                     )
@@ -772,15 +943,22 @@ class DefaultAgentService : AgentService {
                         break
                     }
                     attempt++
-                    result = ToolRegistry.getInstance().executeTool(toolName, params)
+                    result = ToolRegistry.getInstance().executeTool(toolName, execParams)
                 }
                 io.agents.pokeclaw.safety.ActionLog.record(
                     userPrompt,
                     toolName,
                     safetyDecision.assessment.label,
                     if (result.isSuccess) "ok" else "error",
-                    result.error ?: result.data
+                    result.error ?: result.data,
+                    io.agents.pokeclaw.safety.ActionReason.COMPLETED,
+                    if (result.isSuccess) io.agents.pokeclaw.safety.ActionResult.SUCCESS
+                    else io.agents.pokeclaw.safety.ActionResult.FAILED,
                 )
+                // Value no longer needed: wipe it before anything is logged or reported.
+                if (io.agents.pokeclaw.safety.PausedTaskState.hasPlaceholder(params)) {
+                    io.agents.pokeclaw.safety.PausedTaskState.shared.clearAfterToolCall()
+                }
                 val paramsString = if (params.isEmpty()) "" else params.toString()
                 callback.onToolResult(iterations, toolName, displayName, paramsString, result)
                 if (result.isSuccess) {
@@ -855,8 +1033,22 @@ class DefaultAgentService : AgentService {
                     if (loopHistory.size > LOOP_DETECT_WINDOW) loopHistory.removeFirst()
                 }
 
-                // Add tool result to messages
-                messages.add(ToolExecutionResultMessage.from(toolRequest, combinedResultData))
+                // Untrusted tool output (screen/notification/page text) is wrapped as data and
+                // flagged; redaction runs before anything reaches the cloud model.
+                val guardedResultData = if (toolName in ACTION_TOOLS || toolName == "get_notifications" ||
+                    toolName == "get_screen_info" || toolName == "clipboard"
+                ) {
+                    val wrapped = screenGuard.wrap("tool_$toolName", combinedResultData)
+                    if (wrapped.flagged) {
+                        XLog.w(TAG, "tool=$toolName result flagged as suspicious (reasons=${wrapped.reasons})")
+                    }
+                    wrapped.text
+                } else combinedResultData
+                val redacted = io.agents.pokeclaw.safety.SensitiveDataRedactor.redact(guardedResultData)
+                if (redacted.changed) {
+                    XLog.i(TAG, "tool=$toolName result redacted kinds=${redacted.kinds}")
+                }
+                messages.add(ToolExecutionResultMessage.from(toolRequest, redacted.text))
                 XLog.d(TAG, "displayName:$displayName toolName:$toolName")
             }
 

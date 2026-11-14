@@ -54,6 +54,7 @@ class ComposeChatActivity : ComponentActivity() {
     private val _isTaskRunning = mutableStateOf(false)
     private val _inputEnabled = mutableStateOf(true)    // False when model not ready (no task running)
     private val _conversations = mutableStateListOf<ChatHistoryManager.ConversationSummary>()
+    private val _archived = mutableStateListOf<ChatHistoryManager.ConversationSummary>()
     private val _isDownloading = mutableStateOf(false)
     private val _downloadProgress = mutableStateOf(0)
 
@@ -143,6 +144,7 @@ class ComposeChatActivity : ComponentActivity() {
         // Status bar color
         val themeColors = ThemeManager.getColors()
         window.statusBarColor = themeColors.toolbarBg
+        ThemeManager.applySystemBarIcons(this)
 
         // Build Compose colors from ThemeManager
         val composeColors = with(ThemeManager) { themeColors.toComposeColors() }
@@ -178,7 +180,21 @@ class ComposeChatActivity : ComponentActivity() {
                     onSurfaceVariant = composeColors.textSecondary,
                 )
             }
-            androidx.compose.material3.MaterialTheme(colorScheme = m3Colors, typography = PokeclawTypography) {
+            // Font family is fixed to the bundled Naskh face; only text size is user-selectable.
+            val textFamily = TextAppearance.Family.NASKH
+            val textScale = TextAppearance.scaleFor(KVUtils.getTextSizeKey())
+            val baseDensity = androidx.compose.ui.platform.LocalDensity.current
+            androidx.compose.material3.MaterialTheme(
+                colorScheme = m3Colors,
+                typography = pokeclawTypography(textFamily),
+            ) {
+            // Applies the text-size scale to every sp value, including hard-coded ones.
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(
+                    density = baseDensity.density,
+                    fontScale = baseDensity.fontScale * textScale,
+                ),
+            ) {
             ChatScreen(
                 messages = _messages.toList(),
                 modelStatus = _modelStatus.value,
@@ -192,6 +208,13 @@ class ComposeChatActivity : ComponentActivity() {
                 sessionTokens = _sessionTokens.value,
                 sessionCost = _sessionCost.value,
                 onSendChat = { sendChat(it) },
+                onDeleteMessage = { index ->
+                    if (index in _messages.indices) {
+                        XLog.i("ChatScreen", "message deleted at index=$index")
+                        _messages.removeAt(index)
+                        saveChat()
+                    }
+                },
                 onSendTask = { taskFlowController.sendTask(it) },
                 onStartMonitor = { target -> taskFlowController.startMonitor(target) },
                 onSendDirectMessage = { contact, app, message ->
@@ -203,15 +226,46 @@ class ComposeChatActivity : ComponentActivity() {
                 onFixPermissions = { startActivity(Intent(this, SettingsActivity::class.java)) },
                 onAttach = { Toast.makeText(this, R.string.attach_not_supported, Toast.LENGTH_SHORT).show() },
                 conversations = _conversations.toList(),
+                archived = _archived.toList(),
                 onSelectConversation = { loadConversation(it) },
                 onDeleteConversation = { conv ->
                     val deleted = conversationStore.deleteConversation(conv)
                     XLog.i(TAG, "Delete conversation: ${conv.file.absolutePath} deleted=$deleted")
+                    if (conv.id == conversationStore.currentConversationId) {
+                        resetToFreshConversation()
+                    }
+                    refreshSidebarHistory()
+                },
+                onDeleteConversations = { convs ->
+                    var deletedCount = 0
+                    convs.forEach { conv ->
+                        if (conversationStore.deleteConversation(conv)) deletedCount++
+                    }
+                    XLog.i(TAG, "Bulk delete: ${convs.size} requested, $deletedCount deleted")
+                    if (convs.any { it.id == conversationStore.currentConversationId }) {
+                        resetToFreshConversation()
+                    }
                     refreshSidebarHistory()
                 },
                 onRenameConversation = { conv, newName ->
                     val renamed = conversationStore.renameConversation(conv, newName)
                     XLog.i(TAG, "Rename conversation: '${conv.title}' → '$newName' renamed=$renamed")
+                    refreshSidebarHistory()
+                },
+                onArchiveConversations = { convs ->
+                    var archivedCount = 0
+                    convs.forEach { conv ->
+                        if (conversationStore.archiveConversation(conv)) archivedCount++
+                    }
+                    XLog.i(TAG, "Bulk archive: ${convs.size} requested, $archivedCount archived")
+                    if (convs.any { it.id == conversationStore.currentConversationId }) {
+                        resetToFreshConversation()
+                    }
+                    refreshSidebarHistory()
+                },
+                onUnarchiveConversation = { conv ->
+                    val unarchived = conversationStore.unarchiveConversation(conv)
+                    XLog.i(TAG, "Unarchive conversation: ${conv.file.absolutePath} unarchived=$unarchived")
                     refreshSidebarHistory()
                 },
                 activeTasks = activeTasks,
@@ -236,6 +290,7 @@ class ComposeChatActivity : ComponentActivity() {
                 onSelectCloudModel = { providerName, modelId -> selectCloudModel(providerName, modelId) },
                 colors = composeColors,
             )
+            }
             }
         }
 
@@ -484,11 +539,33 @@ class ComposeChatActivity : ComponentActivity() {
 
     private fun refreshSidebarHistory() {
         syncSidebar(conversationStore.refreshSidebar())
+        syncArchived(conversationStore.refreshArchived())
     }
 
     private fun syncSidebar(convos: List<ChatHistoryManager.ConversationSummary>) {
         _conversations.clear()
         _conversations.addAll(convos)
+    }
+
+    private fun syncArchived(convos: List<ChatHistoryManager.ConversationSummary>) {
+        _archived.clear()
+        _archived.addAll(convos)
+    }
+
+    /**
+     * Called after the current conversation was archived or deleted: starts a new id and
+     * clears the UI without saving the old messages again (which would re-create the file).
+     */
+    private fun resetToFreshConversation() {
+        val session = conversationStore.beginFreshConversation()
+        syncSidebar(session.conversations)
+        _messages.clear()
+        _sessionTokens.value = 0
+        _sessionCost.value = 0.0
+        _isAwaitingReply.value = false
+        _isTaskRunning.value = false
+        chatSessionController.startNewConversationRuntime()
+        XLog.i(TAG, "Current conversation was archived/deleted; started ${session.conversationId}")
     }
 
     private fun currentConversationModelName(): String {

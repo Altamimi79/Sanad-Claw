@@ -32,6 +32,8 @@ object RiskClassifier {
     private val riskyTools: Map<String, RiskKind> = mapOf(
         "send_message" to RiskKind.SEND_MESSAGE,
         "send_file" to RiskKind.SEND_FILE,
+        // Attaching a file to a contact is a message to a person: same switch as send_message.
+        "send_media" to RiskKind.SEND_MESSAGE,
         "make_call" to RiskKind.CALL,
         "search_app_in_store" to RiskKind.INSTALL,
     )
@@ -52,6 +54,12 @@ object RiskClassifier {
         val normalizedTool = toolName.trim().lowercase()
         riskyTools[normalizedTool]?.let { kind ->
             return RiskAssessment(true, kind, true, labelFor(kind))
+        }
+
+        // finish only ends the task; its summary text must never be re-classified as a
+        // payment/delete intent (e.g. summarizing a page that merely mentions "transfer").
+        if (normalizedTool == "finish") {
+            return RiskAssessment(false, null, false, labelFor(null))
         }
 
         val text = flatten(params)

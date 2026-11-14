@@ -111,6 +111,14 @@ public class SendMessageTool extends BaseTool {
                 XLog.i(TAG, "Step 3: Tapped " + contact);
                 Thread.sleep(3000);
                 waitForActiveWindow(service, packageName, 5000);
+
+                // Safety: verify the opened chat is actually the requested contact before
+                // typing. A chat-list search can match a group or a message preview that
+                // mentions the contact; sending there would reach the wrong people.
+                if (!isAlreadyInChatWith(service, contact)) {
+                    XLog.w(TAG, "Step 3: opened chat title does not match '" + contact + "' — aborting");
+                    return ToolResult.error("Opened the wrong chat for '" + contact + "'. Aborted to avoid sending to the wrong contact.");
+                }
             }
 
             // Step 4: Type message in the bottommost input field (retry — chat may still be loading)
@@ -155,9 +163,10 @@ public class SendMessageTool extends BaseTool {
         java.util.LinkedHashSet<String> normalizedAliases = ContactMatchUtils.buildNormalizedAliases(contact);
         java.util.LinkedHashSet<String> digitAliases = ContactMatchUtils.buildDigitAliases(contact);
 
-        // Search top 300px of screen for a text matching the contact name
+        // Search the toolbar band only. A wider band can match a chat-list row and make us
+        // believe the chat is open when it is not.
         List<AccessibilityNodeInfo> topNodes = new ArrayList<>();
-        collectTextNodesInRegion(root, 0, 300, topNodes);
+        collectTextNodesInRegion(root, 0, 250, topNodes);
         for (AccessibilityNodeInfo node : topNodes) {
             if (ContactMatchUtils.matchesTarget(node.getText(), node.getContentDescription(), normalizedAliases, digitAliases)) {
                 XLog.d(TAG, "isAlreadyInChatWith: matched toolbar target text=" + node.getText() + " desc=" + node.getContentDescription());
@@ -255,20 +264,36 @@ public class SendMessageTool extends BaseTool {
 
         if (editables.isEmpty()) return false;
 
-        // Pick the one with the largest Y coordinate (bottommost = message input)
+        Rect rootBounds = new Rect();
+        root.getBoundsInScreen(rootBounds);
+        int bottomHalfStart = rootBounds.top + (int) (rootBounds.height() * 0.5f);
+
+        // Pick the bottommost EditText that is actually the composer. Search fields sit at
+        // the top of the screen and must never receive the message text.
         AccessibilityNodeInfo best = null;
         int bestY = -1;
         for (AccessibilityNodeInfo node : editables) {
             Rect bounds = new Rect();
             node.getBoundsInScreen(bounds);
             XLog.d(TAG, "  EditText at y=" + bounds.centerY() + " text=" + node.getText() + " hint=" + node.getHintText());
+            if (isSearchField(node)) {
+                XLog.d(TAG, "  skipping search field at y=" + bounds.centerY());
+                continue;
+            }
+            if (bounds.centerY() < bottomHalfStart) {
+                XLog.d(TAG, "  skipping non-bottom EditText at y=" + bounds.centerY());
+                continue;
+            }
             if (bounds.centerY() > bestY) {
                 bestY = bounds.centerY();
                 best = node;
             }
         }
 
-        if (best == null) return false;
+        if (best == null) {
+            XLog.i(TAG, "typeInBottomEditText: no composer EditText in bottom half yet");
+            return false;
+        }
 
         // Focus + click + set text
         best.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
@@ -298,6 +323,27 @@ public class SendMessageTool extends BaseTool {
             AccessibilityNodeInfo child = node.getChild(i);
             if (child != null) collectEditTexts(child, result);
         }
+    }
+
+    /** True when the EditText is a search box (text/hint/view-id mentions search). */
+    private boolean isSearchField(AccessibilityNodeInfo node) {
+        if (node == null) return false;
+        String[] hints = {"search", "بحث", "ابحث", "buscar", "rechercher", "suchen", "cerca"};
+        CharSequence text = node.getText();
+        CharSequence hint = node.getHintText();
+        CharSequence desc = node.getContentDescription();
+        String viewId = node.getViewIdResourceName();
+        for (String h : hints) {
+            if (containsIgnoreCase(text, h) || containsIgnoreCase(hint, h)
+                    || containsIgnoreCase(desc, h) || containsIgnoreCase(viewId, h)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsIgnoreCase(CharSequence value, String needle) {
+        return value != null && value.toString().toLowerCase().contains(needle.toLowerCase());
     }
 
     /**

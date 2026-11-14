@@ -83,9 +83,13 @@ object ConfigServerManager {
     fun isRunning(): Boolean = server?.isAlive == true
 
     /**
-     * Get the LAN access address, e.g. 192.168.1.100:9527
-     * Port is read from the running server instance
+     * Get the device Wi-Fi address, e.g. 192.168.1.100:9527
+     * Note: the server binds to 127.0.0.1 only, so this address is NOT reachable
+     * from other devices; it is informational. Port is read from the running server instance.
      */
+    /** Port of the running loopback server, or null when not running. */
+    fun getPort(): Int? = server?.listeningPort
+
     fun getAddress(): String? {
         val ip = getWifiIpAddress(appContext ?: return null) ?: return null
         val port = server?.listeningPort ?: return null

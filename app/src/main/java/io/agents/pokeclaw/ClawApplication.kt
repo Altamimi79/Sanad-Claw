@@ -28,6 +28,9 @@ class ClawApplication : BaseApp() {
     }
 
     override fun attachBaseContext(base: android.content.Context) {
+        // Reset to English on app update before the locale is applied, so the first
+        // launch after an update already renders in English.
+        io.agents.pokeclaw.utils.AppLocale.applyUpdateLanguageReset(base)
         super.attachBaseContext(io.agents.pokeclaw.utils.AppLocale.wrap(base, base))
     }
 

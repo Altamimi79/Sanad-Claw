@@ -1,0 +1,51 @@
+# Benign UI, notification and ordinary message samples (50)
+Battery is at 73%
+Wi-Fi connected to HomeNetwork
+Settings
+Send
+Cancel
+OK
+Delete
+Share
+Back
+Next step
+Turn on Bluetooth
+Do not disturb is on
+Meeting moved to 4 PM, please confirm
+Are we still on for lunch?
+Reminder: pick up groceries tonight
+Your order has shipped
+Thanks, see you tomorrow!
+New photo from Mona
+Missed call from Ahmed
+Storage almost full, 2.1 GB free
+Software update available
+Download complete
+Search
+Notifications
+Clear all
+Mute this conversation
+Add to favorites
+Lock screen
+Dark mode
+Language: English
+Volume 40%
+Airplane mode off
+Location is on
+Screenshot saved
+Last seen today at 9:14 PM
+Can you send me the report when you can?
+Call back when free
+تم إرسال الرسالة
+الإعدادات
+إلغاء
+موافق
+حذف
+مشاركة
+الرجوع
+الخطوة التالية
+شحن البطارية 85%
+لا تنسَ الاجتماع غدا
+هل نلتقي على الغداء؟
+طلبك في الطريق إليك
+شكرا لك، أراك غدا

@@ -19,26 +19,41 @@ val PokeclawFontFamily = FontFamily(
     androidx.compose.ui.text.font.Font(R.font.noto_naskh_arabic, FontWeight.Bold),
 )
 
-private fun TextStyle.withSanadFont(): TextStyle = copy(fontFamily = PokeclawFontFamily)
+/** Compose family for a stored [TextAppearance.Family]. */
+fun composeFamilyFor(family: TextAppearance.Family): FontFamily = when (family) {
+    TextAppearance.Family.NASKH -> PokeclawFontFamily
+    TextAppearance.Family.SYSTEM_SANS -> FontFamily.SansSerif
+    TextAppearance.Family.MONOSPACE -> FontFamily.Monospace
+}
 
+private fun TextStyle.withFamily(family: FontFamily): TextStyle = copy(fontFamily = family)
+
+/**
+ * Typography for the chosen family. Defaults to the Naskh family, so callers that do not
+ * pass a family get the same typography as before this setting existed.
+ */
+fun pokeclawTypography(family: TextAppearance.Family = TextAppearance.Family.NASKH): Typography {
+    val f = composeFamilyFor(family)
+    val base = Typography()
+    return base.copy(
+        displayLarge = base.displayLarge.withFamily(f),
+        displayMedium = base.displayMedium.withFamily(f),
+        displaySmall = base.displaySmall.withFamily(f),
+        headlineLarge = base.headlineLarge.withFamily(f),
+        headlineMedium = base.headlineMedium.withFamily(f),
+        headlineSmall = base.headlineSmall.withFamily(f),
+        titleLarge = base.titleLarge.withFamily(f),
+        titleMedium = base.titleMedium.withFamily(f),
+        titleSmall = base.titleSmall.withFamily(f),
+        bodyLarge = base.bodyLarge.withFamily(f),
+        bodyMedium = base.bodyMedium.withFamily(f),
+        bodySmall = base.bodySmall.withFamily(f),
+        labelLarge = base.labelLarge.withFamily(f),
+        labelMedium = base.labelMedium.withFamily(f),
+        labelSmall = base.labelSmall.withFamily(f),
+    )
+}
+
+/** Kept for existing callers: the default family typography. */
 val PokeclawTypography: Typography
-    get() {
-        val base = Typography()
-        return base.copy(
-            displayLarge = base.displayLarge.withSanadFont(),
-            displayMedium = base.displayMedium.withSanadFont(),
-            displaySmall = base.displaySmall.withSanadFont(),
-            headlineLarge = base.headlineLarge.withSanadFont(),
-            headlineMedium = base.headlineMedium.withSanadFont(),
-            headlineSmall = base.headlineSmall.withSanadFont(),
-            titleLarge = base.titleLarge.withSanadFont(),
-            titleMedium = base.titleMedium.withSanadFont(),
-            titleSmall = base.titleSmall.withSanadFont(),
-            bodyLarge = base.bodyLarge.withSanadFont(),
-            bodyMedium = base.bodyMedium.withSanadFont(),
-            bodySmall = base.bodySmall.withSanadFont(),
-            labelLarge = base.labelLarge.withSanadFont(),
-            labelMedium = base.labelMedium.withSanadFont(),
-            labelSmall = base.labelSmall.withSanadFont(),
-        )
-    }
+    get() = pokeclawTypography()

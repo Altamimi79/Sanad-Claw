@@ -169,11 +169,30 @@ public class OpenAppTool extends BaseTool {
         return new OpenAppTool().resolveAppName(appName);
     }
 
+    /** Returns the first of [packages] that is installed, or the first one if none is. */
+    private static String installedPackage(String... packages) {
+        android.content.pm.PackageManager pm = ClawApplication.Companion.getInstance().getPackageManager();
+        for (String pkg : packages) {
+            try {
+                pm.getPackageInfo(pkg, 0);
+                return pkg;
+            } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
+                // not installed; try the next one
+            }
+        }
+        return packages[0];
+    }
+
     private String resolveAppName(String appName) {
         String lower = appName.toLowerCase().trim();
+        // WhatsApp has two packages (consumer and Business). Use whichever is installed.
+        // "WA Business" is the label get_installed_apps returns for com.whatsapp.w4b.
+        if (lower.equals("whatsapp") || lower.equals("whatsapp business")
+                || lower.equals("wa business")) {
+            return installedPackage("com.whatsapp", "com.whatsapp.w4b");
+        }
         // Common app name → package name mapping
         switch (lower) {
-            case "whatsapp": return "com.whatsapp";
             case "telegram": return "org.telegram.messenger";
             case "instagram": return "com.instagram.android";
             case "youtube": return "com.google.android.youtube";

@@ -24,12 +24,21 @@ object SafetyGate {
         val assessment: RiskAssessment,
     )
 
+    /**
+     * Decision order for a tool call (Phase 2g item 4):
+     *  1. Blocklist match: blocked, always (no switch can override it).
+     *  2. Tainted task and sensitive kind: enforced by DefaultAgentService via ScreenContentGuard
+     *     (taint is per-task state owned there). Not repeated here.
+     *  3. kind == UNKNOWN: confirmation required, always.
+     *  4. Otherwise: confirmation required only if SafetySettings.confirmationFor(kind).
+     */
     fun evaluate(toolName: String, params: Map<String, Any?>, taskPrompt: String): Decision {
         val app = ClawApplication.instance
         val patterns = SafetySettings.blocklistPatterns()
         val pkg = currentForegroundPackage()
         val label = pkg?.let { safeAppLabel(it) }
 
+        // Rule 1: blocklist, always enforced.
         if (pkg != null && AppBlocklist.isBlocked(patterns, pkg, label)) {
             val shown = label ?: pkg
             val msg = app.getString(R.string.safety_blocked_app, shown)
@@ -38,16 +47,21 @@ object SafetyGate {
                 allow = false,
                 blockedByApp = true,
                 message = msg,
-                assessment = RiskAssessment(true, RiskKind.PAYMENT, requiresConfirmation = false, label = "blocked_app"),
+                assessment = RiskAssessment(risky = true, kind = null, requiresConfirmation = false, label = "blocked_app"),
             )
         }
 
         val assessment = RiskClassifier.assess(toolName, params)
-        if (!assessment.risky || !assessment.requiresConfirmation) {
+        if (!assessment.risky) {
             return Decision(true, false, null, assessment)
         }
-        if (!SafetySettings.confirmationsEnabled()) {
-            XLog.i(TAG, "confirmation disabled by user; allowing $toolName (${assessment.label})")
+
+        // Rule 3 and 4: UNKNOWN always confirms; other kinds follow their switch.
+        val kind = assessment.kind
+        val switchOn = kind?.let { SafetySettings.confirmationFor(it) } ?: false
+        val needsConfirmation = SafetySettings.requiresConfirmation(kind, switchOn)
+        if (!needsConfirmation) {
+            XLog.i(TAG, "confirmation not required by user setting; allowing $toolName (${assessment.label})")
             return Decision(true, false, null, assessment)
         }
 
@@ -69,8 +83,16 @@ object SafetyGate {
         }
     }
 
-    fun recordAction(taskPrompt: String, toolName: String, risk: String, outcome: String, detail: String?) {
-        ActionLog.record(taskPrompt, toolName, risk, outcome, detail)
+    fun recordAction(
+        taskPrompt: String,
+        toolName: String,
+        risk: String,
+        outcome: String,
+        detail: String?,
+        reason: ActionReason = ActionReason.UNKNOWN_LEGACY,
+        result: ActionResult = ActionResult.PENDING,
+    ) {
+        ActionLog.record(taskPrompt, toolName, risk, outcome, detail, reason, result)
     }
 
     private fun riskLabel(app: Context, kind: RiskKind?): String = app.getString(

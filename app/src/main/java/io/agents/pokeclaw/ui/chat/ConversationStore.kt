@@ -66,6 +66,20 @@ class ConversationStore(
         )
     }
 
+    /**
+     * Switches to a fresh id without saving the current conversation first. Used when the
+     * current conversation is archived or deleted, so it is not immediately re-created.
+     */
+    fun beginFreshConversation(): SessionSnapshot {
+        currentConversationId = newConversationId()
+        persistCurrentConversationId()
+        return SessionSnapshot(
+            conversationId = currentConversationId,
+            messages = emptyList(),
+            conversations = refreshSidebar()
+        )
+    }
+
     fun openConversation(
         target: ChatHistoryManager.ConversationSummary,
         currentMessages: List<ChatMessage>,
@@ -90,6 +104,18 @@ class ConversationStore(
 
     fun deleteConversation(target: ChatHistoryManager.ConversationSummary): Boolean {
         return ChatHistoryManager.delete(target.file)
+    }
+
+    fun archiveConversation(target: ChatHistoryManager.ConversationSummary): Boolean {
+        return ChatHistoryManager.archive(context, target.file)
+    }
+
+    fun unarchiveConversation(target: ChatHistoryManager.ConversationSummary): Boolean {
+        return ChatHistoryManager.unarchive(context, target.file)
+    }
+
+    fun refreshArchived(): List<ChatHistoryManager.ConversationSummary> {
+        return ChatHistoryManager.listArchived(context)
     }
 
     private fun persistCurrentConversationId() {

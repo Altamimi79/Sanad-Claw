@@ -41,6 +41,8 @@ object EmergencyStop {
             risk = "none",
             outcome = "stopped",
             detail = reason,
+            reason = ActionReason.EMERGENCY_STOP,
+            result = ActionResult.CANCELLED,
         )
     }
 }

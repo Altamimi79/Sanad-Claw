@@ -242,12 +242,22 @@ class ForegroundService : Service() {
         super.onCreate()
         _isRunning = true
         createNotificationChannel()
-        if (hasNotificationPermission(this)) {
+        // Android requires startForeground() after startForegroundService(), even when the service
+        // is about to stop. Skipping it kills the process with ForegroundServiceDidNotStartInTimeException.
+        // So always call it first; if the notification permission is missing, stop right after.
+        val granted = hasNotificationPermission(this)
+        try {
             startForeground(
                 NOTIFICATION_ID,
                 buildNotification(this, DEFAULT_TASK_TITLE, DEFAULT_TASK_TEXT)
             )
-        } else {
+        } catch (e: Exception) {
+            XLog.e(TAG, "startForeground failed; stopping service", e)
+            stopSelf()
+            return
+        }
+        if (!granted) {
+            XLog.w(TAG, "notification permission missing; stopping foreground service")
             stopSelf()
             return
         }

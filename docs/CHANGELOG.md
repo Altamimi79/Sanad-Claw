@@ -2,6 +2,165 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3] — 2026-11-14
+
+First stable release of the 1.0.3 line. Functionally identical to `1.0.3-dev-11` (code 112), published as versionCode 113 / versionName `1.0.3` without a pre-release suffix. The dev-11 feature list below is the content of this release.
+
+### Changed
+- Version metadata: `versionCode` 113, `versionName` "1.0.3" (stable channel; no `-dev` suffix).
+- CI: the Firebase Test Lab workflow now skips its build/FTL jobs with a notice when `GCP_PROJECT_ID`/`GCP_SA_KEY_JSON` are not configured, so an optional real-device smoke never turns a release run red. The Release workflow is unchanged.
+- QA checklist: QP4 (UNKNOWN-category confirmation) removed as unreachable — no tool or parameter path returns `RiskKind.UNKNOWN`. The fail-safe rule stays in code and unit tests; the decision is recorded in `docs/MEMORY.md`.
+
+### Known Limitations
+- **Voice input needs human verification.** QV1–QV9 could not be executed by automation (nothing can speak into the mic), so the voice flows still require a person on device.
+- **QP7/QP8 are partial.** No published artifact with the pre-migration single toggle exists, so the migration notice is covered by unit tests (`SafetyPermissionsMigrationTest`) only, not by a device upgrade.
+- **TalkBack is partial.** QP1/QP1a confirm the bilingual state text, but TalkBack speech was not exercised.
+- Known limitations carried over from dev-11 (see its section) are unchanged.
+
+### Verified
+- 335 unit tests / 59 classes / 0 failures; `lintVitalRelease` passes.
+- Signed release APK installed over dev-11 with the same certificate; app data preserved.
+
+## [1.0.3-dev-11] — 2026-11-14
+
+### Added
+- **Sidebar multi-select + select-all**: a Select mode with checkboxes, "Select all"/"Clear selection", a live selected count, and bulk Archive / Delete (delete asks for confirmation and shows the count).
+- **Sidebar Archive section**: archived conversations are grouped under a collapsible "Archived (N)" row with per-conversation Unarchive and Delete. Archive data comes from the existing `ConversationStore` layer.
+- **Sidebar Memory**: a persistent memory list (up to 50 short entries) managed from the sidebar and appended to every chat/task system prompt, with a clear warning not to store secrets.
+- **Sidebar Skills**: a Skills dialog listing the nine built-in user-facing skills; picking one prefills the composer in Agent mode. Built-ins now carry localized-ready descriptions and example phrases.
+- Traceability logs for the system-prompt untrusted-content rule, pre-warm redaction kinds, and tainted non-sensitive tool decisions.
+
+### Changed
+- **Composer send button**: added an always-visible in-app send control (theme accent, disabled when the field is empty or a reply/task is in progress) so sending does not depend on the OEM keyboard's IME action. Chat/Agent tabs now use theme-colored Material icons instead of the blue/purple emoji.
+- **Unified brand color**: the XML brand palette (`colorBrandPrimary`, containers, variants, selected radio) moved from indigo `#5856D6` to the app orange `#E8845A`, matching the Compose theme on the Models screen and the rest of the app.
+
+### Fixed
+- **P0: screen data leak to the cloud model (SD2)**: the pre-warm screen attached to the first agent call bypassed `SensitiveDataRedactor`, so a page containing a card/IBAN/national ID/OTP sent the real values to the provider. The pre-warm screen is now redacted; the model only receives `[REDACTED:*]` placeholders.
+- **Memory crash after a release/debug switch**: R8 minified Gson field names to `a/b/c`, so the debug build read nulls and crashed on every model-client creation. `MemoryStore.Stored` now has nullable fields and explicit `@SerializedName` values with legacy aliases.
+- **Skills panel was always empty**: every built-in skill defaulted to `userFacing = false`; the nine built-ins are now user-facing.
+- **Pause-and-ask deadlock**: the composer refused to send while a task was running, so the user could never supply the value requested by `PausedTaskState`. It now accepts input while paused; `finish` is excluded from pausing.
+- **`finish` false positive**: summaries mentioning "transfer"/"delete" were classified as sensitive, blocking task completion on tainted pages. `finish` is now risk-free by definition.
+- Archiving/deleting the currently open conversation no longer recreates the file on the next save (`beginFreshConversation`).
+
+### Security QA (device, HONOR)
+- PASS: IJ1-IJ6, SD1-SD5, QP2, QP3, QP5, QP6.
+- PARTIAL: QP1/QP1a (English rows and bilingual state text; Arabic RTL and TalkBack not exercised).
+- BLOCKED: QP4 (no code path currently returns `RiskKind.UNKNOWN`), QP7/QP8 (no published pre-migration build), QV1-QV9 (automation cannot speak into the mic).
+
+### Verified
+- 335 unit tests / 59 classes / 0 failures; `lintVitalRelease` passes.
+- Full signed release installed over dev-10 with the same certificate; data preserved, sidebar/archive/memory verified on device, all seven safety switches restored to Enabled.
+- The four GitHub Actions signing secrets are configured, so tagged releases are signed and published automatically.
+
+## [1.0.3-dev-10] — 2026-11-13
+
+### Fixed
+- **Launcher icon white frame**: the "S AI" artwork had a baked-in white/light border that Honor's launcher rendered as a white edge on all four sides. The border was removed from every icon rendition (mdpi→xxxhdpi, round + square, legacy `mipmap/`, adaptive 512 foreground, in-app avatar/small logo).
+- **Empty chat screen text**: removed the "Cloud AI / Local AI" header and the hint line under "Sanad Claw" (the three lines the user asked to drop). The empty state now shows only the logo + "Sanad Claw" above the prompt chips.
+
+### Changed
+- **Icon palette matches the app**: the gold artwork was re-tinted to the app accent family (`#E8845A` / `#D45A30`) while keeping the original shading and highlights, so the icon and the UI look like one product.
+- Version bumped to 1.0.3-dev-10 (code 111).
+
+### Verified
+- Unit tests pass; release APK signed with the fork keystore (matches the installed build, so in-app update installs over it without data loss).
+- Device screenshot verification pending (USB disconnected during the release build).
+
+## [1.0.3-dev-9] — 2026-11-13
+
+### Fixed
+- **Update check could not see newer dev builds**: `isNewer` now compares the trailing pre-release number when the base versions are equal, so `1.0.3-dev-9 > 1.0.3-dev-8 > 1.0.3-dev-7`.
+- Update dialog is localized (en/ar) and now offers **Update / Ignore this version / Later**. Ignored versions are stored and suppressed for automatic checks.
+- **In-app update install**: the Update button now downloads the release APK and launches the system installer (falls back to the release page). Dialog buttons use the theme accent.
+- **Light-mode status bar**: system icons now follow the app theme (`ThemeManager.applySystemBarIcons`), so time/battery/signal are dark and readable on light themes.
+- Composer has no changing placeholder: a fixed **"Ask Sanad"** / **"اسأل سند"** hint is shown in both Chat and Agent modes, so the box never resizes.
+- Settings → Appearance now contains only Text size (Theme and Language live in the chat toolbar).
+- New launcher icon (gold "S AI" mark) at all densities + adaptive foreground.
+
+### Changed
+- Version bumped to 1.0.3-dev-9 (code 110).
+
+### Verified
+- 321 tests / 0 failures (3 new pre-release comparison tests).
+
+## [1.0.3-dev-8] — 2026-11-13
+
+### Added
+- Comprehensive assessment doc: `docs/ASSESSMENT.md` (readiness %, competitors, tomorrow's plan).
+- Image/file attachments in the composer (system document picker, cache copy, removable chip; text files inlined, images referenced by path).
+- Enter / IME Send submits messages (replaces the send FAB; mic + attach remain).
+
+### Changed
+- Chat / Agent sections available for every model with a clear active state; Agent background is theme-aware in light mode.
+- Version bumped to 1.0.3-dev-8 (code 109).
+
+### Verified (device)
+- Enter sends in Chat mode; attach opens DocumentsUI; Chat/Agent colors readable in light mode.
+- 318 tests / 57 classes / 0 failures.
+
+## [1.0.3-dev-7] — 2026-11-13
+
+### Added
+- User-selectable update channel in Settings → About: **Stable** or **Beta**. Persisted in `KVUtils`; defaults to Beta on dev/rc builds.
+- `UpdateChecker` now reads `/releases/latest` on Stable and `/releases` (newest, including pre-releases) on Beta.
+- Chat toolbar quick toggles: sun/moon **theme switch** and **EN/ع language switch** (replaces the settings icon; Settings stays in the sidebar).
+- **Chat / Agent sections** are now available for every model (cloud included) with a clear segmented control (active = accent, inactive = bordered).
+- **Attachments**: an attach button in the composer opens the system document picker, copies the file to the app cache, and shows a removable chip. Text files are inlined into the message; images are referenced by path.
+- **Enter sends**: the keyboard action is `Send` and Enter (hardware or IME) submits the message.
+
+### Changed
+- Removed the send FAB; sending is via Enter / IME Send (mic + attach remain).
+- Agent mode uses a theme-aware background in light themes (no hardcoded dark bar).
+- **Default UI language is now English.** Choosing Arabic is remembered until the next app update; an update resets the language to English (`AppLocale.applyUpdateLanguageReset`).
+- Voice dictation is more patient: silence complete 3.0 s / possibly-complete 2.0 s / minimum 1.5 s, and the hard cap is 120 s (was 60 s).
+- Light themes derive text colors from each palette instead of forcing warm brown onto blue/green/neutral themes.
+- Models page uses the active theme accent (ember orange) instead of the generic purple for the selected provider tab and model radios.
+- Version bumped to 1.0.3-dev-7 (code 108).
+
+### Verified (device)
+- Beta → Latest `1.0.3-dev-6`; Stable → Latest `1.0.2`; the toggle persists across screens.
+- Theme toggle switches dark↔light and restarts; language toggle switches EN↔AR (RTL) and restarts.
+- Models page light mode: warm background, orange selected tab, readable text.
+
+## [1.0.3-dev-6] — 2026-11-13
+
+### Added
+- 6 unit tests for UpdateChecker.isNewer (pre-release-aware version comparison).
+
+### Fixed
+- UpdateChecker: version comparison now strips -dev/-rc/-beta suffixes before parsing, so a stable release correctly wins over a prerelease of the same base, and 1.0.3-dev-5 no longer breaks Integer.parseInt. The latest-tag read no longer strips the prerelease suffix (so the dialog shows the real tag).
+- CI: upgraded `android-actions/setup-android` from v3 to v4 and pinned `platform-tools platforms;android-36 build-tools;36.0.0`. This fixes the "Setup Android SDK" failure that blocked every release run (Google removed the `tools` package that v3 relied on).
+
+### Changed
+- Version bumped to 1.0.3-dev-6 (code 107).
+
+## [Unreleased] — 2026-11-13 (device QA, signed release, CI fix)
+
+### Added
+- Fork release keystore workflow: keys/sanad-release.jks (gitignored) + keys/KEYSTORE_INFO.txt; assembleRelease now produces a signed APK (CN=Sanad Claw).
+- New string resources: send_word_on, send_example_phrase, skill_send_message_desc, skills_experimental_badge (en + ar).
+
+### Fixed
+- AppCapabilityCoordinator.bindingState: a live accessibility binding now wins over the stale pending-repair flag, so re-enabling accessibility no longer leaves the app stuck on "Connecting"/"Disconnected" for up to 120 s.
+- ChatScreen quick-task composer, skill card description and experimental badge now use localized string resources instead of hardcoded English.
+- Action-log export filename: pokeclaw-action-log.txt -> sanadclaw-action-log.txt.
+
+### Changed
+- All GitHub Actions workflows use JDK 21 (matches the project toolchain).
+- Release workflow: robust release-notes extraction (README -> docs/CHANGELOG -> fallback) and dev/rc tags publish as prerelease.
+
+### Verified (device: HONOR MBH-N49, Android 17)
+- QP1 PASS (7 confirm rows), QP2 PASS (persistence), QL1 PASS (redacted export), FL3 PASS (Authorization masked, body omitted), app launch PASS, plan-preview gate PASS, task execution PASS.
+- Unit tests: 312 / 56 classes / 0 failures.
+
+### Known
+- HONOR force-stop revokes the accessibility secure setting; re-enable after force-stop.
+- send_media (file) end-to-end not executed; send_message (text) verified on device.
+- OpenAppTool.resolveAppName now maps "WA Business" to the installed WhatsApp package (com.whatsapp.w4b), fixing send_message when the agent passes the app label.
+
+- send_message end-to-end fixed on WhatsApp Business: "WA Business" label resolution, chat-list readiness detection, settle-before-Back, skip "From ..." message previews, toolbar-only chat verification, composer selection (skip search box, require bottom half), and a post-tap wrong-chat abort guard.
+- Verified on device: message delivered to "أحمد التميمي خاص" via WhatsApp Business; SafetyGate confirmation shown and approved.
+
 ## [Unreleased] — 2026-11-10 (Phase 1: setup/audit)
 
 ### Added
@@ -119,3 +278,29 @@ First fork release (code-complete; device QA not executed).
 
 ### Known limitations
 - Image attachments unsupported; offline Whisper not bundled; local models need sufficient RAM; external automation off by default; global cleartext traffic remains for custom local endpoints.
+
+## [1.0.3-dev] — 2026-11-13 (development build, not for distribution)
+
+| item | change | status |
+|---|---|---|
+| Prompt-injection defense (source-based taint) | Taint tracking and sensitive-action gate for screen-sourced text | unit-tested, device pending; enforcement in DefaultAgentService wiring: verified by inspection only |
+| Sensitive data and OTP redaction | Card, IBAN, national-ID and OTP redaction before cloud send and logs | unit-tested, device pending |
+| FileLoggingInterceptor masking and body omission | Authorization masked, request/response bodies omitted in debug logs | unit-tested, device pending |
+| Per-category confirmation switches | Seven category switches replace the single confirm toggle; migration notice | unit-tested, device pending |
+| Arabic action log v2 and export | Reason and result labels, redacted export | unit-tested, device pending |
+| Voice STOP and CONFIRM (one-shot mic) | STOP while task active; CONFIRM only for a pending request captured at listen start | unit-tested, device pending; timeout-partial separation in SpeechRecognizerController: verified by inspection only |
+| Plan preview, wake word, scheduled routines | Items 5, 7, 8 | not implemented |
+
+Build: versionName 1.0.3-dev, versionCode 101 (set via POKECLAW_VERSION_NAME / POKECLAW_VERSION_CODE for this build only).
+
+### Known limits
+- The pattern detector catches only 5% of the held-out hostile samples; protection comes from source-based taint, not detection.
+- Redaction and URL masking are name/pattern based and can miss unlisted formats.
+- HONOR speech service availability is unverified.
+- Debug builds enable FILE_LOGGING.
+- No device QA has been executed (see docs/DEVICE_QA_SESSION.md).
+
+### Preserved build record (1.0.3-dev)
+- Code commit (local branch `sanad/dev-1.0.3`): `92799e1087006edcada90740feb828515544be9e` — "1.0.3-dev: items 1, 2, 3, 4, 6 and FileLoggingInterceptor fix (unit-tested; device QA pending)". Not pushed.
+- APK: `PokeClaw_v1.0.3-dev_20261113_073755.apk`, SHA-256 `413EB5AFF757927A3C67C1A73AA8D329271DD0C94F10AC9BD5E7F63291DB9DC7`, 157147204 bytes. Preserved at `dist-dev/` (gitignored) with a `.sha256` file.
+- The APK was built from the working tree that this commit captured. Verified build-free: no file under `app/src` has a modification time after the APK (newest: `app/src/main/assets/.pcfp`, build fingerprint, gitignored). The source was unchanged between build and commit.

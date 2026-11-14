@@ -12,7 +12,6 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -30,18 +29,18 @@ import io.agents.pokeclaw.AppCapabilityCoordinator
 import io.agents.pokeclaw.AppRequirement
 import io.agents.pokeclaw.appViewModel
 import io.agents.pokeclaw.server.ConfigServerManager
-import io.agents.pokeclaw.service.ForegroundService
-import io.agents.pokeclaw.support.DebugReportManager
 import io.agents.pokeclaw.utils.KVUtils
 import io.agents.pokeclaw.utils.XLog
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Settings screen
  */
 class SettingsActivity : BaseActivity() {
+
+    companion object {
+        /** Repository that owns this fork's releases and issues. */
+    }
 
     // Poll permissions every second (same as original HomeActivity)
     private val handler = Handler(Looper.getMainLooper())
@@ -60,6 +59,7 @@ class SettingsActivity : BaseActivity() {
     private var permBattery: io.agents.pokeclaw.widget.MenuItem? = null
     private var permStorage: io.agents.pokeclaw.widget.MenuItem? = null
     private var externalAutomationItem: io.agents.pokeclaw.widget.MenuItem? = null
+    private var updateChannelItem: io.agents.pokeclaw.widget.MenuItem? = null
     private var globalPromptItem: io.agents.pokeclaw.widget.MenuItem? = null
     private var customModelUrlItem: io.agents.pokeclaw.widget.MenuItem? = null
 
@@ -93,6 +93,10 @@ class SettingsActivity : BaseActivity() {
 
         setContentView(R.layout.activity_settings)
 
+        // One-time migration of the Phase 4 single switch (idempotent; notice shown once).
+        val migrationOwed = io.agents.pokeclaw.safety.SafetySettings.migrateLegacyConfirmation()
+        XLog.i("SettingsActivity", "safety migration checked, notice_owed=$migrationOwed")
+
         // Override XML backgrounds with ThemeManager colors
         val contentFrame = findViewById<android.view.ViewGroup>(android.R.id.content)
         contentFrame?.setBackgroundColor(themeColors.bg)
@@ -103,6 +107,7 @@ class SettingsActivity : BaseActivity() {
         initMenuGroups()
         applyThemeToGroups(themeColors)
         observeViewModel()
+        showSafetyMigrationNoticeIfPending()
     }
 
     override fun onResume() {
@@ -455,34 +460,10 @@ class SettingsActivity : BaseActivity() {
         refreshCustomModelUrlStatus()
 
         // Appearance
+        // Theme and language moved to the chat toolbar (sun/moon + EN/ع), so only
+        // Text size remains in Settings.
         val appearanceGroup = findViewById<MenuGroup>(R.id.appearanceGroup)
         appearanceGroup.setTitle(getString(R.string.appearance_title))
-
-        appearanceGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_slideshow,
-            title = getString(R.string.theme_title),
-            onClick = {
-                startActivity(Intent(this, ThemeActivity::class.java))
-            },
-            showDivider = false
-        ).apply {
-            val themeId = KVUtils.getString("THEME_ID", "abyss_dark")
-            val label = themeId.replace("_", " ").replaceFirstChar { it.uppercase() }
-            setTrailingText(label)
-        }
-
-        // App language (Sanad fork): Arabic default, switchable to English.
-        val currentLang = io.agents.pokeclaw.utils.AppLocale.getLanguage(this)
-        appearanceGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_view,
-            title = getString(R.string.settings_language),
-            trailingText = if (currentLang == io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH)
-                getString(R.string.language_name_english)
-            else
-                getString(R.string.language_name_arabic),
-            onClick = { switchAppLanguage() },
-            showDivider = false,
-        )
 
         // Tools
         val toolsGroup = findViewById<MenuGroup>(R.id.toolsGroup)
@@ -526,7 +507,6 @@ class SettingsActivity : BaseActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             },
-            showDivider = false
         ).apply {
             setTrailingText(
                 getString(
@@ -536,27 +516,90 @@ class SettingsActivity : BaseActivity() {
             )
         }
 
-        // Phase 4 safety controls
-        var confirmRiskyItem: MenuItem? = null
-        confirmRiskyItem = toolsGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_lock_lock,
-            title = getString(R.string.safety_confirm_risky_setting),
+        // Text size (applied when the chat screen starts).
+        val sizeLabels = listOf(
+            getString(R.string.text_size_normal) to "normal",
+            getString(R.string.text_size_slightly_larger) to "slightly_larger",
+            getString(R.string.text_size_larger) to "larger",
+            getString(R.string.text_size_largest) to "largest",
+        )
+        fun showChoice(titleRes: Int, options: List<Pair<String, String>>, current: String, onPick: (String) -> Unit) {
+            val labels = options.map { it.first }.toTypedArray()
+            val checked = options.indexOfFirst { it.second == current }.coerceAtLeast(0)
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(titleRes)
+                .setSingleChoiceItems(labels, checked) { dialog, which ->
+                    onPick(options[which].second)
+                    Toast.makeText(this, R.string.text_appearance_applied, Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        // Unknown or missing stored keys fall back to the first option, never a crash.
+        fun labelFor(options: List<Pair<String, String>>, key: String): String =
+            (options.firstOrNull { it.second == key } ?: options.first()).first
+
+        var sizeItem: MenuItem? = null
+        sizeItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_zoom,
+            title = getString(R.string.text_size_title),
             onClick = {
-                val next = !KVUtils.isSafetyConfirmRiskyEnabled()
-                KVUtils.setSafetyConfirmRiskyEnabled(next)
-                confirmRiskyItem?.setTrailingText(
+                showChoice(R.string.text_size_title, sizeLabels, KVUtils.getTextSizeKey()) { key ->
+                    KVUtils.setTextSizeKey(key)
+                    sizeItem?.setTrailingText(labelFor(sizeLabels, key))
+                }
+            },
+        ).apply {
+            setTrailingText(labelFor(sizeLabels, KVUtils.getTextSizeKey()))
+        }
+
+        // Plan preview (roadmap item 5) — off by default; a task then waits for plan approval.
+        var planPreviewItem: MenuItem? = null
+        planPreviewItem = toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_agenda,
+            title = getString(R.string.plan_preview_title),
+            onClick = {
+                val next = !KVUtils.isPlanPreviewEnabled()
+                KVUtils.setPlanPreviewEnabled(next)
+                planPreviewItem?.setTrailingText(
                     getString(if (next) R.string.settings_enabled else R.string.settings_disabled)
                 )
+                Toast.makeText(
+                    this,
+                    getString(
+                        if (next) R.string.plan_preview_enabled_toast
+                        else R.string.plan_preview_disabled_toast
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
             },
-            showDivider = true
+            showDivider = false
         ).apply {
             setTrailingText(
                 getString(
-                    if (KVUtils.isSafetyConfirmRiskyEnabled()) R.string.settings_enabled
+                    if (KVUtils.isPlanPreviewEnabled()) R.string.settings_enabled
                     else R.string.settings_disabled
                 )
             )
         }
+
+        // Phase 4/2g safety controls: one confirmation switch per risk category.
+        // UNKNOWN has no switch by design: it always requires confirmation.
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.SEND_MESSAGE,
+            R.string.safety_confirm_send_message, android.R.drawable.ic_menu_send)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.SEND_FILE,
+            R.string.safety_confirm_send_file, android.R.drawable.ic_menu_upload)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.CALL,
+            R.string.safety_confirm_call, android.R.drawable.ic_menu_call)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.DELETE,
+            R.string.safety_confirm_delete, android.R.drawable.ic_menu_delete)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.PAYMENT,
+            R.string.safety_confirm_payment, android.R.drawable.ic_menu_view)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.INSTALL,
+            R.string.safety_confirm_install, android.R.drawable.ic_menu_add)
+        addSafetyCategoryRow(toolsGroup, io.agents.pokeclaw.safety.RiskKind.PUBLISH,
+            R.string.safety_confirm_publish, android.R.drawable.ic_menu_share)
 
         var timeoutItem: MenuItem? = null
         timeoutItem = toolsGroup.addMenuItem(
@@ -606,6 +649,13 @@ class SettingsActivity : BaseActivity() {
             leadingIcon = android.R.drawable.ic_menu_sort_by_size,
             title = getString(R.string.safety_action_log_setting),
             onClick = { startActivity(Intent(this, ActionLogActivity::class.java)) },
+            showDivider = true
+        )
+
+        toolsGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_today,
+            title = getString(R.string.routines_title),
+            onClick = { startActivity(Intent(this, io.agents.pokeclaw.ui.settings.RoutinesActivity::class.java)) },
             showDivider = false
         )
 
@@ -652,192 +702,63 @@ class SettingsActivity : BaseActivity() {
             setTrailingText(getString(R.string.coming_soon))
         }
 
-        // About
+        // About: app identity, update check, repository, support, credits.
         val aboutGroup = findViewById<MenuGroup>(R.id.aboutGroup)
         aboutGroup.setTitle(getString(R.string.about_group_title))
 
         aboutGroup.addMenuItem(
             leadingIcon = android.R.drawable.ic_menu_info_details,
-            title = "Sanad Claw",
+            title = getString(R.string.about_app_name),
             onClick = { },
             showDivider = true
         ).apply {
-            setTrailingText("v${io.agents.pokeclaw.BuildConfig.VERSION_NAME}")
+            setTrailingText("${getString(R.string.about_version_label)} ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}")
         }
 
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_send,
-            title = getString(R.string.report_bug_title),
-            onClick = { reportBug() },
+        updateChannelItem = aboutGroup.addMenuItem(
+            leadingIcon = android.R.drawable.ic_menu_manage,
+            title = getString(R.string.about_update_channel),
+            onClick = { toggleUpdateChannel() },
             showDivider = true
         ).apply {
-            setTrailingText("GitHub + ZIP")
+            setTrailingText(updateChannelLabel())
         }
 
         aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_upload,
-            title = getString(R.string.share_debug_report_title),
-            onClick = { shareDebugReport() },
-            showDivider = true
-        ).apply {
-            setTrailingText("ZIP logs + state")
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_share,
-            title = "GitHub",
-            onClick = {
-                startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/agents-io/PokeClaw".toUri()))
-            },
-            showDivider = true
-        ).apply {
-            setTrailingText("agents-io/PokeClaw")
-        }
-
-        aboutGroup.addMenuItem(
-            leadingIcon = android.R.drawable.ic_menu_compass,
-            title = getString(R.string.built_by_title),
-            onClick = {
-                startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/ithiria894".toUri()))
-            },
+            leadingIcon = android.R.drawable.ic_popup_sync,
+            title = getString(R.string.about_check_update),
+            onClick = { io.agents.pokeclaw.utils.UpdateChecker.checkNow(this@SettingsActivity) },
             showDivider = false
         ).apply {
-            setTrailingText("ithiria894")
+            setTrailingText(getString(R.string.about_check_update_hint))
         }
+
     }
 
-    private fun reportBug() {
-        buildSupportBundle(
-            preparingToast = "Preparing bug report…"
-        ) { report ->
-            AlertDialog.show(
-                context = this@SettingsActivity,
-                title = "Bug report ready",
-                message = """
-                    ${report.name} is ready.
-
-                    Open GitHub Issue to file the bug now.
-                    If your browser or GitHub app makes attachment upload awkward, tap Share ZIP instead and send the report manually.
-                """.trimIndent(),
-                actionTitle = "Open GitHub Issue",
-                cancelTitle = "Share ZIP",
-                onAction = { openGitHubIssue(report) },
-                onCancel = {
-                    shareReportFile(
-                        report = report,
-                        chooserTitle = "Share bug report ZIP",
-                        subject = "PokeClaw bug report ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}",
-                        body = """
-                            Attach this ZIP to your GitHub issue:
-                            https://github.com/agents-io/PokeClaw/issues/new
-                        """.trimIndent()
-                    )
-                }
-            )
+    private fun updateChannelLabel(): String =
+        if (KVUtils.getUpdateChannel() == KVUtils.UPDATE_CHANNEL_BETA) {
+            getString(R.string.update_channel_beta)
+        } else {
+            getString(R.string.update_channel_stable)
         }
+
+    private fun toggleUpdateChannel() {
+        val next = if (KVUtils.getUpdateChannel() == KVUtils.UPDATE_CHANNEL_BETA) {
+            KVUtils.UPDATE_CHANNEL_STABLE
+        } else {
+            KVUtils.UPDATE_CHANNEL_BETA
+        }
+        KVUtils.setUpdateChannel(next)
+        updateChannelItem?.setTrailingText(updateChannelLabel())
+        XLog.i("SettingsActivity", "Update channel set to $next")
     }
 
-    private fun shareDebugReport() {
-        buildSupportBundle(
-            preparingToast = "Preparing debug report…",
-        ) { report ->
-            shareReportFile(
-                report = report,
-                chooserTitle = "Share debug report",
-                subject = "PokeClaw debug report ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}",
-                body = "Attach this debug report when reporting a PokeClaw issue."
-            )
-        }
-    }
-
-    private fun buildSupportBundle(
-        preparingToast: String,
-        onReportReady: (java.io.File) -> Unit,
-    ) {
-        lifecycleScope.launch {
-            Toast.makeText(this@SettingsActivity, preparingToast, Toast.LENGTH_SHORT).show()
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    DebugReportManager.buildReport(this@SettingsActivity)
-                }
-            }.onSuccess { report ->
-                onReportReady(report)
-            }.onFailure { error ->
-                XLog.e("SettingsActivity", "Failed to build debug report", error)
-                Toast.makeText(this@SettingsActivity, "Failed to build debug report", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun openGitHubIssue(report: java.io.File) {
-        val issueUri = "https://github.com/agents-io/PokeClaw/issues/new".toUri()
-            .buildUpon()
-            .appendQueryParameter(
-                "title",
-                "[Bug] ${Build.MANUFACTURER} ${Build.MODEL} - "
-            )
-            .appendQueryParameter("body", buildGitHubIssueBody(report))
-            .build()
+    private fun openUrl(url: String) {
         try {
-            startActivity(Intent(Intent.ACTION_VIEW, issueUri))
-            Toast.makeText(
-                this,
-                "Attach ${report.name} to the GitHub issue after the page opens",
-                Toast.LENGTH_LONG
-            ).show()
+            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "No app available to open GitHub", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun buildGitHubIssueBody(report: java.io.File): String {
-        return """
-            ## What happened
-            -
-
-            ## What you expected
-            -
-
-            ## Exact steps to reproduce
-            1.
-            2.
-            3.
-
-            ## Device
-            - Manufacturer: ${Build.MANUFACTURER}
-            - Model: ${Build.MODEL}
-            - Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
-
-            ## Attachments
-            - Attach this ZIP from PokeClaw: `${report.name}`
-            - If this looks device-specific and you have ADB available, also attach `adb logcat`
-
-            Generated by PokeClaw ${io.agents.pokeclaw.BuildConfig.VERSION_NAME}.
-        """.trimIndent()
-    }
-
-    private fun shareReportFile(
-        report: java.io.File,
-        chooserTitle: String,
-        subject: String,
-        body: String,
-    ) {
-        val uri = FileProvider.getUriForFile(
-            this@SettingsActivity,
-            "${packageName}.fileprovider",
-            report
-        )
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/zip"
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra(Intent.EXTRA_TEXT, body)
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        try {
-            startActivity(Intent.createChooser(intent, chooserTitle))
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this@SettingsActivity, "No app available to share the report", Toast.LENGTH_LONG).show()
+            XLog.w("SettingsActivity", "No browser for $url")
+            Toast.makeText(this, getString(R.string.about_no_browser), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -925,6 +846,59 @@ class SettingsActivity : BaseActivity() {
     /**
      * Show unbind confirmation dialog
      */
+    /**
+     * One Settings row per risk category. Toggles only its own key; the row shows
+     * Enabled/Disabled like the other rows in this group.
+     */
+    private fun addSafetyCategoryRow(
+        group: MenuGroup,
+        kind: io.agents.pokeclaw.safety.RiskKind,
+        titleRes: Int,
+        iconRes: Int,
+    ) {
+        val store = io.agents.pokeclaw.safety.SafetySettings
+        val title = getString(titleRes)
+        var item: MenuItem? = null
+        // Applies the row state as text and as the accessibility description.
+        fun render(row: MenuItem, on: Boolean) {
+            val state = getString(
+                if (on) R.string.safety_row_state_on else R.string.safety_row_state_off
+            )
+            row.setTrailingText(state)
+            row.contentDescription = getString(R.string.safety_row_desc_format, title, state)
+        }
+        item = group.addMenuItem(
+            leadingIcon = iconRes,
+            title = title,
+            onClick = {
+                val next = !store.confirmationFor(kind)
+                store.setCategorySwitch(kind, next)
+                item?.let { render(it, next) }
+                XLog.i("SettingsActivity", "safety category=${kind.name} confirmation=$next")
+            },
+            showDivider = true
+        ).apply {
+            render(this, store.confirmationFor(kind))
+        }
+    }
+
+    /** Shows the one-time migration notice (bilingual) when the owed flag is set. */
+    private fun showSafetyMigrationNoticeIfPending() {
+        val presenter = object : io.agents.pokeclaw.safety.MigrationNoticePresenter {
+            override fun present(): Boolean {
+                // AlertDialog.show calls dialog.show() synchronously; a throw means it did not display.
+                AlertDialog.show(
+                    context = this@SettingsActivity,
+                    title = getString(R.string.safety_migration_title),
+                    message = getString(R.string.safety_migration_message),
+                )
+                return true
+            }
+        }
+        val presented = io.agents.pokeclaw.safety.SafetySettings.presentMigrationNoticeIfPending(presenter)
+        XLog.i("SettingsActivity", "safety migration notice presented=$presented")
+    }
+
     private fun showUnbindDialog(channelName: String, onUnbind: () -> Unit) {
         AlertDialog.showWarm(
             context = this,

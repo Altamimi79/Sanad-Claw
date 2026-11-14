@@ -41,6 +41,7 @@ object ToolRegistry {
         register(RepeatActionsTool())
         register(ClipboardTool())
         register(SendFileTool())
+        register(SendMediaTool())
         register(GetDeviceInfoTool())
         register(GetNotificationsTool())
         register(MakeCallTool())

@@ -66,6 +66,14 @@ public final class ContactListUiUtils {
                 XLog.i(TAG, "prepareForContactLookup: app not active, reopening " + packageName);
                 service.openApp(packageName);
             } else {
+                // The list may still be rendering right after launch. Give it one settle
+                // window before pressing back, otherwise we can exit the app and loop.
+                Thread.sleep(Math.max(settleMs, 700L));
+                root = service.getRootInActiveWindow();
+                if (isContactLookupReady(root)) {
+                    XLog.i(TAG, "prepareForContactLookup: ready after settle on attempt=" + attempt);
+                    return true;
+                }
                 XLog.i(TAG, "prepareForContactLookup: screen not ready, pressing back");
                 service.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK);
             }
@@ -175,6 +183,14 @@ public final class ContactListUiUtils {
 
         for (AccessibilityNodeInfo node : matches) {
             if (!node.isVisibleToUser()) continue;
+
+            // Skip message-preview rows ("From X", "من X") — they are search results for
+            // messages, not the contact/chat row we want to open.
+            CharSequence nodeText = node.getText();
+            if (nodeText != null) {
+                String t = nodeText.toString().trim().toLowerCase();
+                if (t.startsWith("from ") || t.startsWith("من ")) continue;
+            }
 
             Rect bounds = new Rect();
             node.getBoundsInScreen(bounds);
@@ -340,7 +356,13 @@ public final class ContactListUiUtils {
         int clickableRows = metrics[1];
         int scrollableContainers = metrics[2];
 
-        return scrollableContainers > 0 && visibleTextRows >= 3 && clickableRows >= 2;
+        // A scrollable container with a few text rows is a list. Some apps (e.g. WhatsApp
+        // Business) expose the row text on non-clickable TextViews, so do not require the
+        // text node itself to be clickable.
+        if (scrollableContainers > 0 && visibleTextRows >= 3) return true;
+
+        // Fallback: a dense text list without an explicit scrollable flag.
+        return visibleTextRows >= 6 && clickableRows >= 1;
     }
 
     private static String safeScreenSnapshot(ClawAccessibilityService service) {

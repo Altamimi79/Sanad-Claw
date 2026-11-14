@@ -22,6 +22,15 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
             intent.action == "android.intent.action.QUICKBOOT_POWERON") {
             XLog.i(TAG, "Boot broadcast received, no foreground service needed at boot")
+            // Alarms are cleared on reboot; re-arm enabled routines.
+            try {
+                io.agents.pokeclaw.routine.RoutineScheduler.rescheduleAll(
+                    context,
+                    io.agents.pokeclaw.routine.RoutineStore.loadAll(),
+                )
+            } catch (e: Exception) {
+                XLog.e(TAG, "Failed to re-arm routines after boot", e)
+            }
         }
     }
 }

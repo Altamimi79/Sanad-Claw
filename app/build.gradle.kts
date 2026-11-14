@@ -46,6 +46,10 @@ android {
                 storePassword = readSigningValue("KEYSTORE_PASSWORD")
                 keyAlias = readSigningValue("KEY_ALIAS")
                 keyPassword = readSigningValue("KEY_PASSWORD")
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
             }
         }
     }
@@ -54,8 +58,8 @@ android {
         applicationId = "io.agents.pokeclaw"
         minSdk = 28
         targetSdk = 36
-        versionCode = readLocalOrEnvInt("POKECLAW_VERSION_CODE", 100)
-        versionName = readLocalOrEnvString("POKECLAW_VERSION_NAME", "1.0.0")
+        versionCode = readLocalOrEnvInt("POKECLAW_VERSION_CODE", 113)
+        versionName = readLocalOrEnvString("POKECLAW_VERSION_NAME", "1.0.3")
         buildConfigField("String", "VERSION_INFO", getVersionGit())
         buildConfigField("String", "APP_ORIGIN", "\"PokeClaw by agents.io | github.com/agents-io/PokeClaw\"")
         buildConfigField("String", "BUILD_FINGERPRINT", "\"${getBuildFingerprint()}\"")
@@ -84,6 +88,8 @@ android {
         }
 
     }
+
+    testOptions { unitTests.isReturnDefaultValues = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -196,7 +202,7 @@ androidComponents {
         variant.outputs.forEach { output ->
             if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
                 val versionName = android.defaultConfig.versionName ?: "0.0.0"
-                val fileName = "PokeClaw_v${versionName}_${getDateTime()}.apk"
+                val fileName = "SanadClaw_v${versionName}_${getDateTime()}.apk"
                 println("output file name: $fileName")
                 output.outputFileName.set(fileName)
             }

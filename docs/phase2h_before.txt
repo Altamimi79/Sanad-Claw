@@ -1,0 +1,232 @@
+BASELINE classes=43 tests=231 nonpass=0
+io.agents.pokeclaw.agent.CloudTransportPayloadTest#capturedCloudRequestBodyContainsNoSensitiveValuesAndHasPlaceholders PASS
+io.agents.pokeclaw.agent.CloudTransportPayloadTest#requestPathIsTheOpenAiChatCompletionsEndpoint PASS
+io.agents.pokeclaw.agent.DirectDeviceDataGuardTest#clipboard request blocks completion until clipboard tool is tried PASS
+io.agents.pokeclaw.agent.DirectDeviceDataGuardTest#conceptual clipboard question stays out of device data guard PASS
+io.agents.pokeclaw.agent.DirectDeviceDataGuardTest#empty clipboard remains a valid answer path PASS
+io.agents.pokeclaw.agent.DirectDeviceDataGuardTest#notification slang still activates direct data guard PASS
+io.agents.pokeclaw.agent.EmailComposeGuardTest#explicitEmailComposeTask_isGuarded PASS
+io.agents.pokeclaw.agent.EmailComposeGuardTest#genericWritingTask_isNotGuarded PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#apiKeyCookieAndSetCookieMasked PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#authorizationValueNeverWrittenAndMasked PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#curlLineHasNoAuthorizationValueOrPrefixOrBody PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#exceptionMessageNotWrittenButClassNameIs PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#headerRuleCoversRequiredNamesAndNotOthers PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#maskedValueIsExactlyPlaceholder PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#nonSensitiveHeaderWrittenInFull PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#requestBodyOmittedWithByteCountAndContentType PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#responseBodyNeverWritten PASS
+io.agents.pokeclaw.agent.langchain.http.FileLoggingInterceptorTest#sensitiveQueryParamsRedactedAndNonSensitiveKept PASS
+io.agents.pokeclaw.agent.LanguagePolicyTest#apply_appendsGulfArabicPolicy PASS
+io.agents.pokeclaw.agent.LanguagePolicyTest#compose_placesUserGlobalInstructionsLastSoTheyCanOverridePolicy PASS
+io.agents.pokeclaw.agent.LanguagePolicyTest#compose_withoutGlobalPrompt_equalsApply PASS
+io.agents.pokeclaw.agent.LanguagePolicyTest#policy_keepsToolNamesUntranslated PASS
+io.agents.pokeclaw.agent.llm.CloudConnectionTesterTest#normalizeBaseUrl_addsSchemeAndStripsTrailingSlashes PASS
+io.agents.pokeclaw.agent.llm.CloudConnectionTesterTest#normalizeBaseUrl_blankStaysBlank PASS
+io.agents.pokeclaw.agent.llm.CloudConnectionTesterTest#normalizeBaseUrl_keepsHostWhenNoVersionPath PASS
+io.agents.pokeclaw.agent.llm.CloudConnectionTesterTest#normalizeBaseUrl_stripsEndpointSuffixesLangchainAppends PASS
+io.agents.pokeclaw.agent.llm.CloudConnectionTesterTest#test_missingApiKeyIsUnauthorizedWithoutNetwork PASS
+io.agents.pokeclaw.agent.llm.CloudConnectionTesterTest#test_missingBaseUrlIsGenericWithoutNetwork PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#conservative cpu applies to fold4 model before gpu is verified PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#conservative cpu applies to mediatek style hardware before gpu is verified PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#conservative cpu applies to xiaomi before gpu is verified PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#conservative cpu does not apply after gpu is verified PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#does not promote pending gpu init crash for another device PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#does not promote stale pending gpu init crash PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#does not rearm verified gpu during fresh cpu safe quarantine PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#does not rearm verified gpu for non crash cpu safe reason PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#promotes pending gpu init crash on same device within age window PASS
+io.agents.pokeclaw.agent.llm.LocalBackendHealthTest#rearms verified gpu after stale cpu safe quarantine PASS
+io.agents.pokeclaw.agent.llm.LocalModelManagerTest#model directory falls back to internal storage when external path is not writable PASS
+io.agents.pokeclaw.agent.llm.LocalModelManagerTest#model directory falls back to internal storage when external path is unusable PASS
+io.agents.pokeclaw.agent.llm.LocalModelManagerTest#model directory falls back to internal storage when external root is missing PASS
+io.agents.pokeclaw.agent.llm.LocalModelManagerTest#model directory uses external app storage when it can be created PASS
+io.agents.pokeclaw.agent.TaskParserTest#email commands do not route to messaging app tool PASS
+io.agents.pokeclaw.agent.TaskParserTest#send contextual message still falls through to agent PASS
+io.agents.pokeclaw.agent.TaskParserTest#send message command routes to direct send message tool PASS
+io.agents.pokeclaw.agent.TaskPromptEnvelopeTest#build and parse preserve current request and chat history PASS
+io.agents.pokeclaw.agent.TaskPromptEnvelopeTest#plain prompt without envelope still parses as raw request PASS
+io.agents.pokeclaw.automation.ExternalAutomationContractTest#parse chat action can fallback to task extra PASS
+io.agents.pokeclaw.automation.ExternalAutomationContractTest#parse prefers base64 payload over plain payload PASS
+io.agents.pokeclaw.automation.ExternalAutomationContractTest#parse rejects unknown action or empty payload PASS
+io.agents.pokeclaw.automation.ExternalAutomationContractTest#parse task action reads plain task payload PASS
+io.agents.pokeclaw.ExampleUnitTest#addition_isCorrect PASS
+io.agents.pokeclaw.safety.ActionLogFormatterTest#actionLogNeverReceivesOtpOrIbanOrNationalIdValues PASS
+io.agents.pokeclaw.safety.ActionLogFormatterTest#formatAndParseRoundTrip PASS
+io.agents.pokeclaw.safety.ActionLogFormatterTest#malformedLinesAreIgnored PASS
+io.agents.pokeclaw.safety.ActionLogFormatterTest#masksApiKeysTokensPasswordsAndCardNumbers PASS
+io.agents.pokeclaw.safety.ActionLogFormatterTest#truncatesLongDetails PASS
+io.agents.pokeclaw.safety.AppBlocklistTest#appLabelMatchesAreBlocked PASS
+io.agents.pokeclaw.safety.AppBlocklistTest#defaultsCoverBankingAndPasswordApps PASS
+io.agents.pokeclaw.safety.AppBlocklistTest#packageNameMatchesAreBlocked PASS
+io.agents.pokeclaw.safety.AppBlocklistTest#parseAndStorageRoundTrip PASS
+io.agents.pokeclaw.safety.AppBlocklistTest#passwordScreenFallbackNeedsTwoMarkers PASS
+io.agents.pokeclaw.safety.AppBlocklistTest#userProvidedPatternsReplaceDefaults PASS
+io.agents.pokeclaw.safety.CloudPayloadTest#benignScreenTextPassesThroughUnchanged PASS
+io.agents.pokeclaw.safety.CloudPayloadTest#outgoingToolResultContainsNoCardIbanNationalIdOrOtp PASS
+io.agents.pokeclaw.safety.CloudPayloadTest#payloadFieldsCheckedAreTheToolResultText PASS
+io.agents.pokeclaw.safety.HeldOutCorpusTest#reportHeldOutDetectionNumbers PASS
+io.agents.pokeclaw.safety.InjectionCorpusTest#benignFalsePositiveRateAtMost5Percent PASS
+io.agents.pokeclaw.safety.InjectionCorpusTest#corpusSizesAreAsSpecified PASS
+io.agents.pokeclaw.safety.InjectionCorpusTest#hostileDetectionRateAtLeast90Percent PASS
+io.agents.pokeclaw.safety.InjectionCorpusTest#zeroSensitiveActionsExecutedWithoutConfirmationFromAnyHostileText PASS
+io.agents.pokeclaw.safety.InjectionSensitiveActionPolicyTest#arabicFlaggedResultAlsoBlocksSensitiveActions PASS
+io.agents.pokeclaw.safety.InjectionSensitiveActionPolicyTest#noScreenInputMeansNoBlock PASS
+io.agents.pokeclaw.safety.InjectionSensitiveActionPolicyTest#riskClassifierKindFeedsTheBlock PASS
+io.agents.pokeclaw.safety.InjectionSensitiveActionPolicyTest#screenSourcedContextBlocksSensitiveActionsEvenWhenClean PASS
+io.agents.pokeclaw.safety.InjectionSensitiveActionPolicyTest#sensitiveActionAfterFlaggedResultIsBlockedWithoutConfirmation PASS
+io.agents.pokeclaw.safety.OtpGuardTest#codeWithoutKeywordIsNotHidden PASS
+io.agents.pokeclaw.safety.OtpGuardTest#filterNeverReturnsTheCode PASS
+io.agents.pokeclaw.safety.OtpGuardTest#hidesArabicOtpNotification PASS
+io.agents.pokeclaw.safety.OtpGuardTest#hidesEnglishOtpNotification PASS
+io.agents.pokeclaw.safety.OtpGuardTest#keywordWithoutCodeIsNotHidden PASS
+io.agents.pokeclaw.safety.OtpGuardTest#ordinaryMessagesPass PASS
+io.agents.pokeclaw.safety.PausedTaskLogCaptureTest#captureIsActiveAndRecordsLevelsAndTags PASS
+io.agents.pokeclaw.safety.PausedTaskLogCaptureTest#ibanShapedSubstitutionNeverLogsCanaryIban PASS
+io.agents.pokeclaw.safety.PausedTaskLogCaptureTest#pauseResumeSubstituteClearFlowNeverLogsCanaryValue PASS
+io.agents.pokeclaw.safety.PausedTaskLogCaptureTest#timeoutCancellationNeverLogsCanaryValue PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#awaitValueCancelsOnTimeout PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#awaitValueReturnsTrueAfterMessageArrives PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#emptyMessageIsNotAValue PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#messageAfterResumeIsNotAccepted PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#messageWhileNotPausedIsNotAValue PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#pauseEnteredOnlyWhenPlaceholderPresent PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#resumeUsesNextMessageAsValueAndSubstitutesOnlyPlaceholder PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#substitutionKeepsSurroundingTextAndReplacesOnlyTheToken PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#substitutionLeavesParamsWithoutPlaceholderUntouched PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#timeoutCancelsAndReportsCancellation PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#valueClearedAfterToolCall PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#valueClearedAtTaskEnd PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#valueClearedOnCancel PASS
+io.agents.pokeclaw.safety.PausedTaskStateTest#valueNeverAppearsInActionLogLines PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#arabicDiacriticsDoNotHideOverride PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#benignTextIsNotFlagged PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#flagsArabicOverride PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#flagsArabicRoleAndTags PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#flagsEnglishOverride PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#flagsEnglishRoleAndSystemTags PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#flagsExfiltrationPhrases PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#flagsHiddenMarkersAndHtmlComments PASS
+io.agents.pokeclaw.safety.PromptInjectionGuardTest#reasonsAreReported PASS
+io.agents.pokeclaw.safety.RetryPolicyTest#backoffGrows PASS
+io.agents.pokeclaw.safety.RetryPolicyTest#onlySafeToolsAreRetryable PASS
+io.agents.pokeclaw.safety.RetryPolicyTest#retryIsBounded PASS
+io.agents.pokeclaw.safety.RetryPolicyTest#transientErrorsAreDetected PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#deleteTextIsRisky PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#labelForIsStable PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#messagingCallingAndFilesRequireConfirmation PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#normalActionsAreNotRisky PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#paymentTextInAnyToolIsRisky PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#publishingIsRiskyOnlyForInputTools PASS
+io.agents.pokeclaw.safety.RiskClassifierTest#storeInstallIsRisky PASS
+io.agents.pokeclaw.safety.SafetyCoordinatorTest#approvalResolvesBlockingRequest PASS
+io.agents.pokeclaw.safety.SafetyCoordinatorTest#failsSafeWhenNoUiIsAvailable PASS
+io.agents.pokeclaw.safety.SafetyPermissionsMigrationTest#migrationDoesNotCopyFalseIntoNewKeys PASS
+io.agents.pokeclaw.safety.SafetyPermissionsMigrationTest#migrationIsIdempotent PASS
+io.agents.pokeclaw.safety.SafetyPermissionsMigrationTest#migrationRemovesOldKey PASS
+io.agents.pokeclaw.safety.SafetyPermissionsMigrationTest#migrationShowsNoticeOnlyWhenOldValueWasFalse PASS
+io.agents.pokeclaw.safety.SafetyPermissionsMigrationTest#noticeSurvivesDialogFailure PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#blockedAppAssessmentHasNullKind PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#blockedAppAssessmentWithNullKindIsSafe PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#blocklistBlocksRegardlessOfSwitches PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#defaultsAreAllTrue PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#disabledCategoryDoesNotRequireConfirmation PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#enabledCategoryRequiresConfirmation PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#taintedTaskRequiresConfirmationRegardlessOfSwitch PASS
+io.agents.pokeclaw.safety.SafetyPermissionsPolicyTest#unknownAlwaysRequiresConfirmationEvenWithoutSwitch PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#escapesAngleBracketsSoContentCannotCloseTheTag PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#explicitConfirmationAllowsSensitiveAction PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#flaggedContentSetsTaintAndSticks PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#sourceIsSanitized PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#systemRuleMentionsDataNotInstructions PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#taintedNonSensitiveActionOnlyWarns PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#taintedSensitiveActionRequiresConfirmation PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#untaintedTaskAllowsEverything PASS
+io.agents.pokeclaw.safety.ScreenContentGuardTest#wrapsInUntrustedDelimiters PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#digitsWithoutKeywordAreNotOtp PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#doesNotRedactNonLuhnDigits PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#emptyAndNullInputs PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#ibanMod97EdgeCases PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#luhnEdgeCases PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#multipleCategoriesInOneString PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#nationalIdMustBeTenDigits PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#nationalIdMustStartWithOneOrTwo PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#otpDigitsOutsideWindowAreKept PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactedOutputContainsNoRawValues PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsCompactCard PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsLuhnValidCard PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsOtpNearArabicKeyword PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsOtpNearEnglishKeyword PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsSaudiIban PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsSaudiNationalId PASS
+io.agents.pokeclaw.safety.SensitiveDataRedactorTest#redactsValidIban PASS
+io.agents.pokeclaw.safety.TaintPolicyTest#benignScreenResultAlsoTaints PASS
+io.agents.pokeclaw.safety.TaintPolicyTest#explicitConfirmationAllowsSensitiveActionAfterTaint PASS
+io.agents.pokeclaw.safety.TaintPolicyTest#missedSamplesAreNotFlaggedByDetector PASS
+io.agents.pokeclaw.safety.TaintPolicyTest#missedSamplesStillTaintAndRequireConfirmation PASS
+io.agents.pokeclaw.safety.TaintPolicyTest#nonSensitiveActionAfterTaintProceedsWithWarning PASS
+io.agents.pokeclaw.safety.TaintPolicyTest#untaintedTaskWithNoScreenInputIsUnaffected PASS
+io.agents.pokeclaw.safety.TaskTimeoutPolicyTest#presetCycling PASS
+io.agents.pokeclaw.safety.TaskTimeoutPolicyTest#timeoutConvertsAndClamps PASS
+io.agents.pokeclaw.safety.TaskTimeoutPolicyTest#timeoutDetection PASS
+io.agents.pokeclaw.ui.chat.CloudContextHandoffFormatterTest#conversation handoff keeps user and assistant only PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#arabicBoldRendersBoldSegment PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#blockquoteMarkersAreStripped PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#boldItalicProducesCombinedSegment PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#boldProducesBoldSegment PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#bulletMarkersNormalizeToUnicodeBullet PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#codeSpanIsMonospaceAndNotEmphasized PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#fencedCodeBlockBecomesSingleMonospaceSegment PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#headingIsFlattenedToBold PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#italicStarProducesItalicSegment PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#linkKeepsTextAndAnnotatesUrl PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#multilinePreservesNewlines PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#plainTextPassesThrough PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#snakeCaseIsNotItalicized PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#underscoreBoldProducesBoldSegment PASS
+io.agents.pokeclaw.ui.chat.MarkdownRenderTest#unmatchedMarkersStayLiteral PASS
+io.agents.pokeclaw.ui.chat.MonitorTargetParserTest#defaults to whatsapp when app missing PASS
+io.agents.pokeclaw.ui.chat.MonitorTargetParserTest#does not mistake caroline for line app PASS
+io.agents.pokeclaw.ui.chat.MonitorTargetParserTest#parses messages aliases PASS
+io.agents.pokeclaw.ui.chat.MonitorTargetParserTest#parses telegram monitor target PASS
+io.agents.pokeclaw.ui.chat.MonitorTargetParserTest#returns null when no target remains PASS
+io.agents.pokeclaw.utils.ChatNoiseFilterUtilsTest#centered short labels are treated as system separators PASS
+io.agents.pokeclaw.utils.ChatNoiseFilterUtilsTest#left aligned chat bubble is not treated as system label PASS
+io.agents.pokeclaw.utils.ChatNoiseFilterUtilsTest#timestamp-like labels are filtered without English words PASS
+io.agents.pokeclaw.utils.ChatNoiseFilterUtilsTest#wide upper banner is filtered as non-message noise PASS
+io.agents.pokeclaw.utils.ContactMatchUtilsTest#does not match unrelated contact PASS
+io.agents.pokeclaw.utils.ContactMatchUtilsTest#matches contact name ignoring case and punctuation PASS
+io.agents.pokeclaw.utils.ContactMatchUtilsTest#matches last digits when app omits country code PASS
+io.agents.pokeclaw.utils.ContactMatchUtilsTest#matches phone numbers across formatting differences PASS
+io.agents.pokeclaw.utils.SecretsMaskerTest#isMasked_detectsMaskedRoundTrip PASS
+io.agents.pokeclaw.utils.SecretsMaskerTest#mask_emptyStaysEmpty_shortSecretUnchanged PASS
+io.agents.pokeclaw.utils.SecretsMaskerTest#mask_keepsOnlyLastFourChars PASS
+io.agents.pokeclaw.utils.SecretsMaskerTest#mask_neverLeaksMiddleCharacters PASS
+io.agents.pokeclaw.utils.UiTextMatchUtilsTest#exact matching does not overmatch partial short text PASS
+io.agents.pokeclaw.utils.UiTextMatchUtilsTest#matches exact text ignoring punctuation and case PASS
+io.agents.pokeclaw.utils.UiTextMatchUtilsTest#relaxed matching allows extra words around query PASS
+io.agents.pokeclaw.utils.UiTextMatchUtilsTest#relaxed matching handles digit formatting differences PASS
+io.agents.pokeclaw.utils.UiTextMatchUtilsTest#relaxed matching still rejects unrelated text PASS
+io.agents.pokeclaw.voice.VoiceDictationPolicyTest#autoSendRequiresSettingOn PASS
+io.agents.pokeclaw.voice.VoiceDictationPolicyTest#blankTranscriptNeverSends PASS
+io.agents.pokeclaw.voice.VoiceDictationPolicyTest#blockedComposerNeverSends PASS
+io.agents.pokeclaw.voice.VoiceDictationPolicyTest#pendingReplyNeverSends PASS
+io.agents.pokeclaw.voice.VoiceDictationPolicyTest#runningTaskNeverSends PASS
+io.agents.pokeclaw.voice.VoiceErrorTest#everyErrorHasNonBlankResName PASS
+io.agents.pokeclaw.voice.VoiceErrorTest#fromMessageKeyRoundTrips PASS
+io.agents.pokeclaw.voice.VoiceErrorTest#messageKeysAreUnique PASS
+io.agents.pokeclaw.voice.VoiceTextNormalizerTest#collapsesWhitespaceAndTrims PASS
+io.agents.pokeclaw.voice.VoiceTextNormalizerTest#keepsArabicPunctuation PASS
+io.agents.pokeclaw.voice.VoiceTextNormalizerTest#nullAndBlankBecomeEmpty PASS
+io.agents.pokeclaw.voice.VoiceTextNormalizerTest#stripsInvisibleBidiMarks PASS
+io.agents.pokeclaw.voice.VoiceTextNormalizerTest#truncatesToMaxLengthWithoutTrailingSpace PASS
+io.agents.pokeclaw.voice.VoiceTimerFormatTest#elapsedSecondsForTimestamps PASS
+io.agents.pokeclaw.voice.VoiceTimerFormatTest#formatsSecondsAsMmSs PASS
+io.agents.pokeclaw.voice.VoiceTimerFormatTest#negativeClampsToZero PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#blankInputsAreIgnored PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#finalReplacesPendingPartial PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#multipleFinalsAreJoinedWithSingleSpace PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#partialsReplaceEachOther PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#resetClearsEverything PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#startsEmpty PASS
+io.agents.pokeclaw.voice.VoiceTranscriptAssemblerTest#transcriptIsNormalized PASS

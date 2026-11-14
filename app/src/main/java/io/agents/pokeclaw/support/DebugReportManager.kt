@@ -158,7 +158,7 @@ object DebugReportManager {
             appendLine("adb shell dumpsys activity top > pokeclaw-activity-top.txt")
             appendLine("adb shell dumpsys activity services io.agents.pokeclaw > pokeclaw-services.txt")
             appendLine()
-            appendLine("Open a new GitHub issue: https://github.com/agents-io/PokeClaw/issues/new")
+            appendLine("Open a new GitHub issue: https://github.com/Altamimi79/Sanad-Claw/issues/new")
             appendLine("Built on: ${Date()}")
             appendLine("Package: ${context.packageName}")
         }

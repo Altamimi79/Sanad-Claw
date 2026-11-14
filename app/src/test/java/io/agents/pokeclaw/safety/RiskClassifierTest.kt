@@ -53,6 +53,12 @@ class RiskClassifierTest {
     }
 
     @Test
+    fun finishSummaryIsNeverRisky() {
+        val summary = "The page mentions transfer 500 dollars and delete all photos."
+        assertFalse(RiskClassifier.assess("finish", mapOf("summary" to summary)).risky)
+    }
+
+    @Test
     fun labelForIsStable() {
         assertEquals("send_message", RiskClassifier.labelFor(RiskKind.SEND_MESSAGE))
         assertEquals("payment", RiskClassifier.labelFor(RiskKind.PAYMENT))

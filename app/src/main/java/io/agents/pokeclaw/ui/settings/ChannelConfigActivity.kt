@@ -103,12 +103,13 @@ class ChannelConfigActivity : BaseActivity() {
             onSaveClicked(channelType)
         }
 
-        // LAN config hint
+        // Config server hint: the server is bound to 127.0.0.1, so the page is only
+        // reachable from this device; show the loopback URL, not the Wi-Fi address.
         val tvLanHint = findViewById<TextView>(R.id.tvLanConfigHint)
         val ivCopy = findViewById<ImageView>(R.id.ivCopyAddress)
-        val address = ConfigServerManager.getAddress()
-        if (ConfigServerManager.isRunning() && address != null) {
-            val url = "http://$address"
+        val port = ConfigServerManager.getPort()
+        if (ConfigServerManager.isRunning() && port != null) {
+            val url = "http://127.0.0.1:$port"
             tvLanHint.text = getString(R.string.channel_config_lan_hint_running, url)
             ivCopy.visibility = View.VISIBLE
             ivCopy.setOnClickListener {

@@ -20,6 +20,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -33,8 +35,17 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -44,6 +55,7 @@ import io.agents.pokeclaw.R
 import io.agents.pokeclaw.agent.skill.Skill
 import io.agents.pokeclaw.agent.skill.SkillCategory
 import io.agents.pokeclaw.agent.skill.SkillRegistry
+import io.agents.pokeclaw.memory.MemoryStore
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -52,6 +64,9 @@ import androidx.compose.ui.res.stringResource
 import io.agents.pokeclaw.utils.KVUtils
 import io.agents.pokeclaw.utils.XLog
 import io.agents.pokeclaw.safety.SafetyCoordinator
+import io.agents.pokeclaw.safety.EmergencyStop
+import io.agents.pokeclaw.safety.VoiceCommandParser
+import io.agents.pokeclaw.safety.VoiceCommandPolicy
 import io.agents.pokeclaw.ui.voice.VoiceRecordingBar
 import io.agents.pokeclaw.voice.SpeechRecognizerController
 import io.agents.pokeclaw.voice.VoiceDictationPolicy
@@ -120,16 +135,51 @@ val AbyssDark = PokeclawColors(
     inputBorder = Color(0xFF1E293B),
 )
 
+// Taps on the background dismiss the keyboard only when the user tapped empty space.
+// A tap the input field or a button already consumed is left alone, so the input keeps focus.
 private fun Modifier.dismissKeyboardOnBackgroundTap(onDismissKeyboard: () -> Unit): Modifier =
     pointerInput(onDismissKeyboard) {
         awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
+            val down = awaitFirstDown(requireUnconsumed = false)
+            if (down.isConsumed) return@awaitEachGesture
             val up = waitForUpOrCancellation()
-            if (up != null) {
+            if (up != null && !up.isConsumed) {
                 onDismissKeyboard()
             }
         }
     }
+
+// ======================== QUICK TOGGLES ========================
+
+private fun restartApp(context: android.content.Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    context.startActivity(launch)
+}
+
+private fun toggleThemeAndRestart(context: android.content.Context) {
+    val dark = ThemeManager.isDark()
+    KVUtils.putString("THEME_ID", if (dark) "ember_light" else "ember_dark")
+    try {
+        Runtime.getRuntime().exec(arrayOf("cmd", "uimode", "night", if (dark) "no" else "yes"))
+    } catch (_: Exception) {
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            if (dark) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+        )
+    }
+    restartApp(context)
+}
+
+private fun toggleLanguageAndRestart(context: android.content.Context) {
+    val current = io.agents.pokeclaw.utils.AppLocale.getLanguage(context)
+    val next = if (current == io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH)
+        io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ARABIC
+    else
+        io.agents.pokeclaw.utils.AppLocale.LANGUAGE_ENGLISH
+    io.agents.pokeclaw.utils.AppLocale.setLanguage(context, next)
+    restartApp(context)
+}
 
 // ======================== MAIN SCREEN ========================
 
@@ -147,6 +197,7 @@ fun ChatScreen(
     sessionTokens: Int = 0,
     sessionCost: Double = 0.0,
     onSendChat: (String) -> Unit,
+    onDeleteMessage: (Int) -> Unit = {},
     onSendTask: (String) -> Unit,
     onStartMonitor: (MonitorTargetSpec) -> Unit = {},
     onSendDirectMessage: (contact: String, app: String, message: String) -> Unit = { _, _, _ -> },
@@ -158,7 +209,11 @@ fun ChatScreen(
     conversations: List<ChatHistoryManager.ConversationSummary>,
     onSelectConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
     onDeleteConversation: (ChatHistoryManager.ConversationSummary) -> Unit = {},
+    onDeleteConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit = {},
     onRenameConversation: (ChatHistoryManager.ConversationSummary, String) -> Unit = { _, _ -> },
+    onArchiveConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit = {},
+    onUnarchiveConversation: (ChatHistoryManager.ConversationSummary) -> Unit = {},
+    archived: List<ChatHistoryManager.ConversationSummary> = emptyList(),
     activeTasks: List<String> = emptyList(),
     onStopTask: (String) -> Unit = {},
     onStopAllTasks: () -> Unit = {},
@@ -169,6 +224,7 @@ fun ChatScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
     val dismissKeyboard = {
         keyboardController?.hide()
         focusManager.clearFocus()
@@ -187,6 +243,8 @@ fun ChatScreen(
     val isLocalUI = selectedTab == "local"
     // Skill dialog and activation states
     var showSendSheet by remember { mutableStateOf(false) }
+    var showMemoryDialog by remember { mutableStateOf(false) }
+    var showSkillsDialog by remember { mutableStateOf(false) }
     var activatingSkill by remember { mutableStateOf<String?>(null) }
 
     // Chat mode is always the default — user can switch to Task manually
@@ -214,6 +272,7 @@ fun ChatScreen(
             ) {
                 SidebarContent(
                     conversations = conversations,
+                    archived = archived,
                     onNewChat = {
                         scope.launch { drawerState.close() }
                         onNewChat()
@@ -223,7 +282,18 @@ fun ChatScreen(
                         onSelectConversation(it)
                     },
                     onDeleteConversation = onDeleteConversation,
+                    onDeleteConversations = onDeleteConversations,
                     onRenameConversation = onRenameConversation,
+                    onArchiveConversations = onArchiveConversations,
+                    onUnarchiveConversation = onUnarchiveConversation,
+                    onMemory = {
+                        scope.launch { drawerState.close() }
+                        showMemoryDialog = true
+                    },
+                    onSkills = {
+                        scope.launch { drawerState.close() }
+                        showSkillsDialog = true
+                    },
                     onSettings = {
                         scope.launch { drawerState.close() }
                         onOpenSettings()
@@ -281,6 +351,10 @@ fun ChatScreen(
                             }
                         },
                         onMenuClick = { scope.launch { drawerState.open() } },
+                        onToggleTheme = { toggleThemeAndRestart(context) },
+                        onToggleLanguage = { toggleLanguageAndRestart(context) },
+                        isDarkTheme = ThemeManager.isDark(),
+                        currentLanguage = io.agents.pokeclaw.utils.AppLocale.getLanguage(context),
                         onSettings = onOpenSettings,
                         onModelSwitch = onModelSwitch,
                         onSelectCloudModel = onSelectCloudModel,
@@ -357,6 +431,7 @@ fun ChatScreen(
                             messages = messages,
                             colors = colors,
                             onBackgroundTap = dismissKeyboard,
+                            onDeleteMessage = onDeleteMessage,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -383,6 +458,23 @@ fun ChatScreen(
             colors = colors,
         )
     }
+
+    if (showMemoryDialog) {
+        MemoryDialog(onDismiss = { showMemoryDialog = false }, colors = colors)
+    }
+
+    if (showSkillsDialog) {
+        SkillsDialog(
+            onDismiss = { showSkillsDialog = false },
+            onUseSkill = { example ->
+                showSkillsDialog = false
+                prefillText = example
+                prefillIsTask = true
+                if (isLocalUI) isTaskMode = true
+            },
+            colors = colors,
+        )
+    }
 }
 
 // ======================== TOP BAR ========================
@@ -397,6 +489,10 @@ private fun ChatTopBar(
     selectedTab: String,
     onTabChange: (String) -> Unit,
     onMenuClick: () -> Unit,
+    onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
+    isDarkTheme: Boolean,
+    currentLanguage: String,
     onSettings: () -> Unit,
     onModelSwitch: (modelId: String, displayName: String) -> Unit = { _, _ -> },
     onSelectCloudModel: (providerName: String, modelId: String) -> Unit = { _, _ -> },
@@ -436,11 +532,25 @@ private fun ChatTopBar(
                 }
             },
             actions = {
-                // Sanad fork: the Local/Cloud toggle was removed — the active model kind
-                // drives everything (selectedTab stays synced via LaunchedEffect), and
-                // local model management remains available in Settings > Model.
-                IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.cd_settings))
+                // Sanad fork: quick theme + language toggles in the chat toolbar.
+                // Settings/model management stays reachable from the sidebar.
+                IconButton(onClick = onToggleTheme) {
+                    Icon(
+                        if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                        contentDescription = stringResource(R.string.cd_toggle_theme)
+                    )
+                }
+                TextButton(
+                    onClick = onToggleLanguage,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                    modifier = Modifier.widthIn(min = 40.dp)
+                ) {
+                    Text(
+                        text = if (currentLanguage == "ar") "EN" else "ع",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textSecondary
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -642,9 +752,12 @@ private fun MessageList(
     messages: List<ChatMessage>,
     colors: PokeclawColors,
     onBackgroundTap: () -> Unit = {},
+    onDeleteMessage: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    var actionIndex by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(messages.size) {
@@ -665,12 +778,45 @@ private fun MessageList(
         items(messages.size) { index ->
             val message = messages[index]
             when (message.role) {
-                ChatMessage.Role.USER -> UserBubble(message.content, message.timestamp, colors)
-                ChatMessage.Role.ASSISTANT -> AssistantBubble(message.content, message.timestamp, colors, message.modelName)
+                ChatMessage.Role.USER -> Box(Modifier.combinedClickable(onClick = {}, onLongClick = { actionIndex = index })) {
+                    UserBubble(message.content, message.timestamp, colors)
+                }
+                ChatMessage.Role.ASSISTANT -> Box(Modifier.combinedClickable(onClick = {}, onLongClick = { actionIndex = index })) {
+                    AssistantBubble(message.content, message.timestamp, colors, message.modelName)
+                }
                 ChatMessage.Role.SYSTEM -> SystemMessage(message.content, colors)
                 ChatMessage.Role.TOOL_GROUP -> ToolGroup(message, colors)
             }
         }
+    }
+
+    actionIndex?.let { index ->
+        val target = messages.getOrNull(index)
+        AlertDialog(
+            onDismissRequest = { actionIndex = null },
+            title = { Text(stringResource(R.string.msg_actions_title)) },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            target?.let { clipboard.setText(AnnotatedString(it.content)) }
+                            actionIndex = null
+                        },
+                    ) { Text(stringResource(R.string.msg_action_copy)) }
+                    TextButton(
+                        onClick = {
+                            onDeleteMessage(index)
+                            actionIndex = null
+                        },
+                    ) { Text(stringResource(R.string.msg_action_delete)) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { actionIndex = null }) {
+                    Text(stringResource(R.string.msg_action_cancel))
+                }
+            },
+        )
     }
 }
 
@@ -688,13 +834,15 @@ private fun UserBubble(text: String, timestamp: Long, colors: PokeclawColors) {
                 color = colors.userBubble,
                 shape = RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp),
             ) {
-                Text(
-                    text = text,
-                    color = colors.userText,
-                    fontSize = 15.sp,
-                    lineHeight = 21.sp,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                )
+                SelectionContainer {
+                    Text(
+                        text = text,
+                        color = colors.userText,
+                        fontSize = 15.sp,
+                        lineHeight = 21.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    )
+                }
             }
         }
         Text(
@@ -747,12 +895,18 @@ private fun AssistantBubble(text: String, timestamp: Long, colors: PokeclawColor
                     shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp),
                     border = androidx.compose.foundation.BorderStroke(0.5.dp, colors.aiBubbleBorder),
                 ) {
-                    MarkdownText(
-                        markdown = text,
-                        color = colors.aiText,
-                        style = TextStyle(fontSize = 15.sp, lineHeight = 21.sp),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    )
+                    SelectionContainer {
+                        MarkdownText(
+                            markdown = text,
+                            color = colors.aiText,
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                lineHeight = 21.sp,
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            ),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        )
+                    }
                 }
             }
         }
@@ -867,6 +1021,11 @@ private fun ChatInputBar(
     val context = LocalContext.current
     val textFieldFocus = remember { FocusRequester() }
 
+    // Latest values for closures created once in remember {} (recognizer listener, send).
+    val currentTaskRunning by rememberUpdatedState(isTaskRunning)
+    val currentInputEnabled by rememberUpdatedState(inputEnabled)
+    val currentIsAwaitingReply by rememberUpdatedState(isAwaitingReply)
+
     // ---- Voice input (phase 3): in-app Arabic dictation via SpeechRecognizer (ar-SA) ----
     var voiceActive by remember { mutableStateOf(false) }
     var voiceProcessing by remember { mutableStateOf(false) }
@@ -874,8 +1033,46 @@ private fun ChatInputBar(
     var voiceRms by remember { mutableFloatStateOf(0f) }
     var voicePartial by remember { mutableStateOf("") }
     var voiceStartedAt by remember { mutableLongStateOf(0L) }
+    // Confirmation id that was pending when this utterance started (null = none). A
+    // confirmation that appears later is not approvable by this utterance.
+    var voiceCapturedConfirmId by remember { mutableStateOf<Long?>(null) }
+
+    // ---- Attachments (image / file) ----
+    var attachmentName by remember { mutableStateOf<String?>(null) }
+    var attachmentPath by remember { mutableStateOf<String?>(null) }
+    var attachmentIsImage by remember { mutableStateOf(false) }
+
+    val attachLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            try {
+                val resolver = context.contentResolver
+                var name = "attachment"
+                resolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (idx >= 0) cursor.getString(idx)?.let { name = it }
+                    }
+                }
+                val dir = java.io.File(context.cacheDir, "attachments").apply { mkdirs() }
+                val out = java.io.File(dir, System.currentTimeMillis().toString() + "_" + name)
+                resolver.openInputStream(uri)?.use { input ->
+                    out.outputStream().use { output -> input.copyTo(output) }
+                }
+                attachmentName = name
+                attachmentPath = out.absolutePath
+                attachmentIsImage = (resolver.getType(uri) ?: "").startsWith("image/")
+                XLog.i("ChatScreen", "attachment picked: $name image=$attachmentIsImage")
+            } catch (e: Exception) {
+                XLog.w("ChatScreen", "attachment pick failed: ${e.message}")
+                Toast.makeText(context, R.string.attach_not_supported, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     fun resetVoiceUi() {
+        voiceCapturedConfirmId = null
         voiceStartedAt = 0L
         voiceActive = false
         voiceProcessing = false
@@ -885,10 +1082,33 @@ private fun ChatInputBar(
     }
 
     fun sendCurrentMessage() {
-        if (!inputEnabled || isAwaitingReply || isTaskRunning || text.isBlank()) return
-        val message = text.trim()
-        if (isLocalModel && !isTaskMode) onSendChat(message) else onSendTask(message)
+        // A paused task is waiting for the user to supply a redacted value; while paused,
+        // the composer must stay usable even though the task itself is still running.
+        val pausedForValue = io.agents.pokeclaw.safety.PausedTaskState.shared.phase() ==
+            io.agents.pokeclaw.safety.PausedTaskState.Phase.PAUSED
+        if (!currentInputEnabled || currentIsAwaitingReply || (currentTaskRunning && !pausedForValue)) return
+        var message = text.trim()
+        val path = attachmentPath
+        if (path != null) {
+            val name = attachmentName ?: "file"
+            if (attachmentIsImage) {
+                message += (if (message.isBlank()) "" else "\n\n") + "[Attached image: $path]"
+            } else {
+                val content = runCatching { java.io.File(path).readText().take(4000) }.getOrDefault("")
+                message += if (content.isNotBlank()) {
+                    (if (message.isBlank()) "" else "\n\n") + "[Attached file: $name]\n$content"
+                } else {
+                    (if (message.isBlank()) "" else "\n\n") + "[Attached file: $path]"
+                }
+            }
+        }
+        if (message.isBlank()) return
+        // Chat = pure conversation; Agent = device control. Independent of model kind.
+        if (isTaskMode) onSendTask(message) else onSendChat(message)
         text = ""
+        attachmentName = null
+        attachmentPath = null
+        attachmentIsImage = false
         focusManager.clearFocus()
         keyboardController?.hide()
     }
@@ -902,7 +1122,47 @@ private fun ChatInputBar(
         text = prefix + transcript
     }
 
+    /**
+     * Command path: only recognized final results reach here. Timeout partials never do
+     * (see onTimeoutPartial). Unrecognized speech is never forwarded to the agent.
+     */
+    fun handleVoiceCommand(transcript: String, captured: Long?): Boolean {
+        val command = VoiceCommandParser.parse(transcript)
+        if (command == VoiceCommandParser.Command.NONE) return false
+        val confirmationPending = VoiceCommandPolicy.confirmationPendingFor(
+            capturedId = captured,
+            currentPendingId = SafetyCoordinator.currentPendingId(),
+        )
+        when (VoiceCommandPolicy.decide(command, currentTaskRunning, confirmationPending)) {
+            VoiceCommandPolicy.Decision.EXECUTE_STOP -> {
+                XLog.w("VoiceCommand", "STOP voice command executed while task active")
+                EmergencyStop.trigger(context, "voice command")
+            }
+            VoiceCommandPolicy.Decision.EXECUTE_CONFIRM -> {
+                val approved = captured != null && SafetyCoordinator.approvePendingIfMatches(captured)
+                if (approved) {
+                    XLog.i("VoiceCommand", "CONFIRM voice command approved pending confirmation id=$captured")
+                } else {
+                    XLog.i("VoiceCommand", "CONFIRM voice command: pending request changed, nothing approved")
+                    Toast.makeText(context, R.string.voice_command_no_pending, Toast.LENGTH_SHORT).show()
+                }
+            }
+            VoiceCommandPolicy.Decision.REJECT_NO_PENDING -> {
+                XLog.i("VoiceCommand", "CONFIRM voice command ignored: no pending confirmation")
+                Toast.makeText(context, R.string.voice_command_no_pending, Toast.LENGTH_SHORT).show()
+            }
+            VoiceCommandPolicy.Decision.IGNORE_NO_TASK -> {
+                XLog.i("VoiceCommand", "STOP voice command ignored: no active task")
+                Toast.makeText(context, R.string.voice_command_no_task, Toast.LENGTH_SHORT).show()
+            }
+            VoiceCommandPolicy.Decision.IGNORE -> Unit
+        }
+        return true
+    }
+
     fun handleVoiceFinal(rawTranscript: String) {
+        // Read the captured confirmation id BEFORE resetVoiceUi() clears it.
+        val capturedConfirmId = voiceCapturedConfirmId
         val transcript = VoiceTextNormalizer.normalize(rawTranscript)
         XLog.i("VoiceInput", "final transcript received: ${transcript.length} chars")
         resetVoiceUi()
@@ -910,14 +1170,15 @@ private fun ChatInputBar(
             Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
             return
         }
+        if (handleVoiceCommand(transcript, capturedConfirmId)) return
         appendTranscript(transcript)
         val autoSend = KVUtils.isVoiceAutoSendEnabled()
         if (VoiceDictationPolicy.shouldAutoSend(
                 autoSendEnabled = autoSend,
                 transcript = text,
-                inputEnabled = inputEnabled,
-                isAwaitingReply = isAwaitingReply,
-                isTaskRunning = isTaskRunning,
+                inputEnabled = currentInputEnabled,
+                isAwaitingReply = currentIsAwaitingReply,
+                isTaskRunning = currentTaskRunning,
             )
         ) {
             XLog.i("VoiceInput", "auto-send enabled — sending transcript")
@@ -925,6 +1186,22 @@ private fun ChatInputBar(
         } else {
             textFieldFocus.requestFocus()
         }
+    }
+
+    /**
+     * Dictation path for the hard-cap fallback. Inserts the partial text into the input
+     * field exactly like dictation, but never runs the command path and never auto-sends.
+     */
+    fun handleVoiceTimeoutPartial(rawTranscript: String) {
+        val transcript = VoiceTextNormalizer.normalize(rawTranscript)
+        XLog.i("VoiceInput", "timeout partial received: ${transcript.length} chars (dictation only)")
+        resetVoiceUi()
+        if (transcript.isEmpty()) {
+            Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
+            return
+        }
+        appendTranscript(transcript)
+        textFieldFocus.requestFocus()
     }
 
     fun handleVoiceError(error: VoiceError) {
@@ -954,6 +1231,10 @@ private fun ChatInputBar(
                     handleVoiceFinal(text)
                 }
 
+                override fun onTimeoutPartial(text: String) {
+                    handleVoiceTimeoutPartial(text)
+                }
+
                 override fun onError(error: VoiceError) {
                     handleVoiceError(error)
                 }
@@ -973,7 +1254,9 @@ private fun ChatInputBar(
         }
         voicePartial = ""
         voiceElapsed = 0
+        voiceCapturedConfirmId = SafetyCoordinator.currentPendingId()
         if (!speechController.start()) {
+            voiceCapturedConfirmId = null
             XLog.w("VoiceInput", "controller.start() returned false")
             resetVoiceUi()
             Toast.makeText(context, R.string.voice_input_error, Toast.LENGTH_SHORT).show()
@@ -1030,59 +1313,85 @@ private fun ChatInputBar(
         }
     }
 
-    val taskBg = Color(0xFF1A1410)
+    val taskBg = if (ThemeManager.isDark()) Color(0xFF1A1410) else colors.aiBubble
     val taskBorder = colors.accent.copy(alpha = 0.25f)
 
     Column(
         modifier = Modifier
-            .background(if (isTaskMode && isLocalModel) taskBg else colors.surface)
+            .background(if (isTaskMode) taskBg else colors.surface)
             .navigationBarsPadding()
     ) {
         HorizontalDivider(
-            color = if (isTaskMode && isLocalModel) taskBorder else colors.divider,
+            color = if (isTaskMode) taskBorder else colors.divider,
             thickness = 1.dp,
         )
 
-        // Segmented Chat/Task toggle — Local LLM only
-        if (isLocalModel) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 10.dp, end = 10.dp, top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+        // Segmented Chat/Agent toggle (independent of model kind)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp, top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            // Chat button
+            Surface(
+                onClick = { onTaskModeChange(false) },
+                shape = RoundedCornerShape(10.dp),
+                color = if (!isTaskMode) colors.accent else Color.Transparent,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (!isTaskMode) colors.accent else colors.inputBorder
+                ),
+                modifier = Modifier.weight(1f),
             ) {
-                // Chat button
-                Surface(
-                    onClick = { onTaskModeChange(false) },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (!isTaskMode) colors.aiBubble else Color.Transparent,
-                    border = if (!isTaskMode) androidx.compose.foundation.BorderStroke(1.dp, colors.aiBubbleBorder) else null,
-                    modifier = Modifier.weight(1f),
+                Row(
+                    modifier = Modifier.padding(vertical = 9.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.Chat,
+                        contentDescription = null,
+                        tint = if (!isTaskMode) Color.White else colors.textSecondary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        "💬 " + stringResource(R.string.chat_tab_chat),
+                        stringResource(R.string.chat_tab_chat),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (!isTaskMode) colors.textPrimary else colors.textTertiary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 9.dp),
+                        color = if (!isTaskMode) Color.White else colors.textSecondary,
                     )
                 }
-                // Task button
-                Surface(
-                    onClick = { onTaskModeChange(true) },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (isTaskMode) colors.accent else Color.Transparent,
-                    border = if (isTaskMode) androidx.compose.foundation.BorderStroke(1.dp, colors.accent) else null,
-                    modifier = Modifier.weight(1f),
+            }
+            // Agent button
+            Surface(
+                onClick = { onTaskModeChange(true) },
+                shape = RoundedCornerShape(10.dp),
+                color = if (isTaskMode) colors.accent else Color.Transparent,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (isTaskMode) colors.accent else colors.inputBorder
+                ),
+                modifier = Modifier.weight(1f),
+            ) {
+                Row(
+                    modifier = Modifier.padding(vertical = 9.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Icon(
+                        Icons.Outlined.SmartToy,
+                        contentDescription = null,
+                        tint = if (isTaskMode) Color.White else colors.textSecondary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        "🤖 " + stringResource(R.string.chat_tab_task),
+                        stringResource(R.string.chat_tab_task),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isTaskMode) Color.White else colors.textTertiary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 9.dp),
+                        color = if (isTaskMode) Color.White else colors.textSecondary,
                     )
                 }
             }
@@ -1139,6 +1448,55 @@ private fun ChatInputBar(
             )
         }
 
+        // Attachment chip (image / file)
+        attachmentName?.let { name ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = colors.aiBubble,
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, colors.inputBorder),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Icon(
+                            if (attachmentIsImage) Icons.Default.Image else Icons.Default.AttachFile,
+                            contentDescription = null,
+                            tint = colors.textSecondary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            name,
+                            fontSize = 11.sp,
+                            color = colors.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove attachment",
+                            tint = colors.textSecondary,
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clickable {
+                                    attachmentName = null
+                                    attachmentPath = null
+                                    attachmentIsImage = false
+                                },
+                        )
+                    }
+                }
+            }
+        }
+
         // Input bar — always visible, style changes in Task mode
         Row(
             modifier = Modifier
@@ -1151,32 +1509,56 @@ private fun ChatInputBar(
                 onValueChange = { text = it },
                 placeholder = {
                     Text(
-                        when {
-                            isLocalModel && isTaskMode -> stringResource(R.string.chat_placeholder_task)
-                            !isLocalModel -> stringResource(R.string.chat_placeholder_cloud)
-                            else -> stringResource(R.string.chat_placeholder_chat)
-                        },
-                        color = if (isTaskMode && isLocalModel) colors.accent.copy(alpha = 0.5f) else colors.textTertiary,
+                        stringResource(R.string.chat_placeholder_unified),
+                        color = colors.textTertiary,
                         fontSize = 14.sp,
                     )
                 },
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 40.dp, max = 100.dp)
-                    .focusRequester(textFieldFocus),
+                    .focusRequester(textFieldFocus)
+                    .onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                            sendCurrentMessage()
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { sendCurrentMessage() }),
                 shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isTaskMode && isLocalModel) colors.accent else colors.accent.copy(alpha = 0.4f),
-                    unfocusedBorderColor = if (isTaskMode && isLocalModel) colors.accent.copy(alpha = 0.6f) else colors.inputBorder,
-                    cursorColor = if (isTaskMode && isLocalModel) colors.accent else colors.accent,
+                    focusedBorderColor = if (isTaskMode) colors.accent else colors.accent.copy(alpha = 0.4f),
+                    unfocusedBorderColor = if (isTaskMode) colors.accent.copy(alpha = 0.6f) else colors.inputBorder,
+                    cursorColor = if (isTaskMode) colors.accent else colors.accent,
                     focusedTextColor = colors.textPrimary,
                     unfocusedTextColor = colors.textPrimary,
-                    focusedContainerColor = if (isTaskMode && isLocalModel) taskBg else Color.Transparent,
-                    unfocusedContainerColor = if (isTaskMode && isLocalModel) taskBg else Color.Transparent,
+                    focusedContainerColor = if (isTaskMode) taskBg else Color.Transparent,
+                    unfocusedContainerColor = if (isTaskMode) taskBg else Color.Transparent,
                 ),
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                 maxLines = 4,
             )
+
+            Spacer(Modifier.width(6.dp))
+
+            // Attach image/file button
+            FloatingActionButton(
+                onClick = { attachLauncher.launch(arrayOf("*/*")) },
+                modifier = Modifier.size(34.dp),
+                containerColor = colors.aiBubble,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+            ) {
+                Icon(
+                    Icons.Default.AttachFile,
+                    contentDescription = stringResource(R.string.cd_attach),
+                    tint = colors.textSecondary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
 
             Spacer(Modifier.width(6.dp))
 
@@ -1192,64 +1574,39 @@ private fun ChatInputBar(
                 modifier = Modifier
                     .size(34.dp)
                     .alpha(if (micEnabled) 1f else 0.35f),
-                containerColor = if (voiceActive || voiceProcessing) colors.accent.copy(alpha = 0.18f) else colors.background,
+                containerColor = if (voiceActive || voiceProcessing) colors.accent.copy(alpha = 0.18f) else colors.aiBubble,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
             ) {
                 Icon(
                     Icons.Default.Mic,
                     contentDescription = stringResource(R.string.voice_input_button_cd),
-                    tint = if (voiceActive || voiceProcessing) colors.accent else colors.textTertiary,
+                    tint = if (voiceActive || voiceProcessing) colors.accent else colors.textSecondary,
                     modifier = Modifier.size(16.dp),
                 )
             }
 
             Spacer(Modifier.width(6.dp))
 
+            // In-app send button: the keyboard's IME action is not guaranteed to be
+            // visible/working on every OEM keyboard, so the composer always exposes
+            // a theme-colored send control.
+            val pausedForValue = io.agents.pokeclaw.safety.PausedTaskState.shared.phase() ==
+                io.agents.pokeclaw.safety.PausedTaskState.Phase.PAUSED
+            val sendEnabled = text.isNotBlank() && currentInputEnabled &&
+                !currentIsAwaitingReply && (!currentTaskRunning || pausedForValue)
             FloatingActionButton(
-                onClick = {
-                    if (isTaskRunning) {
-                        onStopAll()
-                    } else if (!isAwaitingReply && inputEnabled && text.isNotBlank()) {
-                        if (!isLocalModel || isTaskMode) {
-                            onSendTask(text.trim())
-                            text = ""
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                        } else {
-                            onSendChat(text.trim())
-                            text = ""
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .size(34.dp)
-                    .alpha(if ((text.isBlank() || !inputEnabled || isAwaitingReply) && !isTaskRunning) 0.35f else 1f),
-                containerColor = when {
-                    isTaskRunning -> Color(0xFFF44336)
-                    isAwaitingReply -> colors.background
-                    text.isBlank() -> colors.background
-                    isTaskMode && isLocalModel -> colors.accent
-                    else -> colors.userBubble
-                },
+                onClick = { sendCurrentMessage() },
+                modifier = Modifier.size(34.dp),
+                containerColor = if (sendEnabled) colors.accent else colors.aiBubble,
+                contentColor = if (sendEnabled) Color.White else colors.textTertiary,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
             ) {
                 Icon(
-                    when {
-                        isTaskRunning -> Icons.Default.Close
-                        isAwaitingReply -> Icons.Default.MoreHoriz
-                        else -> Icons.Default.ArrowUpward
-                    },
-                    contentDescription = when {
-                        isTaskRunning -> "Stop"
-                        isAwaitingReply -> "Waiting for reply"
-                        else -> "Send"
-                    },
-                    tint = Color.White,
-                    modifier = Modifier.size(14.dp),
+                    Icons.AutoMirrored.Outlined.Send,
+                    contentDescription = stringResource(R.string.action_send),
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -1481,8 +1838,6 @@ private fun EmptyStateWithPrompts(
         )
     }
 
-    val headerText = if (!isLocalModel) stringResource(R.string.header_cloud_ai) else stringResource(R.string.header_local_ai)
-
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1504,44 +1859,6 @@ private fun EmptyStateWithPrompts(
             maxLines = 1,
             softWrap = false,
         )
-        Spacer(Modifier.height(3.dp))
-        Text(
-            headerText,
-            fontSize = 12.sp,
-            color = colors.accent,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(6.dp))
-        // Hint text — Local has styled bold parts, Cloud is plain
-        if (isLocalModel) {
-            Text(
-                buildAnnotatedString {
-                    append("Chat in ")
-                    withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.Bold)) {
-                        append("💬 Chat")
-                    }
-                    append(" mode, or switch to ")
-                    withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.Bold)) {
-                        append("🤖 Task")
-                    }
-                    append(" to control your phone")
-                },
-                fontSize = 11.sp,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 16.sp,
-                modifier = Modifier.widthIn(max = 260.dp),
-            )
-        } else {
-            Text(
-                "Chat and tasks work together \u2014 just type anything",
-                fontSize = 11.sp,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 16.sp,
-                modifier = Modifier.widthIn(max = 260.dp),
-            )
-        }
         Spacer(Modifier.height(12.dp))
 
         // Suggested prompt chips — same style as Quick Tasks items
@@ -1592,7 +1909,7 @@ private fun QuickTasksPanel(
     onFillTask: (String) -> Unit,
     colors: PokeclawColors,
 ) {
-    var expanded by remember { mutableStateOf(true) }
+    var expanded by remember { mutableStateOf(false) }
 
     // Cloud-only tasks at the top (multi-step, Siri/GA can't do these)
     // Cloud-only tasks (multi-step, Siri can't do)
@@ -1720,10 +2037,16 @@ private fun QuickTasksPanel(
 @Composable
 private fun SidebarContent(
     conversations: List<ChatHistoryManager.ConversationSummary>,
+    archived: List<ChatHistoryManager.ConversationSummary>,
     onNewChat: () -> Unit,
     onSelectConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
     onDeleteConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
+    onDeleteConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit,
     onRenameConversation: (ChatHistoryManager.ConversationSummary, String) -> Unit,
+    onArchiveConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit,
+    onUnarchiveConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
+    onMemory: () -> Unit,
+    onSkills: () -> Unit,
     onSettings: () -> Unit,
     onModels: () -> Unit,
     colors: PokeclawColors,
@@ -1732,6 +2055,23 @@ private fun SidebarContent(
     var deleteTarget by remember { mutableStateOf<ChatHistoryManager.ConversationSummary?>(null) }
     var renameTarget by remember { mutableStateOf<ChatHistoryManager.ConversationSummary?>(null) }
     var renameText by remember { mutableStateOf("") }
+    var archivedExpanded by remember { mutableStateOf(false) }
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var bulkDeleteTargets by remember { mutableStateOf<List<ChatHistoryManager.ConversationSummary>>(emptyList()) }
+
+    fun toggleSelection(conv: ChatHistoryManager.ConversationSummary) {
+        val key = conv.file.absolutePath
+        selectedIds = if (key in selectedIds) selectedIds - key else selectedIds + key
+    }
+
+    val selectedConversations = conversations.filter { it.file.absolutePath in selectedIds }
+    val allSelected = conversations.isNotEmpty() && selectedConversations.size == conversations.size
+
+    fun leaveSelectionMode() {
+        selectionMode = false
+        selectedIds = emptySet()
+    }
 
     // Long-press action menu: Rename / Delete
     if (actionTarget != null) {
@@ -1831,6 +2171,40 @@ private fun SidebarContent(
             containerColor = colors.surface,
         )
     }
+
+    // Bulk delete confirmation (multi-select)
+    if (bulkDeleteTargets.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { bulkDeleteTargets = emptyList() },
+            title = {
+                Text(
+                    stringResource(R.string.chat_bulk_delete_confirm_title, bulkDeleteTargets.size),
+                    color = colors.textPrimary,
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.chat_bulk_delete_confirm_body),
+                    color = colors.textSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val targets = bulkDeleteTargets
+                    bulkDeleteTargets = emptyList()
+                    leaveSelectionMode()
+                    onDeleteConversations(targets)
+                }) { Text(stringResource(R.string.action_delete), color = Color(0xFFF87171)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { bulkDeleteTargets = emptyList() }) {
+                    Text(stringResource(R.string.action_cancel), color = colors.textSecondary)
+                }
+            },
+            containerColor = colors.surface,
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -1875,16 +2249,91 @@ private fun SidebarContent(
         HorizontalDivider(color = colors.divider, modifier = Modifier.padding(horizontal = 14.dp))
         Spacer(Modifier.height(8.dp))
 
-        // Recent label
-        Text(
-            stringResource(R.string.chat_recent),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = colors.textTertiary,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
-        )
+        // Recent header / selection toolbar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (selectionMode) {
+                    stringResource(R.string.chat_selected_count, selectedConversations.size)
+                } else {
+                    stringResource(R.string.chat_recent)
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textTertiary,
+                modifier = Modifier.weight(1f),
+            )
+            if (selectionMode) {
+                TextButton(onClick = {
+                    selectedIds = if (allSelected) {
+                        emptySet()
+                    } else {
+                        conversations.map { it.file.absolutePath }.toSet()
+                    }
+                }) {
+                    Text(
+                        stringResource(
+                            if (allSelected) R.string.chat_clear_selection else R.string.chat_select_all
+                        ),
+                        fontSize = 12.sp,
+                        color = colors.accent,
+                    )
+                }
+                TextButton(onClick = { leaveSelectionMode() }) {
+                    Text(stringResource(R.string.action_done), fontSize = 12.sp, color = colors.textSecondary)
+                }
+            } else if (conversations.isNotEmpty()) {
+                TextButton(onClick = { selectionMode = true }) {
+                    Text(stringResource(R.string.chat_select), fontSize = 12.sp, color = colors.accent)
+                }
+            }
+        }
 
-        // Conversations
+        // Selection actions
+        if (selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                TextButton(
+                    onClick = {
+                        if (selectedConversations.isNotEmpty()) {
+                            val targets = selectedConversations
+                            leaveSelectionMode()
+                            onArchiveConversations(targets)
+                        }
+                    },
+                    enabled = selectedConversations.isNotEmpty(),
+                ) {
+                    Icon(Icons.Outlined.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.chat_archive), fontSize = 12.sp)
+                }
+                TextButton(
+                    onClick = {
+                        if (selectedConversations.isNotEmpty()) bulkDeleteTargets = selectedConversations
+                    },
+                    enabled = selectedConversations.isNotEmpty(),
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color(0xFFF87171),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.action_delete), fontSize = 12.sp, color = Color(0xFFF87171))
+                }
+            }
+        }
+
+        // Conversations + archived section
         LazyColumn(modifier = Modifier.weight(1f)) {
             if (conversations.isEmpty()) {
                 item {
@@ -1898,18 +2347,31 @@ private fun SidebarContent(
             }
             items(conversations.size) { index ->
                 val conv = conversations[index]
-                // Per BACKLOG P3 "Rename chat session" — long-press still opens the
-                // Rename/Delete action menu (kept for power users), AND a tappable
-                // pencil icon now sits at the trailing edge for discoverability.
+                val selected = conv.file.absolutePath in selectedIds
+                // Long-press opens the Rename/Delete action menu (kept for power users);
+                // selection mode shows checkboxes for bulk archive/delete.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(if (selected) colors.accent.copy(alpha = 0.10f) else Color.Transparent)
                         .combinedClickable(
-                            onClick = { onSelectConversation(conv) },
-                            onLongClick = { actionTarget = conv },
+                            onClick = {
+                                if (selectionMode) toggleSelection(conv) else onSelectConversation(conv)
+                            },
+                            onLongClick = {
+                                if (selectionMode) toggleSelection(conv) else actionTarget = conv
+                            },
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (selectionMode) {
+                        Checkbox(
+                            checked = selected,
+                            onCheckedChange = { toggleSelection(conv) },
+                            colors = CheckboxDefaults.colors(checkedColor = colors.accent),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
                     Text(
                         text = conv.title,
                         fontSize = 14.sp,
@@ -1918,25 +2380,140 @@ private fun SidebarContent(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(start = 20.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+                            .padding(
+                                start = if (selectionMode) 4.dp else 20.dp,
+                                top = 12.dp,
+                                bottom = 12.dp,
+                                end = 4.dp,
+                            ),
                     )
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.chat_rename_conversation),
-                        tint = colors.textTertiary,
+                    if (!selectionMode) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.chat_rename_conversation),
+                            tint = colors.textTertiary,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .size(18.dp)
+                                .clickable {
+                                    renameText = conv.title
+                                    renameTarget = conv
+                                },
+                        )
+                    }
+                }
+            }
+
+            // Archived conversations (collapsed by default)
+            if (archived.isNotEmpty()) {
+                item {
+                    HorizontalDivider(
+                        color = colors.divider,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                    Row(
                         modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(18.dp)
-                            .clickable {
-                                renameText = conv.title
-                                renameTarget = conv
-                            },
-                    )
+                            .fillMaxWidth()
+                            .clickable { archivedExpanded = !archivedExpanded }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Archive,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.chat_archived, archived.size),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textTertiary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            if (archivedExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+                if (archivedExpanded) {
+                    items(archived.size) { index ->
+                        val conv = archived[index]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = conv.title,
+                                fontSize = 13.sp,
+                                color = colors.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 44.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+                            )
+                            IconButton(onClick = { onUnarchiveConversation(conv) }) {
+                                Icon(
+                                    Icons.Outlined.Unarchive,
+                                    contentDescription = stringResource(R.string.chat_unarchive),
+                                    tint = colors.accent,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                            IconButton(onClick = { deleteTarget = conv }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.action_delete),
+                                    tint = colors.textTertiary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
 
         HorizontalDivider(color = colors.divider)
+
+        // Memory + Skills sections
+        TextButton(
+            onClick = onMemory,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.Psychology, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.memory_title), color = colors.textSecondary)
+            }
+        }
+        TextButton(
+            onClick = onSkills,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 0.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.chat_skills_label), color = colors.textSecondary)
+            }
+        }
+
+        HorizontalDivider(color = colors.divider, modifier = Modifier.padding(horizontal = 14.dp))
 
         // Bottom nav
         TextButton(
@@ -1972,6 +2549,191 @@ private fun SidebarContent(
 
         Spacer(Modifier.height(16.dp))
     }
+}
+
+// ======================== MEMORY + SKILLS DIALOGS ========================
+
+@Composable
+private fun MemoryDialog(
+    onDismiss: () -> Unit,
+    colors: PokeclawColors,
+) {
+    var entries by remember { mutableStateOf(MemoryStore.load()) }
+    var draft by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.memory_title), color = colors.textPrimary) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.memory_hint),
+                    fontSize = 12.sp,
+                    color = colors.textTertiary,
+                    lineHeight = 16.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it },
+                        singleLine = true,
+                        placeholder = {
+                            Text(
+                                stringResource(R.string.memory_add_hint),
+                                fontSize = 13.sp,
+                                color = colors.textTertiary,
+                            )
+                        },
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = colors.textPrimary,
+                            unfocusedTextColor = colors.textPrimary,
+                            focusedBorderColor = colors.accent,
+                            unfocusedBorderColor = colors.inputBorder,
+                            cursorColor = colors.accent,
+                        ),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            entries = MemoryStore.add(draft)
+                            draft = ""
+                        },
+                        enabled = draft.isNotBlank(),
+                    ) { Text(stringResource(R.string.memory_add), color = colors.accent) }
+                }
+                Spacer(Modifier.height(8.dp))
+                if (entries.isEmpty()) {
+                    Text(
+                        stringResource(R.string.memory_empty),
+                        fontSize = 13.sp,
+                        color = colors.textTertiary,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                        items(entries.size) { index ->
+                            val entry = entries[index]
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    entry.text,
+                                    fontSize = 13.sp,
+                                    color = colors.textPrimary,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                IconButton(onClick = { entries = MemoryStore.remove(entry.id) }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.memory_delete),
+                                        tint = colors.textTertiary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_done), color = colors.accent)
+            }
+        },
+        containerColor = colors.surface,
+    )
+}
+
+@Composable
+private fun SkillsDialog(
+    onDismiss: () -> Unit,
+    onUseSkill: (String) -> Unit,
+    colors: PokeclawColors,
+) {
+    val skills = remember { SkillRegistry.getUserFacing() }
+    val categoryIcons = mapOf(
+        SkillCategory.INPUT to Icons.Outlined.Keyboard,
+        SkillCategory.DISMISS to Icons.Outlined.Close,
+        SkillCategory.NAVIGATION to Icons.Outlined.Navigation,
+        SkillCategory.MESSAGING to Icons.AutoMirrored.Outlined.Chat,
+        SkillCategory.GENERAL to Icons.Outlined.AutoAwesome,
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.chat_skills_label), color = colors.textPrimary) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.skills_panel_subtitle),
+                    fontSize = 12.sp,
+                    color = colors.textTertiary,
+                    lineHeight = 16.sp,
+                )
+                Spacer(Modifier.height(8.dp))
+                if (skills.isEmpty()) {
+                    Text(
+                        stringResource(R.string.skills_panel_empty),
+                        fontSize = 13.sp,
+                        color = colors.textTertiary,
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 340.dp)) {
+                        items(skills.size) { index ->
+                            val skill = skills[index]
+                            val example = skill.userExample.ifBlank {
+                                skill.triggerPatterns.firstOrNull()
+                                    ?.replace(Regex("\\{\\w+\\}"), "...")
+                                    ?.replace(".+", "...")
+                                    ?: skill.name
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onUseSkill(example) }
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    categoryIcons[skill.category] ?: Icons.Outlined.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = colors.accent,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        skill.name,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = colors.textPrimary,
+                                    )
+                                    Text(
+                                        skill.description,
+                                        fontSize = 12.sp,
+                                        color = colors.textTertiary,
+                                        lineHeight = 15.sp,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_done), color = colors.accent)
+            }
+        },
+        containerColor = colors.surface,
+    )
 }
 
 // ======================== TASK SKILLS PANEL ========================
@@ -2019,7 +2781,7 @@ private fun TaskSkillsPanel(
                 modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
             ) {
                 Text(
-                    "Experimental — more workflows coming soon",
+                    stringResource(R.string.skills_experimental_badge),
                     fontSize = 11.sp,
                     color = colors.accent,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -2034,7 +2796,7 @@ private fun TaskSkillsPanel(
             SkillCard(
                 icon = Icons.AutoMirrored.Outlined.Send,
                 title = stringResource(R.string.skill_send_message),
-                description = "Send a message to someone via any messaging app",
+                description = stringResource(R.string.skill_send_message_desc),
                 onClick = onSendClick,
                 colors = colors,
             )
@@ -2044,10 +2806,12 @@ private fun TaskSkillsPanel(
         if (builtInSkills.isNotEmpty()) {
             items(builtInSkills.size) { index ->
                 val skill = builtInSkills[index]
-                val example = skill.triggerPatterns.firstOrNull()
-                    ?.replace(Regex("\\{\\w+\\}"), "...")
-                    ?.replace(".+", "...")
-                    ?: skill.name
+                val example = skill.userExample.ifBlank {
+                    skill.triggerPatterns.firstOrNull()
+                        ?.replace(Regex("\\{\\w+\\}"), "...")
+                        ?.replace(".+", "...")
+                        ?: skill.name
+                }
                 SkillCard(
                     icon = categoryIcons[skill.category] ?: Icons.Outlined.AutoAwesome,
                     title = skill.name,
@@ -2401,9 +3165,9 @@ private fun SendMessageDialog(
         },
         text = {
             Column {
-                Text("With a smarter LLM, you can just type:", fontSize = 11.sp, color = colors.textTertiary)
+                Text(stringResource(R.string.send_smart_llm_hint), fontSize = 11.sp, color = colors.textTertiary)
                 Spacer(Modifier.height(2.dp))
-                Text("\"send hi to Mom on WhatsApp\"", fontSize = 11.sp, color = colors.accent.copy(alpha = 0.7f))
+                Text(stringResource(R.string.send_example_phrase), fontSize = 11.sp, color = colors.accent.copy(alpha = 0.7f))
                 Spacer(Modifier.height(16.dp))
 
                 // Fill-in-the-blank: "Send [___] to [___] on [WhatsApp ▾]"
@@ -2411,16 +3175,16 @@ private fun SendMessageDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Send ", fontSize = 15.sp, color = colors.textPrimary)
+                    Text(stringResource(R.string.send_word_send), fontSize = 15.sp, color = colors.textPrimary)
                     Text("\"", fontSize = 15.sp, color = colors.textTertiary)
                     OutlinedTextField(
                         value = message,
                         onValueChange = { message = it },
-                        placeholder = { Text("message", color = colors.textTertiary, fontSize = 14.sp) },
+                        placeholder = { Text(stringResource(R.string.send_placeholder_message), color = colors.textTertiary, fontSize = 14.sp) },
                         modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colors.accent,
                             unfocusedBorderColor = colors.inputBorder,
@@ -2436,15 +3200,15 @@ private fun SendMessageDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("to ", fontSize = 15.sp, color = colors.textPrimary)
+                    Text(stringResource(R.string.send_word_to), fontSize = 15.sp, color = colors.textPrimary)
                     OutlinedTextField(
                         value = contact,
                         onValueChange = { contact = it },
-                        placeholder = { Text("name", color = colors.textTertiary, fontSize = 14.sp) },
+                        placeholder = { Text(stringResource(R.string.send_placeholder_name), color = colors.textTertiary, fontSize = 14.sp) },
                         modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colors.accent,
                             unfocusedBorderColor = colors.inputBorder,
@@ -2453,7 +3217,7 @@ private fun SendMessageDialog(
                             unfocusedTextColor = colors.textPrimary,
                         ),
                     )
-                    Text(" on ", fontSize = 15.sp, color = colors.textPrimary)
+                    Text(stringResource(R.string.send_word_on), fontSize = 15.sp, color = colors.textPrimary)
                     Box {
                         Surface(
                             onClick = { appMenuExpanded = true },
