@@ -54,6 +54,7 @@ class ComposeChatActivity : ComponentActivity() {
     private val _isTaskRunning = mutableStateOf(false)
     private val _inputEnabled = mutableStateOf(true)    // False when model not ready (no task running)
     private val _conversations = mutableStateListOf<ChatHistoryManager.ConversationSummary>()
+    private val _archived = mutableStateListOf<ChatHistoryManager.ConversationSummary>()
     private val _isDownloading = mutableStateOf(false)
     private val _downloadProgress = mutableStateOf(0)
 
@@ -225,15 +226,46 @@ class ComposeChatActivity : ComponentActivity() {
                 onFixPermissions = { startActivity(Intent(this, SettingsActivity::class.java)) },
                 onAttach = { Toast.makeText(this, R.string.attach_not_supported, Toast.LENGTH_SHORT).show() },
                 conversations = _conversations.toList(),
+                archived = _archived.toList(),
                 onSelectConversation = { loadConversation(it) },
                 onDeleteConversation = { conv ->
                     val deleted = conversationStore.deleteConversation(conv)
                     XLog.i(TAG, "Delete conversation: ${conv.file.absolutePath} deleted=$deleted")
+                    if (conv.id == conversationStore.currentConversationId) {
+                        resetToFreshConversation()
+                    }
+                    refreshSidebarHistory()
+                },
+                onDeleteConversations = { convs ->
+                    var deletedCount = 0
+                    convs.forEach { conv ->
+                        if (conversationStore.deleteConversation(conv)) deletedCount++
+                    }
+                    XLog.i(TAG, "Bulk delete: ${convs.size} requested, $deletedCount deleted")
+                    if (convs.any { it.id == conversationStore.currentConversationId }) {
+                        resetToFreshConversation()
+                    }
                     refreshSidebarHistory()
                 },
                 onRenameConversation = { conv, newName ->
                     val renamed = conversationStore.renameConversation(conv, newName)
                     XLog.i(TAG, "Rename conversation: '${conv.title}' → '$newName' renamed=$renamed")
+                    refreshSidebarHistory()
+                },
+                onArchiveConversations = { convs ->
+                    var archivedCount = 0
+                    convs.forEach { conv ->
+                        if (conversationStore.archiveConversation(conv)) archivedCount++
+                    }
+                    XLog.i(TAG, "Bulk archive: ${convs.size} requested, $archivedCount archived")
+                    if (convs.any { it.id == conversationStore.currentConversationId }) {
+                        resetToFreshConversation()
+                    }
+                    refreshSidebarHistory()
+                },
+                onUnarchiveConversation = { conv ->
+                    val unarchived = conversationStore.unarchiveConversation(conv)
+                    XLog.i(TAG, "Unarchive conversation: ${conv.file.absolutePath} unarchived=$unarchived")
                     refreshSidebarHistory()
                 },
                 activeTasks = activeTasks,
@@ -507,11 +539,33 @@ class ComposeChatActivity : ComponentActivity() {
 
     private fun refreshSidebarHistory() {
         syncSidebar(conversationStore.refreshSidebar())
+        syncArchived(conversationStore.refreshArchived())
     }
 
     private fun syncSidebar(convos: List<ChatHistoryManager.ConversationSummary>) {
         _conversations.clear()
         _conversations.addAll(convos)
+    }
+
+    private fun syncArchived(convos: List<ChatHistoryManager.ConversationSummary>) {
+        _archived.clear()
+        _archived.addAll(convos)
+    }
+
+    /**
+     * Called after the current conversation was archived or deleted: starts a new id and
+     * clears the UI without saving the old messages again (which would re-create the file).
+     */
+    private fun resetToFreshConversation() {
+        val session = conversationStore.beginFreshConversation()
+        syncSidebar(session.conversations)
+        _messages.clear()
+        _sessionTokens.value = 0
+        _sessionCost.value = 0.0
+        _isAwaitingReply.value = false
+        _isTaskRunning.value = false
+        chatSessionController.startNewConversationRuntime()
+        XLog.i(TAG, "Current conversation was archived/deleted; started ${session.conversationId}")
     }
 
     private fun currentConversationModelName(): String {

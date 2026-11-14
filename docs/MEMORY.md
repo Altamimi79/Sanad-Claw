@@ -511,3 +511,49 @@ Note: implicit `am broadcast` to DebugTaskReceiver is blocked on this device; us
 - Empty chat state: removed the Cloud AI/Local AI header and the hint line under "Sanad Claw" in ChatScreen.EmptyStateWithPrompts; logo + "Sanad Claw" remain. header_cloud_ai/header_local_ai strings are now unused (kept).
 - Version 1.0.3-dev-10 (code 111). Signed release APK app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-10_20261113_205220.apk (107 MB), SHA-256 9C91B881710D9385DBE468AA660897DB49A36ECE31558EEF664754F48EFC74AD, aapt2-verified versionCode 111 / versionName 1.0.3-dev-10. Signing config now enables v2+v3 (apksigner verifies v3; minSdk 28, so v3 is sufficient). Published as prerelease v1.0.3-dev-10 with the APK asset.
 - Unit tests pass. Device (HONOR MBH-N49) was disconnected after the build; on-device verification of the new empty state and launcher icon is pending.
+
+## Sidebar + Memory/Skills + safety QA (2026-11-14)
+
+Status: ~85%. Sidebar/memory/skills work is done and device-verified; most manual safety QA is done. Stable-release blockers are now only voice QA (QV1-9) and two QA cases that cannot be executed with available artifacts (QP4 unreachable category, QP7/8 missing legacy build).
+
+### Sidebar: select-all / multi-select + Archive
+- `SidebarContent` now supports a Select mode: checkboxes, "Select all"/"Clear selection", selected count, bulk Archive and bulk Delete (confirmation shows the count).
+- Archived conversations are a collapsible "Archived (N)" section with unarchive and delete actions. Data layer reused `ConversationStore.archiveConversation/unarchiveConversation/refreshArchived` unchanged.
+- Archiving/deleting the currently open conversation now starts a fresh id via `ConversationStore.beginFreshConversation()` without re-saving the old file (previously any reset would recreate the deleted/archived chat).
+- Bulk callbacks wired in `ComposeChatActivity` (`onDeleteConversations`, `onArchiveConversations`, `onUnarchiveConversation`) and `_archived` state is refreshed by `refreshSidebarHistory()`.
+- Device verified: Select → Select all → Archive → Archived (2) → expand → Unarchive one → Recent contains it, Archive count 1.
+
+### Sidebar: Memory + Skills
+- New `memory/MemoryStore`: up to 50 entries, 500 chars each, exact-duplicate skip, JSON in MMKV. Entries are appended to the system prompt by `PromptUtils.applyGlobalPrompt` after LanguagePolicy and before the user's global instructions. UI is an AlertDialog from the sidebar (add/list/delete + warning not to store secrets).
+- Crash found on device: release R8 minified Gson field names to `a/b/c`, so the debug build (installed over release) read nulls and `normalizeText(null)` crashed every LLM client creation. Fixed with nullable `Stored` fields + `@SerializedName(..., alternate=["a","b","c"])`, so both formats load. Unit tests cover null/malformed/legacy JSON.
+- Memory injection verified end-to-end on device: saved "My name is Ahmed", asked "what is my name" on the qwen cloud model → "Your name is Ahmed".
+- Skills panel was always empty: `BuiltInSkills` never set `userFacing = true` (default false). Marked all nine built-ins userFacing with a `userExample`; added `SkillRegistryUserFacingTest`. Sidebar Skills dialog now lists them; selecting one prefills the composer in Agent mode.
+
+### Safety fixes found by manual QA
+1. P0 data leak (SD2): the pre-warm screen attached on the first agent LLM call bypassed `SensitiveDataRedactor`. On the hostile page the cloud model received and repeated the exact card, IBAN, national ID and OTP. Fixed by redacting the wrapped pre-warm screen before building the prompt; log: `runAgentLoop: pre-warm screen redacted kinds=[CARD, IBAN, NATIONAL_ID, OTP]`. Retest: model only sees `[REDACTED:*]`.
+2. `finish` false positive: `finish.summary` was classified as payment/delete when the page text mentioned "transfer"/"delete", blocking task completion on tainted pages. `RiskClassifier` now exempts `finish`; unit test added.
+3. Pause-and-ask deadlock (SD4/SD5): `sendCurrentMessage()` refused to send while a task was running, so the user could never supply the paused value. The composer now allows sending when `PausedTaskState.phase() == PAUSED`. Verified: pause → reply accepted → `resumed: value received` → task completes; pause path logs no value. `finish` is excluded from pausing (a placeholder in a summary should not ask for input).
+4. Added traceability logs: pre-warm redaction kinds, tainted non-sensitive warning, system-prompt untrusted-rule presence.
+
+### Manual QA executed on HONOR (debug APK re-signed with the release key so it installs over dev-10 and keeps data)
+- PASS: IJ1, IJ2, IJ3, IJ4, IJ5, IJ6; SD1, SD2 (after fix), SD3, SD4, SD5; QP2, QP3, QP5, QP6.
+- PARTIAL: QP1/QP1a (English rows + bilingual state text; Arabic RTL and TalkBack not exercised).
+- BLOCKED: QP4 — no current tool or parameter path returns `RiskKind.UNKNOWN`, so the rule is unreachable and has no device evidence. Decide whether to remove the case or introduce an explicit unknown-risk tool path.
+- NOT RUN: QP7/QP8 — every published release already contains the migration code; no single-toggle artifact exists. Unit tests cover migration.
+- NOT EXECUTED: QV1-QV9 — device has recognizers but automation cannot speak into the mic. Needs a person; this is the last stable-release blocker.
+- Evidence lives in QA_CHECKLIST.md rows.
+
+### GitHub Actions
+- The four signing secrets are now set on `Altamimi79/Sanad-Claw` via `gh secret set`: `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Values were read from the gitignored `keys/GITHUB_SECRETS.txt` and never printed. Release workflow should now sign automatically.
+
+### Build/verification
+- 335 unit tests / 59 classes / 0 failures (`testDebugUnitTest`); `lintVitalRelease` passes.
+- Device QA used a debug APK re-signed with the release keystore; the QA build was replaced by the final release build after restoring the seven switches.
+
+### Final artifact after fixes (2026-11-14)
+- `app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-10_20261114_072413.apk`, SHA-256 `993D9DDF8890B84A6D51B3DAA57998C33076087A35BB6291C40676ED182EB243`.
+- Installed over the QA debug build with `adb install -r` (same release certificate, app data preserved). Verified on device: app launches, sidebar shows Archive/Memory/Skills, saved memory "My name is Ahmed" survives, all seven safety switches restored to Enabled.### Final dev-11 artifact (2026-11-14)
+- `app/build/outputs/apk/release/SanadClaw_v1.0.3-dev-11_20261114_074655.apk`, SHA-256 `5FBE49C3A44A3438F2ABC83766C6755C7F35512F08083360D74A2C58711961BC`.
+- Version 1.0.3-dev-11 (code 112). Installed over dev-10 with the same release certificate; app data preserved.
+- Device verified: sidebar Archive/Memory/Skills, saved memory survived, seven safety switches Enabled, in-app orange send button sends, Chat/Agent tabs themed, Models Save & Activate / Fetch are orange (night brand palette fixed).
+- 335 tests / 59 classes / 0 failures; `lintVitalRelease` passes.

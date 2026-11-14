@@ -55,6 +55,7 @@ import io.agents.pokeclaw.R
 import io.agents.pokeclaw.agent.skill.Skill
 import io.agents.pokeclaw.agent.skill.SkillCategory
 import io.agents.pokeclaw.agent.skill.SkillRegistry
+import io.agents.pokeclaw.memory.MemoryStore
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -208,7 +209,11 @@ fun ChatScreen(
     conversations: List<ChatHistoryManager.ConversationSummary>,
     onSelectConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
     onDeleteConversation: (ChatHistoryManager.ConversationSummary) -> Unit = {},
+    onDeleteConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit = {},
     onRenameConversation: (ChatHistoryManager.ConversationSummary, String) -> Unit = { _, _ -> },
+    onArchiveConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit = {},
+    onUnarchiveConversation: (ChatHistoryManager.ConversationSummary) -> Unit = {},
+    archived: List<ChatHistoryManager.ConversationSummary> = emptyList(),
     activeTasks: List<String> = emptyList(),
     onStopTask: (String) -> Unit = {},
     onStopAllTasks: () -> Unit = {},
@@ -238,6 +243,8 @@ fun ChatScreen(
     val isLocalUI = selectedTab == "local"
     // Skill dialog and activation states
     var showSendSheet by remember { mutableStateOf(false) }
+    var showMemoryDialog by remember { mutableStateOf(false) }
+    var showSkillsDialog by remember { mutableStateOf(false) }
     var activatingSkill by remember { mutableStateOf<String?>(null) }
 
     // Chat mode is always the default — user can switch to Task manually
@@ -265,6 +272,7 @@ fun ChatScreen(
             ) {
                 SidebarContent(
                     conversations = conversations,
+                    archived = archived,
                     onNewChat = {
                         scope.launch { drawerState.close() }
                         onNewChat()
@@ -274,7 +282,18 @@ fun ChatScreen(
                         onSelectConversation(it)
                     },
                     onDeleteConversation = onDeleteConversation,
+                    onDeleteConversations = onDeleteConversations,
                     onRenameConversation = onRenameConversation,
+                    onArchiveConversations = onArchiveConversations,
+                    onUnarchiveConversation = onUnarchiveConversation,
+                    onMemory = {
+                        scope.launch { drawerState.close() }
+                        showMemoryDialog = true
+                    },
+                    onSkills = {
+                        scope.launch { drawerState.close() }
+                        showSkillsDialog = true
+                    },
                     onSettings = {
                         scope.launch { drawerState.close() }
                         onOpenSettings()
@@ -435,6 +454,23 @@ fun ChatScreen(
             onSend = { contact, app, message ->
                 showSendSheet = false
                 onSendDirectMessage(contact, app, message)
+            },
+            colors = colors,
+        )
+    }
+
+    if (showMemoryDialog) {
+        MemoryDialog(onDismiss = { showMemoryDialog = false }, colors = colors)
+    }
+
+    if (showSkillsDialog) {
+        SkillsDialog(
+            onDismiss = { showSkillsDialog = false },
+            onUseSkill = { example ->
+                showSkillsDialog = false
+                prefillText = example
+                prefillIsTask = true
+                if (isLocalUI) isTaskMode = true
             },
             colors = colors,
         )
@@ -1046,7 +1082,11 @@ private fun ChatInputBar(
     }
 
     fun sendCurrentMessage() {
-        if (!currentInputEnabled || currentIsAwaitingReply || currentTaskRunning) return
+        // A paused task is waiting for the user to supply a redacted value; while paused,
+        // the composer must stay usable even though the task itself is still running.
+        val pausedForValue = io.agents.pokeclaw.safety.PausedTaskState.shared.phase() ==
+            io.agents.pokeclaw.safety.PausedTaskState.Phase.PAUSED
+        if (!currentInputEnabled || currentIsAwaitingReply || (currentTaskRunning && !pausedForValue)) return
         var message = text.trim()
         val path = attachmentPath
         if (path != null) {
@@ -1304,14 +1344,25 @@ private fun ChatInputBar(
                 ),
                 modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    "💬 " + stringResource(R.string.chat_tab_chat),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (!isTaskMode) Color.White else colors.textSecondary,
-                    textAlign = TextAlign.Center,
+                Row(
                     modifier = Modifier.padding(vertical = 9.dp),
-                )
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.Chat,
+                        contentDescription = null,
+                        tint = if (!isTaskMode) Color.White else colors.textSecondary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.chat_tab_chat),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (!isTaskMode) Color.White else colors.textSecondary,
+                    )
+                }
             }
             // Agent button
             Surface(
@@ -1324,14 +1375,25 @@ private fun ChatInputBar(
                 ),
                 modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    "🤖 " + stringResource(R.string.chat_tab_task),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isTaskMode) Color.White else colors.textSecondary,
-                    textAlign = TextAlign.Center,
+                Row(
                     modifier = Modifier.padding(vertical = 9.dp),
-                )
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Outlined.SmartToy,
+                        contentDescription = null,
+                        tint = if (isTaskMode) Color.White else colors.textSecondary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.chat_tab_task),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isTaskMode) Color.White else colors.textSecondary,
+                    )
+                }
             }
         }
 
@@ -1525,6 +1587,28 @@ private fun ChatInputBar(
             }
 
             Spacer(Modifier.width(6.dp))
+
+            // In-app send button: the keyboard's IME action is not guaranteed to be
+            // visible/working on every OEM keyboard, so the composer always exposes
+            // a theme-colored send control.
+            val pausedForValue = io.agents.pokeclaw.safety.PausedTaskState.shared.phase() ==
+                io.agents.pokeclaw.safety.PausedTaskState.Phase.PAUSED
+            val sendEnabled = text.isNotBlank() && currentInputEnabled &&
+                !currentIsAwaitingReply && (!currentTaskRunning || pausedForValue)
+            FloatingActionButton(
+                onClick = { sendCurrentMessage() },
+                modifier = Modifier.size(34.dp),
+                containerColor = if (sendEnabled) colors.accent else colors.aiBubble,
+                contentColor = if (sendEnabled) Color.White else colors.textTertiary,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.Send,
+                    contentDescription = stringResource(R.string.action_send),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
     }
 }
@@ -1953,10 +2037,16 @@ private fun QuickTasksPanel(
 @Composable
 private fun SidebarContent(
     conversations: List<ChatHistoryManager.ConversationSummary>,
+    archived: List<ChatHistoryManager.ConversationSummary>,
     onNewChat: () -> Unit,
     onSelectConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
     onDeleteConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
+    onDeleteConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit,
     onRenameConversation: (ChatHistoryManager.ConversationSummary, String) -> Unit,
+    onArchiveConversations: (List<ChatHistoryManager.ConversationSummary>) -> Unit,
+    onUnarchiveConversation: (ChatHistoryManager.ConversationSummary) -> Unit,
+    onMemory: () -> Unit,
+    onSkills: () -> Unit,
     onSettings: () -> Unit,
     onModels: () -> Unit,
     colors: PokeclawColors,
@@ -1965,6 +2055,23 @@ private fun SidebarContent(
     var deleteTarget by remember { mutableStateOf<ChatHistoryManager.ConversationSummary?>(null) }
     var renameTarget by remember { mutableStateOf<ChatHistoryManager.ConversationSummary?>(null) }
     var renameText by remember { mutableStateOf("") }
+    var archivedExpanded by remember { mutableStateOf(false) }
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var bulkDeleteTargets by remember { mutableStateOf<List<ChatHistoryManager.ConversationSummary>>(emptyList()) }
+
+    fun toggleSelection(conv: ChatHistoryManager.ConversationSummary) {
+        val key = conv.file.absolutePath
+        selectedIds = if (key in selectedIds) selectedIds - key else selectedIds + key
+    }
+
+    val selectedConversations = conversations.filter { it.file.absolutePath in selectedIds }
+    val allSelected = conversations.isNotEmpty() && selectedConversations.size == conversations.size
+
+    fun leaveSelectionMode() {
+        selectionMode = false
+        selectedIds = emptySet()
+    }
 
     // Long-press action menu: Rename / Delete
     if (actionTarget != null) {
@@ -2064,6 +2171,40 @@ private fun SidebarContent(
             containerColor = colors.surface,
         )
     }
+
+    // Bulk delete confirmation (multi-select)
+    if (bulkDeleteTargets.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { bulkDeleteTargets = emptyList() },
+            title = {
+                Text(
+                    stringResource(R.string.chat_bulk_delete_confirm_title, bulkDeleteTargets.size),
+                    color = colors.textPrimary,
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.chat_bulk_delete_confirm_body),
+                    color = colors.textSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val targets = bulkDeleteTargets
+                    bulkDeleteTargets = emptyList()
+                    leaveSelectionMode()
+                    onDeleteConversations(targets)
+                }) { Text(stringResource(R.string.action_delete), color = Color(0xFFF87171)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { bulkDeleteTargets = emptyList() }) {
+                    Text(stringResource(R.string.action_cancel), color = colors.textSecondary)
+                }
+            },
+            containerColor = colors.surface,
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -2108,16 +2249,91 @@ private fun SidebarContent(
         HorizontalDivider(color = colors.divider, modifier = Modifier.padding(horizontal = 14.dp))
         Spacer(Modifier.height(8.dp))
 
-        // Recent label
-        Text(
-            stringResource(R.string.chat_recent),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = colors.textTertiary,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
-        )
+        // Recent header / selection toolbar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (selectionMode) {
+                    stringResource(R.string.chat_selected_count, selectedConversations.size)
+                } else {
+                    stringResource(R.string.chat_recent)
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textTertiary,
+                modifier = Modifier.weight(1f),
+            )
+            if (selectionMode) {
+                TextButton(onClick = {
+                    selectedIds = if (allSelected) {
+                        emptySet()
+                    } else {
+                        conversations.map { it.file.absolutePath }.toSet()
+                    }
+                }) {
+                    Text(
+                        stringResource(
+                            if (allSelected) R.string.chat_clear_selection else R.string.chat_select_all
+                        ),
+                        fontSize = 12.sp,
+                        color = colors.accent,
+                    )
+                }
+                TextButton(onClick = { leaveSelectionMode() }) {
+                    Text(stringResource(R.string.action_done), fontSize = 12.sp, color = colors.textSecondary)
+                }
+            } else if (conversations.isNotEmpty()) {
+                TextButton(onClick = { selectionMode = true }) {
+                    Text(stringResource(R.string.chat_select), fontSize = 12.sp, color = colors.accent)
+                }
+            }
+        }
 
-        // Conversations
+        // Selection actions
+        if (selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                TextButton(
+                    onClick = {
+                        if (selectedConversations.isNotEmpty()) {
+                            val targets = selectedConversations
+                            leaveSelectionMode()
+                            onArchiveConversations(targets)
+                        }
+                    },
+                    enabled = selectedConversations.isNotEmpty(),
+                ) {
+                    Icon(Icons.Outlined.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.chat_archive), fontSize = 12.sp)
+                }
+                TextButton(
+                    onClick = {
+                        if (selectedConversations.isNotEmpty()) bulkDeleteTargets = selectedConversations
+                    },
+                    enabled = selectedConversations.isNotEmpty(),
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color(0xFFF87171),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.action_delete), fontSize = 12.sp, color = Color(0xFFF87171))
+                }
+            }
+        }
+
+        // Conversations + archived section
         LazyColumn(modifier = Modifier.weight(1f)) {
             if (conversations.isEmpty()) {
                 item {
@@ -2131,18 +2347,31 @@ private fun SidebarContent(
             }
             items(conversations.size) { index ->
                 val conv = conversations[index]
-                // Per BACKLOG P3 "Rename chat session" — long-press still opens the
-                // Rename/Delete action menu (kept for power users), AND a tappable
-                // pencil icon now sits at the trailing edge for discoverability.
+                val selected = conv.file.absolutePath in selectedIds
+                // Long-press opens the Rename/Delete action menu (kept for power users);
+                // selection mode shows checkboxes for bulk archive/delete.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(if (selected) colors.accent.copy(alpha = 0.10f) else Color.Transparent)
                         .combinedClickable(
-                            onClick = { onSelectConversation(conv) },
-                            onLongClick = { actionTarget = conv },
+                            onClick = {
+                                if (selectionMode) toggleSelection(conv) else onSelectConversation(conv)
+                            },
+                            onLongClick = {
+                                if (selectionMode) toggleSelection(conv) else actionTarget = conv
+                            },
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (selectionMode) {
+                        Checkbox(
+                            checked = selected,
+                            onCheckedChange = { toggleSelection(conv) },
+                            colors = CheckboxDefaults.colors(checkedColor = colors.accent),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
                     Text(
                         text = conv.title,
                         fontSize = 14.sp,
@@ -2151,25 +2380,140 @@ private fun SidebarContent(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(start = 20.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+                            .padding(
+                                start = if (selectionMode) 4.dp else 20.dp,
+                                top = 12.dp,
+                                bottom = 12.dp,
+                                end = 4.dp,
+                            ),
                     )
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.chat_rename_conversation),
-                        tint = colors.textTertiary,
+                    if (!selectionMode) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.chat_rename_conversation),
+                            tint = colors.textTertiary,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .size(18.dp)
+                                .clickable {
+                                    renameText = conv.title
+                                    renameTarget = conv
+                                },
+                        )
+                    }
+                }
+            }
+
+            // Archived conversations (collapsed by default)
+            if (archived.isNotEmpty()) {
+                item {
+                    HorizontalDivider(
+                        color = colors.divider,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                    Row(
                         modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(18.dp)
-                            .clickable {
-                                renameText = conv.title
-                                renameTarget = conv
-                            },
-                    )
+                            .fillMaxWidth()
+                            .clickable { archivedExpanded = !archivedExpanded }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Archive,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.chat_archived, archived.size),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textTertiary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            if (archivedExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+                if (archivedExpanded) {
+                    items(archived.size) { index ->
+                        val conv = archived[index]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = conv.title,
+                                fontSize = 13.sp,
+                                color = colors.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 44.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+                            )
+                            IconButton(onClick = { onUnarchiveConversation(conv) }) {
+                                Icon(
+                                    Icons.Outlined.Unarchive,
+                                    contentDescription = stringResource(R.string.chat_unarchive),
+                                    tint = colors.accent,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                            IconButton(onClick = { deleteTarget = conv }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.action_delete),
+                                    tint = colors.textTertiary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
 
         HorizontalDivider(color = colors.divider)
+
+        // Memory + Skills sections
+        TextButton(
+            onClick = onMemory,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.Psychology, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.memory_title), color = colors.textSecondary)
+            }
+        }
+        TextButton(
+            onClick = onSkills,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 0.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.chat_skills_label), color = colors.textSecondary)
+            }
+        }
+
+        HorizontalDivider(color = colors.divider, modifier = Modifier.padding(horizontal = 14.dp))
 
         // Bottom nav
         TextButton(
@@ -2205,6 +2549,191 @@ private fun SidebarContent(
 
         Spacer(Modifier.height(16.dp))
     }
+}
+
+// ======================== MEMORY + SKILLS DIALOGS ========================
+
+@Composable
+private fun MemoryDialog(
+    onDismiss: () -> Unit,
+    colors: PokeclawColors,
+) {
+    var entries by remember { mutableStateOf(MemoryStore.load()) }
+    var draft by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.memory_title), color = colors.textPrimary) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.memory_hint),
+                    fontSize = 12.sp,
+                    color = colors.textTertiary,
+                    lineHeight = 16.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it },
+                        singleLine = true,
+                        placeholder = {
+                            Text(
+                                stringResource(R.string.memory_add_hint),
+                                fontSize = 13.sp,
+                                color = colors.textTertiary,
+                            )
+                        },
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = colors.textPrimary,
+                            unfocusedTextColor = colors.textPrimary,
+                            focusedBorderColor = colors.accent,
+                            unfocusedBorderColor = colors.inputBorder,
+                            cursorColor = colors.accent,
+                        ),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            entries = MemoryStore.add(draft)
+                            draft = ""
+                        },
+                        enabled = draft.isNotBlank(),
+                    ) { Text(stringResource(R.string.memory_add), color = colors.accent) }
+                }
+                Spacer(Modifier.height(8.dp))
+                if (entries.isEmpty()) {
+                    Text(
+                        stringResource(R.string.memory_empty),
+                        fontSize = 13.sp,
+                        color = colors.textTertiary,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                        items(entries.size) { index ->
+                            val entry = entries[index]
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    entry.text,
+                                    fontSize = 13.sp,
+                                    color = colors.textPrimary,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                IconButton(onClick = { entries = MemoryStore.remove(entry.id) }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.memory_delete),
+                                        tint = colors.textTertiary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_done), color = colors.accent)
+            }
+        },
+        containerColor = colors.surface,
+    )
+}
+
+@Composable
+private fun SkillsDialog(
+    onDismiss: () -> Unit,
+    onUseSkill: (String) -> Unit,
+    colors: PokeclawColors,
+) {
+    val skills = remember { SkillRegistry.getUserFacing() }
+    val categoryIcons = mapOf(
+        SkillCategory.INPUT to Icons.Outlined.Keyboard,
+        SkillCategory.DISMISS to Icons.Outlined.Close,
+        SkillCategory.NAVIGATION to Icons.Outlined.Navigation,
+        SkillCategory.MESSAGING to Icons.AutoMirrored.Outlined.Chat,
+        SkillCategory.GENERAL to Icons.Outlined.AutoAwesome,
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.chat_skills_label), color = colors.textPrimary) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.skills_panel_subtitle),
+                    fontSize = 12.sp,
+                    color = colors.textTertiary,
+                    lineHeight = 16.sp,
+                )
+                Spacer(Modifier.height(8.dp))
+                if (skills.isEmpty()) {
+                    Text(
+                        stringResource(R.string.skills_panel_empty),
+                        fontSize = 13.sp,
+                        color = colors.textTertiary,
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 340.dp)) {
+                        items(skills.size) { index ->
+                            val skill = skills[index]
+                            val example = skill.userExample.ifBlank {
+                                skill.triggerPatterns.firstOrNull()
+                                    ?.replace(Regex("\\{\\w+\\}"), "...")
+                                    ?.replace(".+", "...")
+                                    ?: skill.name
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onUseSkill(example) }
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    categoryIcons[skill.category] ?: Icons.Outlined.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = colors.accent,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        skill.name,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = colors.textPrimary,
+                                    )
+                                    Text(
+                                        skill.description,
+                                        fontSize = 12.sp,
+                                        color = colors.textTertiary,
+                                        lineHeight = 15.sp,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_done), color = colors.accent)
+            }
+        },
+        containerColor = colors.surface,
+    )
 }
 
 // ======================== TASK SKILLS PANEL ========================
@@ -2277,10 +2806,12 @@ private fun TaskSkillsPanel(
         if (builtInSkills.isNotEmpty()) {
             items(builtInSkills.size) { index ->
                 val skill = builtInSkills[index]
-                val example = skill.triggerPatterns.firstOrNull()
-                    ?.replace(Regex("\\{\\w+\\}"), "...")
-                    ?.replace(".+", "...")
-                    ?: skill.name
+                val example = skill.userExample.ifBlank {
+                    skill.triggerPatterns.firstOrNull()
+                        ?.replace(Regex("\\{\\w+\\}"), "...")
+                        ?.replace(".+", "...")
+                        ?: skill.name
+                }
                 SkillCard(
                     icon = categoryIcons[skill.category] ?: Icons.Outlined.AutoAwesome,
                     title = skill.name,

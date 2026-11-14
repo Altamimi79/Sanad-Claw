@@ -557,6 +557,11 @@ class DefaultAgentService : AgentService {
 
         val messages = mutableListOf<ChatMessage>()
         messages.add(SystemMessage.from(fullSystemPrompt))
+        XLog.i(
+            TAG,
+            "System prompt built: ${fullSystemPrompt.length} chars, untrustedRule=" +
+                fullSystemPrompt.contains(io.agents.pokeclaw.safety.ScreenContentGuard.SYSTEM_RULE)
+        )
         // Per-task injection taint: set once any untrusted text is flagged.
         val screenGuard = io.agents.pokeclaw.safety.ScreenContentGuard()
 
@@ -607,7 +612,13 @@ class DefaultAgentService : AgentService {
                         if (wrappedScreen.flagged) {
                             XLog.w(TAG, "runAgentLoop: pre-warm screen flagged as suspicious (reasons=${wrappedScreen.reasons})")
                         }
-                        "$promptForModel\n\nCurrent screen:\n${wrappedScreen.text}"
+                        // Redact before the screen text reaches the cloud model. Tool results
+                        // are redacted later; this pre-warm path is separate and must do it too.
+                        val redactedPrewarm = io.agents.pokeclaw.safety.SensitiveDataRedactor.redact(wrappedScreen.text)
+                        if (redactedPrewarm.changed) {
+                            XLog.i(TAG, "runAgentLoop: pre-warm screen redacted kinds=${redactedPrewarm.kinds}")
+                        }
+                        "$promptForModel\n\nCurrent screen:\n${redactedPrewarm.text}"
                     } else promptForModel
                 } else promptForModel
             } catch (e: Exception) { promptForModel }
@@ -849,7 +860,8 @@ class DefaultAgentService : AgentService {
                 // Injection guard: a sensitive action in a task whose context was flagged
                 // requires explicit user confirmation through the existing SafetyCoordinator.
                 val taintKind = io.agents.pokeclaw.safety.RiskClassifier.assess(toolName, params).kind
-                when (screenGuard.decide(taintKind, confirmedByUser = false)) {
+                val taintDecision = screenGuard.decide(taintKind, confirmedByUser = false)
+                when (taintDecision) {
                     io.agents.pokeclaw.safety.ScreenContentGuard.Decision.REQUIRE_CONFIRMATION -> {
                         val approved = io.agents.pokeclaw.safety.SafetyCoordinator.requestConfirmation(
                             ClawApplication.instance.getString(
@@ -875,6 +887,8 @@ class DefaultAgentService : AgentService {
                         }
                         XLog.i(TAG, "sensitive tool=$toolName allowed after explicit confirmation (tainted context)")
                     }
+                    io.agents.pokeclaw.safety.ScreenContentGuard.Decision.ALLOW_WITH_WARNING ->
+                        XLog.w(TAG, "tainted context: non-sensitive tool=$toolName allowed with warning")
                     else -> Unit
                 }
 
@@ -884,7 +898,11 @@ class DefaultAgentService : AgentService {
                 // The value is substituted into this call only, never logged, never persisted.
                 val pausedState = io.agents.pokeclaw.safety.PausedTaskState.shared
                 var execParams: Map<String, Any> = params
-                if (io.agents.pokeclaw.safety.PausedTaskState.hasPlaceholder(params)) {
+                // `finish` only summarizes the task; a placeholder in its summary must not
+                // pause the task and ask the user for a value (there is nothing to execute).
+                if (toolName != "finish" &&
+                    io.agents.pokeclaw.safety.PausedTaskState.hasPlaceholder(params)
+                ) {
                     pausedState.pause(toolName, params)
                     callback.onContent(iterations, ClawApplication.instance.getString(R.string.pause_need_value_message))
                     XLog.i(TAG, "paused: tool=$toolName needs a user-supplied value (redacted)")

@@ -19,6 +19,8 @@ object BuiltInSkills {
         name = "Search in App",
         description = "Type a search query and submit it. Use when the task says 'search for' or 'find' in any app.",
         category = SkillCategory.INPUT,
+        userFacing = true,
+        userExample = "search for coffee shops in the maps app",
         estimatedStepsSaved = 5,
         parameters = listOf(
             SkillParameter("query", "string", true, "The search query to type")
@@ -36,12 +38,13 @@ object BuiltInSkills {
         ),
         fallbackGoal = "The search bar should have '{query}' typed. Just press enter or submit."
     )
-
     fun submitForm() = Skill(
         id = "submit_form",
         name = "Submit Form",
         description = "Find and tap the Send/Submit/Save button. Use after typing a message or filling a form.",
         category = SkillCategory.INPUT,
+        userFacing = true,
+        userExample = "submit the form",
         estimatedStepsSaved = 4,
         parameters = emptyList(),
         triggerPatterns = listOf("submit", "send message", "press send"),
@@ -58,6 +61,8 @@ object BuiltInSkills {
         name = "Dismiss Popup",
         description = "Close common popups, dialogs, and overlays. Use when a dialog blocks the task.",
         category = SkillCategory.DISMISS,
+        userFacing = true,
+        userExample = "dismiss the popup",
         estimatedStepsSaved = 3,
         parameters = emptyList(),
         triggerPatterns = listOf("dismiss", "close popup", "close dialog"),
@@ -81,6 +86,8 @@ object BuiltInSkills {
         name = "Scroll and Read",
         description = "Scroll down the page and collect all visible text content.",
         category = SkillCategory.GENERAL,
+        userFacing = true,
+        userExample = "scroll and read the page",
         estimatedStepsSaved = 10,
         parameters = listOf(
             SkillParameter("max_scrolls", "int", false, "Maximum number of scrolls", "5")
@@ -101,6 +108,8 @@ object BuiltInSkills {
         name = "Copy Screen Text",
         description = "Extract all visible text from the current screen.",
         category = SkillCategory.GENERAL,
+        userFacing = true,
+        userExample = "copy the text on screen",
         estimatedStepsSaved = 3,
         parameters = emptyList(),
         triggerPatterns = listOf("copy text", "extract text", "read screen"),
@@ -115,6 +124,8 @@ object BuiltInSkills {
         name = "Accept Permission",
         description = "Accept permission dialogs, terms, or consent popups. Use when a dialog asks to Allow, Accept, or Agree.",
         category = SkillCategory.DISMISS,
+        userFacing = true,
+        userExample = "accept the permission dialog",
         estimatedStepsSaved = 3,
         parameters = emptyList(),
         triggerPatterns = listOf("accept permission", "allow permission", "grant access"),
@@ -136,6 +147,8 @@ object BuiltInSkills {
         name = "Swipe Screen",
         description = "Swipe the screen in a direction. Use for Tinder swipes, Instagram stories, carousels, or any swipeable content.",
         category = SkillCategory.NAVIGATION,
+        userFacing = true,
+        userExample = "swipe left",
         estimatedStepsSaved = 2,
         parameters = listOf(
             SkillParameter("direction", "string", true, "Direction: left, right, up, or down")
@@ -155,6 +168,8 @@ object BuiltInSkills {
         name = "Go Back",
         description = "Press the back button to return to the previous screen.",
         category = SkillCategory.NAVIGATION,
+        userFacing = true,
+        userExample = "go back",
         estimatedStepsSaved = 1,
         parameters = emptyList(),
         triggerPatterns = listOf("go back", "press back", "navigate back"),
@@ -170,6 +185,8 @@ object BuiltInSkills {
         name = "Wait for Content",
         description = "Wait for new content to appear on screen (loading, AI response, page update). Polls up to 15 seconds.",
         category = SkillCategory.GENERAL,
+        userFacing = true,
+        userExample = "wait for the page to load",
         estimatedStepsSaved = 5,
         parameters = emptyList(),
         triggerPatterns = listOf("wait for content", "wait for loading", "wait for response"),

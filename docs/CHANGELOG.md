@@ -2,6 +2,37 @@
 
 Format based on Keep a Changelog; upstream PokeClaw history lives in `README.md` §Changelog (v0.1.0 → v0.7.1).
 
+## [1.0.3-dev-11] — 2026-11-14
+
+### Added
+- **Sidebar multi-select + select-all**: a Select mode with checkboxes, "Select all"/"Clear selection", a live selected count, and bulk Archive / Delete (delete asks for confirmation and shows the count).
+- **Sidebar Archive section**: archived conversations are grouped under a collapsible "Archived (N)" row with per-conversation Unarchive and Delete. Archive data comes from the existing `ConversationStore` layer.
+- **Sidebar Memory**: a persistent memory list (up to 50 short entries) managed from the sidebar and appended to every chat/task system prompt, with a clear warning not to store secrets.
+- **Sidebar Skills**: a Skills dialog listing the nine built-in user-facing skills; picking one prefills the composer in Agent mode. Built-ins now carry localized-ready descriptions and example phrases.
+- Traceability logs for the system-prompt untrusted-content rule, pre-warm redaction kinds, and tainted non-sensitive tool decisions.
+
+### Changed
+- **Composer send button**: added an always-visible in-app send control (theme accent, disabled when the field is empty or a reply/task is in progress) so sending does not depend on the OEM keyboard's IME action. Chat/Agent tabs now use theme-colored Material icons instead of the blue/purple emoji.
+- **Unified brand color**: the XML brand palette (`colorBrandPrimary`, containers, variants, selected radio) moved from indigo `#5856D6` to the app orange `#E8845A`, matching the Compose theme on the Models screen and the rest of the app.
+
+### Fixed
+- **P0: screen data leak to the cloud model (SD2)**: the pre-warm screen attached to the first agent call bypassed `SensitiveDataRedactor`, so a page containing a card/IBAN/national ID/OTP sent the real values to the provider. The pre-warm screen is now redacted; the model only receives `[REDACTED:*]` placeholders.
+- **Memory crash after a release/debug switch**: R8 minified Gson field names to `a/b/c`, so the debug build read nulls and crashed on every model-client creation. `MemoryStore.Stored` now has nullable fields and explicit `@SerializedName` values with legacy aliases.
+- **Skills panel was always empty**: every built-in skill defaulted to `userFacing = false`; the nine built-ins are now user-facing.
+- **Pause-and-ask deadlock**: the composer refused to send while a task was running, so the user could never supply the value requested by `PausedTaskState`. It now accepts input while paused; `finish` is excluded from pausing.
+- **`finish` false positive**: summaries mentioning "transfer"/"delete" were classified as sensitive, blocking task completion on tainted pages. `finish` is now risk-free by definition.
+- Archiving/deleting the currently open conversation no longer recreates the file on the next save (`beginFreshConversation`).
+
+### Security QA (device, HONOR)
+- PASS: IJ1-IJ6, SD1-SD5, QP2, QP3, QP5, QP6.
+- PARTIAL: QP1/QP1a (English rows and bilingual state text; Arabic RTL and TalkBack not exercised).
+- BLOCKED: QP4 (no code path currently returns `RiskKind.UNKNOWN`), QP7/QP8 (no published pre-migration build), QV1-QV9 (automation cannot speak into the mic).
+
+### Verified
+- 335 unit tests / 59 classes / 0 failures; `lintVitalRelease` passes.
+- Full signed release installed over dev-10 with the same certificate; data preserved, sidebar/archive/memory verified on device, all seven safety switches restored to Enabled.
+- The four GitHub Actions signing secrets are configured, so tagged releases are signed and published automatically.
+
 ## [1.0.3-dev-10] — 2026-11-13
 
 ### Fixed

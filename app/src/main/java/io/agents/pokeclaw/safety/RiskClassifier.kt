@@ -56,6 +56,12 @@ object RiskClassifier {
             return RiskAssessment(true, kind, true, labelFor(kind))
         }
 
+        // finish only ends the task; its summary text must never be re-classified as a
+        // payment/delete intent (e.g. summarizing a page that merely mentions "transfer").
+        if (normalizedTool == "finish") {
+            return RiskAssessment(false, null, false, labelFor(null))
+        }
+
         val text = flatten(params)
         return assessText(toolName, text)
     }

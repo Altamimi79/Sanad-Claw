@@ -24,7 +24,9 @@ data class Skill(
     val fallbackGoal: String = "",
     /** If true, this skill appears in the Task UI for users to initiate.
      *  If false, it's only used internally by the LLM agent (e.g. dismiss_popup, go_back). */
-    val userFacing: Boolean = false
+    val userFacing: Boolean = false,
+    /** Optional example phrase inserted into the composer when the user picks this skill. */
+    val userExample: String = ""
 )
 
 enum class SkillCategory(val label: String, val icon: String) {
