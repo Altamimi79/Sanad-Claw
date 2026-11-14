@@ -2,7 +2,7 @@
 
 Persistent project memory. Read first, update at the end of every phase (see AGENTS.md).
 
-Last updated: 2026-11-13 (Phase 2g item 4 per-category confirmation permissions: unit-complete, device QA pending)
+Last updated: 2026-11-14 (stable v1.0.3 published; branch ui-cleanup-1.0.4 prepared with Arabic-first language fix + UI cleanup — PR open, not merged)
 
 ## Project Identity
 
@@ -557,3 +557,19 @@ Status: ~85%. Sidebar/memory/skills work is done and device-verified; most manua
 - Version 1.0.3-dev-11 (code 112). Installed over dev-10 with the same release certificate; app data preserved.
 - Device verified: sidebar Archive/Memory/Skills, saved memory survived, seven safety switches Enabled, in-app orange send button sends, Chat/Agent tabs themed, Models Save & Activate / Fetch are orange (night brand palette fixed).
 - 335 tests / 59 classes / 0 failures; `lintVitalRelease` passes.
+
+## Stable v1.0.3 published + 1.0.4 dev cycle (2026-11-14)
+
+### Release v1.0.3 (stable, DONE)
+- Branch `release/1.0.3` → PR #1 merged into `main` (merge commit `3a9f90e8`), tag **v1.0.3** pushed. GitHub Release: https://github.com/Altamimi79/Sanad-Claw/releases/tag/v1.0.3 — prerelease=false, assets: `SanadClaw_v1.0.3_20261114_082303.apk` (CI-built, SHA-256 `67a65d4f78cb10f6a051f91ad9070a83209892870bdc15d7a886835c7f1296f4`) + SHA256SUMS.txt. Release workflow run 43575477343 green; Firebase Test Lab self-skipped green via the guard job (GCP secrets still absent).
+- Local verified build: `SanadClaw_v1.0.3_20261114_114819.apk`, SHA-256 `2CEDA98A612F8DD839751F161F0586C2F8A7E33BB9BC59985C5F5BDB91DA2C7C`. CI APK re-downloaded, hash-matched, installed on HONOR — data intact.
+- One ANR during device QA (input-dispatch timeout under system Load ~23; HONOR killed the process despite "Wait" and auto-restored WhatsApp Business to the foreground — no chat opened, nothing sent). Re-tested send/reply after restart: clean. Environmental, same code as dev-11 which passed.
+- cla-check (upstream CLA Assistant) fails on PRs: action crashes reading signatures from agents-io/PokeClaw (inaccessible from this fork). Non-required; fix later in a separate PR (point path-to-signatures at this repo or disable the workflow).
+
+### Branch `ui-cleanup-1.0.4` (PR open against main, NOT merged — version still 113/1.0.3 by design)
+Commits: `8f63d77` fix(ui) · `2eae248` feat(i18n) Arabic-first default + no reset on update + tests + docs · `6ebedd3` fix(i18n) explicit-choice flag migration.
+- **UI cleanup:** `ic_arrow_right`/`ic_back` get `android:autoMirrored="true"`; dead drawables `bg_bubble_user.xml`/`bg_bubble_assistant.xml` deleted (zero refs repo-wide — the live Compose chat already uses RTL-correct start/end RoundedCornerShape; do NOT "fix" those XML files, they were dead); tertiary text alpha raised (`values-night #52→#8AFFFFFF`, `values #61→#99000000`) for WCAG AA on Views pages. Compose chat tertiary (aiText@60%) was already fine — the reviewer table's "#52FFFFFF on #0C111B" applies to Views resources only.
+- **Language model now:** Arabic default; a saved "en" is honored ONLY when `KEY_APP_LANGUAGE_CHOSEN` is set (written by `setLanguage` in the same commit()). Legacy implicit "en" from the old update-reset is ignored → those users move to Arabic once (**accepted trade-off**: cannot be distinguished from an explicit choice made on old builds). `applyUpdateLanguageReset` never writes KEY_LANGUAGE; pure functions `resolveLanguage(stored, chosen)` + `shouldRecordVersionOnly(last,current)` are top-level and unit-tested (no Robolectric in this project — do not add it casually).
+- **Tests:** 347 / 60 classes / 0 failures (`AppLocaleLogicTest` = 12). Old-behavior proof: copied the new test into a throwaway worktree at `8f63d77` with a semantics shim replicating old decisions; 4/12 failed exactly on `expected:<[ar]> but was:<[en]>` (incl. the legacy-implicit case) — the suite genuinely catches the migration bug. Worktree removed afterwards.
+- **Device QA on HONOR (final build `SanadClaw_v1.0.3_20261114_131223.apk`, SHA-256 `EFFE4DF9802909F230F7AAC6C1886FE2C0639CC422BE998933FF30A4E98A7162`, installed -r over official 1.0.3, data preserved):** LN4 PASS — the device really carried implicit `en` from 1.0.3 and flipped to Arabic RTL on upgrade; QP9 PASS — chevrons/back arrow mirrored in Arabic, night-mode meta text readable (system night toggled via `cmd uimode night`); explicit EN then AR choices persist across force-stop/cold restart; final device state: explicit Arabic. LN1 skipped deliberately (`pm clear` would destroy QA data; same path covered by LN4 + unit tests). LN2/LN3 PARTIAL — cross-version persistence re-testable only after the versionCode bump.
+- **Next for 1.0.4:** merge decision, then version bump (114 / e.g. `1.0.4-dev-12`) in a release task; re-run LN2/LN3 legs on that update; later: cla-check fix, color-token unification (Views vs ThemeManager duplication is real), Arabic UI font decision.
