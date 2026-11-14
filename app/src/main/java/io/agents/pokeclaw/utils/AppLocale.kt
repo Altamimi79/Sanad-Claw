@@ -7,13 +7,14 @@ import android.content.Context
 import java.util.Locale
 
 /**
- * App language resolution for the Sanad fork: English is the default UI language.
+ * App language resolution for the Sanad fork: Arabic is the default UI language.
  *
  * Stored in a tiny plain SharedPreferences file (not MMKV) because attachBaseContext
  * runs before KVUtils/MMKV initialization on every Context.
  *
- * Values: "en" (default) or "ar". Unknown values fall back to "en".
- * On an app update the language is reset to English (see [applyUpdateLanguageReset]).
+ * Values: "ar" (default) or "en". English is used only when explicitly chosen;
+ * unknown values fall back to "ar". An app update never changes the language —
+ * [applyUpdateLanguageReset] only tracks the versionCode (see that function).
  */
 object AppLocale {
 
@@ -28,8 +29,8 @@ object AppLocale {
         // while the Application is still being attached, so applicationContext is null then.
         val stored = context
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_LANGUAGE, LANGUAGE_ENGLISH)
-        return if (stored == LANGUAGE_ARABIC) LANGUAGE_ARABIC else LANGUAGE_ENGLISH
+            .getString(KEY_LANGUAGE, LANGUAGE_ARABIC)
+        return resolveLanguage(stored)
     }
 
     fun setLanguage(context: Context, language: String) {
@@ -45,9 +46,9 @@ object AppLocale {
     }
 
     /**
-     * Reset the UI language to English when the app was updated (versionCode changed).
-     * Called from attachBaseContext before the locale is applied, so the first launch
-     * after an update already renders in English. First install just records the code.
+     * Tracks the app versionCode across updates. The UI language is NEVER touched here:
+     * a user's saved language (Arabic or English) survives every update. On first install
+     * the code is just recorded; on an update only the new code is stored.
      */
     fun applyUpdateLanguageReset(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -58,13 +59,8 @@ object AppLocale {
             return
         }
         val lastCode = prefs.getInt(KEY_LAST_VERSION_CODE, 0)
-        if (lastCode == 0) {
+        if (shouldRecordVersionOnly(lastCode, currentCode)) {
             prefs.edit().putInt(KEY_LAST_VERSION_CODE, currentCode).commit()
-        } else if (lastCode != currentCode) {
-            prefs.edit()
-                .putString(KEY_LANGUAGE, LANGUAGE_ENGLISH)
-                .putInt(KEY_LAST_VERSION_CODE, currentCode)
-                .commit()
         }
     }
 
@@ -81,3 +77,20 @@ object AppLocale {
         return newBase.createConfigurationContext(config)
     }
 }
+
+/**
+ * Pure language resolution (no Android deps, unit-tested in AppLocaleLogicTest):
+ * English only when explicitly stored; anything else — null (never chosen), "ar",
+ * or an unknown value — resolves to Arabic. This is the single source of truth for
+ * the Arabic-first default.
+ */
+fun resolveLanguage(stored: String?): String =
+    if (stored == AppLocale.LANGUAGE_ENGLISH) AppLocale.LANGUAGE_ENGLISH else AppLocale.LANGUAGE_ARABIC
+
+/**
+ * Pure version-tracking decision (unit-tested): true when the stored versionCode
+ * should be written — first install (lastCode == 0) or an update (codes differ).
+ * It never implies any language write; equal codes mean no-op.
+ */
+fun shouldRecordVersionOnly(lastCode: Int, currentCode: Int): Boolean =
+    lastCode == 0 || lastCode != currentCode
