@@ -15,6 +15,7 @@ Model label and dictation release (versionCode 115, versionName "1.0.5").
 ### Verified
 - 356 unit tests / 62 classes / 0 failures (`ModelDisplayNamesTest` 4, `VoiceSessionPolicyTest` 5); debug + signed release builds green.
 - Device (HONOR MBH-N49): chip reads `Qwen 3.8 Flash-Next` with no dot and no cloud suffix, selection survives force-stop. Dictation still needs a human speaker (VP1–VP3).
+- Published: tag `v1.0.5`, GitHub Release with `SanadClaw_v1.0.5_20261114_123508.apk` (SHA-256 `59d2d69f…44fc`) and `SHA256SUMS.txt`; installed `-r` on the HONOR over 1.0.4 (versionCode 115 confirmed).
 
 ## [1.0.4] — 2026-11-14
 
